@@ -1,0 +1,49 @@
+cmake_minimum_required(VERSION 3.9)
+project(xendbg)
+
+set(CMAKE_CXX_STANDARD 17)
+
+# Apple clang doesn't actually support all C++17 features...
+# Assume xen has been cloned into /opt
+if (APPLE)
+    set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
+    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
+    include_directories("/opt/xen/tools/xenstore/include")
+    include_directories("/opt/xen/tools/libxc/include")
+    include_directories("/opt/xen/tools/libs/foreignmemory/include")
+    include_directories("/opt/xen/xen/include")
+endif()
+
+add_executable(xendbg
+    main.cpp
+    Parser/Parser.cpp
+    Parser/Expression/Constant.hpp
+    Parser/Expression/Expression.hpp
+    Parser/Expression/Label.hpp
+    Parser/Expression/Variable.hpp
+    Parser/Expression/UnaryExpression.hpp
+    Parser/Expression/BinaryExpression.hpp
+    Parser/Operator/BinaryOperator.hpp
+    Parser/Operator/Precedence.hpp
+    Parser/Operator/UnaryOperator.hpp
+    Parser/ParserException.hpp
+    Parser/Sentinel.hpp
+    Parser/Tokenizer.hpp
+    Parser/Token/Constant.hpp
+    Parser/Token/Variable.hpp
+    Parser/Token/Label.hpp
+    Parser/Token/Symbol.hpp
+    Parser/Token/Match.hpp
+    Parser/Token/Match.cpp
+    Parser/Predicate.hpp
+    Util/overloaded.hpp
+    Util/pop_ret.hpp
+    Util/clear.hpp
+    REPL/REPL.cpp
+    REPL/REPL.hpp
+    Xen/XenHandle.cpp
+    Xen/XenHandle.hpp
+    Xen/Domain.cpp
+    Xen/Domain.hpp)
+
+target_link_libraries(xendbg readline)

@@ -5,10 +5,11 @@
 #ifndef XENDBG_DOMAIN_HPP
 #define XENDBG_DOMAIN_HPP
 
-#include <cstdint>
 #include <string>
 
 #include <xenctrl.h>
+
+#include "Common.hpp"
 
 namespace xd::xen {
 
@@ -16,14 +17,16 @@ namespace xd::xen {
 
   class Domain {
   public:
-    using DomID = uint32_t ;
-    using DomInfo = xc_dominfo_t;
-
-  public:
     explicit Domain(XenHandle& xen, DomID domid);
 
+    DomID domid() { return _domid; };
     std::string name();
     DomInfo info();
+
+    void set_debugging(bool enabled);
+    void set_single_step(bool enabled);
+    void pause();
+    void unpause();
 
   private:
     const DomID _domid;

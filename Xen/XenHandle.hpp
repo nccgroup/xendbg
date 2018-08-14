@@ -7,32 +7,28 @@
 
 #include <memory>
 #include <string>
-
-#include <xenctrl.h>
-#include <xenstore.h>
-#include <xenforeignmemory.h>
+#include <vector>
 
 #include "Domain.hpp"
+#include "ForeignMemory.hpp"
+#include "Xenctrl.hpp"
+#include "Xenstore.hpp"
+
+struct xs_handle;
+struct xenforeignmemory_handle;
 
 namespace xd::xen {
 
   class XenHandle {
   public:
-    struct Version {
-      int major, minor;
-    };
-
-  public:
-    XenHandle();
-
-    Version version();
-
-    Domain::DomID get_domid_from_name(const std::string& name);
+    Xenctrl& xenctrl() { return _xenctrl; }
+    Xenstore& xenstore() { return _xenstore; }
+    ForeignMemory& foreign_memory() { return _foreign_memory; }
 
   private:
-    std::unique_ptr<xc_interface> _xenctrl;
-    std::unique_ptr<struct xs_handle> _xenstore;
-    std::unique_ptr<xenforeignmemory_handle> _foreign_memory;
+    Xenctrl _xenctrl;
+    Xenstore _xenstore;
+    ForeignMemory _foreign_memory;
   };
 
 }

@@ -18,9 +18,6 @@ namespace xd::xen {
 
   class XenForeignMemory {
   public:
-    using MappedMemory = std::shared_ptr<void>;
-
-  public:
     XenForeignMemory();
 
     MappedMemory map(Domain& domain, Address address, size_t size, int prot);

@@ -1,6 +1,29 @@
 #include "REPL/REPL.hpp"
+#include "Xen/Domain.hpp"
+#include "Xen/Xenctrl.hpp"
+#include "Xen/Xenstore.hpp"
+#include "Xen/XenForeignMemory.hpp"
+
+#include <sys/mman.h>
+
+using xd::xen::DomID;
+using xd::xen::Domain;
+using xd::xen::Xenctrl;
+using xd::xen::XenForeignMemory;
+using xd::xen::Xenstore;
 
 int main() {
+  Xenctrl xenctrl;
+  XenForeignMemory xen_foreign_memory;
+  Xenstore xenstore;
+
+  DomID domid = 1;
+  Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
+  domain.pause();
+  domain.set_debugging(true);
+  domain.map_memory((void*)0x0, 1024, PROT_READ);
+  domain.unpause();
+
   repl::set_prompt("> ");
   repl::do_repl();
 }

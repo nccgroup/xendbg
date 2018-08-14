@@ -41,8 +41,7 @@ add_executable(xendbg
     Util/clear.hpp
     REPL/REPL.cpp
     REPL/REPL.hpp
-    Xen/XenHandle.hpp
-    Xen/Domain.cpp
+        Xen/Domain.cpp
     Xen/Domain.hpp Xen/XenException.hpp Xen/Xenstore.cpp Xen/Xenstore.hpp Xen/Xenctrl.cpp Xen/Xenctrl.hpp Xen/XenForeignMemory.cpp Xen/XenForeignMemory.hpp Xen/Common.hpp Xen/Registers.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)

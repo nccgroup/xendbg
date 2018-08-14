@@ -7,9 +7,10 @@
 #include "XenException.hpp"
 
 // NOTE: This needs to be declared after Domain.hpp, which includes xenctrl.h.
-// For some reason, including xenforeignmemory.h before that header will fail. 
+// For some reason, including xenforeignmemory.h before xenctrl.h will fail. 
 #include <xenforeignmemory.h>
 
+using xd::xen::MappedMemory;
 using xd::xen::XenForeignMemory;
 using xd::xen::XenException;
 
@@ -20,7 +21,7 @@ XenForeignMemory::XenForeignMemory()
     throw XenException("Failed to open Xen foreign memory handle!");
 }
 
-XenForeignMemory::MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) {
+MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) {
   xen_pfn_t base_page_frame_num = ((uintptr_t)address) >> XC_PAGE_SHIFT;
   size_t num_pages = base_page_frame_num;
 

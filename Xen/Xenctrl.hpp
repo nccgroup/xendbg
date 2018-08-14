@@ -29,8 +29,8 @@ namespace xd::xen {
     void get_cpu_context(Domain& domain, VCPU_ID vcpu_id);
     int get_domain_word_size(Domain &domain);
 
-    void set_debugging_for_domain(Domain& domain, bool enable, VCPU_ID vcpu_id);
-    void set_single_step_for_domain(Domain& domain, bool enable, VCPU_ID vcpu_id);
+    void set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id);
+    void set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_id);
     void pause_domain(Domain& domain);
     void unpause_domain(Domain& domain);
 

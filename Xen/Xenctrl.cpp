@@ -71,7 +71,7 @@ int xd::xen::Xenctrl::get_domain_word_size(Domain &domain) {
   return word_size;
 }
 
-void Xenctrl::set_debugging_for_domain(Domain &domain, bool enable, VCPU_ID vcpu_id) {
+void Xenctrl::set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id) {
   if (vcpu_id > domain.info().max_vcpu_id)
     throw XenException(
         "Tried to " + std::string(enable ? "enable" : "disable") + " debugging for nonexistent VCPU " +
@@ -83,7 +83,7 @@ void Xenctrl::set_debugging_for_domain(Domain &domain, bool enable, VCPU_ID vcpu
   }
 }
 
-void Xenctrl::set_single_step_for_domain(Domain &domain, bool enable, VCPU_ID vcpu_id) {
+void Xenctrl::set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_id) {
   uint32_t op = enable
       ? XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_ON
       : XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_OFF;

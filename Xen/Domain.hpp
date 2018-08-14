@@ -22,9 +22,10 @@ namespace xd::xen {
     DomID domid() { return _domid; };
     std::string name();
     DomInfo info();
+    int word_size();
 
-    void set_debugging(bool enabled);
-    void set_single_step(bool enabled);
+    void set_debugging(bool enabled, VCPU_ID vcpu_id = 0);
+    void set_single_step(bool enabled, VCPU_ID vcpu_id = 0);
     void pause();
     void unpause();
 

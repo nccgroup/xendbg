@@ -30,8 +30,9 @@ namespace xd::xen {
     void unpause();
 
   private:
-    const DomID _domid;
     XenHandle& _xen;
+
+    const DomID _domid;
   };
 
 }

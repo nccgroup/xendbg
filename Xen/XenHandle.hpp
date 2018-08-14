@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "Domain.hpp"
-#include "ForeignMemory.hpp"
+#include "XenForeignMemory.hpp"
 #include "Xenctrl.hpp"
 #include "Xenstore.hpp"
 
@@ -23,12 +23,12 @@ namespace xd::xen {
   public:
     Xenctrl& xenctrl() { return _xenctrl; }
     Xenstore& xenstore() { return _xenstore; }
-    ForeignMemory& foreign_memory() { return _foreign_memory; }
+    XenForeignMemory& foreign_memory() { return _foreign_memory; }
 
   private:
     Xenctrl _xenctrl;
     Xenstore _xenstore;
-    ForeignMemory _foreign_memory;
+    XenForeignMemory _foreign_memory;
   };
 
 }

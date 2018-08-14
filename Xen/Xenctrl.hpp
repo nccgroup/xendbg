@@ -7,17 +7,7 @@
 
 #include <memory>
 
-extern "C" int xc_interface_close(xc_interface_core*);
-extern "C" int xc_interface_open(xentoollog_logger*, xentoollog_logger*, unsigned int);
-extern "C" int xc_version(xc_interface_core*, int, void*);
-extern "C" int xc_domain_getinfo(xc_interface_core*, unsigned int, unsigned int, xc_dominfo*);
-extern "C" int xc_domain_get_guest_width(xc_interface_core*, unsigned int, unsigned int*);
-extern "C" int xc_domain_setdebugging(xc_interface_core*, unsigned int, unsigned int);
-extern "C" int xc_domain_debug_control(xc_interface_core*, unsigned int, unsigned int, unsigned int);
-extern "C" int xc_domain_pause(xc_interface_core*, unsigned int);
-extern "C" int xc_domain_unpause(xc_interface_core*, unsigned int);
-
-#include <xenctrl.h>
+#include "BridgeHeaders/xenctrl.h"
 
 #include "Common.hpp"
 

@@ -2,8 +2,6 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
-#include <xenstore.h>
-
 #include "XenException.hpp"
 #include "Xenstore.hpp"
 

@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <memory>
 
-#include <xenctrl.h>
+#include "BridgeHeaders/xenctrl.h"
 
 namespace xd::xen {
   using Address = void*;

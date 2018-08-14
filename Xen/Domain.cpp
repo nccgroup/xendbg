@@ -2,8 +2,6 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
-#include <xenstore.h>
-
 #include "Domain.hpp"
 #include "Xenctrl.hpp"
 #include "XenForeignMemory.hpp"

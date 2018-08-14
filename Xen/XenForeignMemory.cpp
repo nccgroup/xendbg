@@ -7,8 +7,8 @@
 #include "XenException.hpp"
 
 // NOTE: This needs to be declared after Domain.hpp, which includes xenctrl.h.
-// For some reason, including xenforeignmemory.h before xenctrl.h will fail. 
-#include <xenforeignmemory.h>
+// For some reason, including xenforeignmemory.h before xenctrl.h will fail.
+#include "BridgeHeaders/xenforeignmemory.h"
 
 using xd::xen::MappedMemory;
 using xd::xen::XenForeignMemory;

@@ -2,27 +2,25 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
-#include <domctl.h>
-#include <version.h>
-#include <xenctrl.h>
-
 #include "Domain.hpp"
 #include "Xenctrl.hpp"
 #include "XenException.hpp"
 
 using xd::xen::DomInfo;
 using xd::xen::Domain;
+using xd::xen::WordSize;
 using xd::xen::Xenctrl;
 using xd::xen::XenException;
 
 xd::xen::Xenctrl::Xenctrl()
+  : _xenctrl(xc_interface_open(nullptr, nullptr, 0), &xc_interface_close)
 {
   if (!_xenctrl)
     throw XenException("Failed to open Xenctrl handle!");
 }
 
 Xenctrl::XenVersion Xenctrl::xen_version() {
-  int version = _version(xc_version(_xenctrl, XENVER_version, NULL));
+  int version = xc_version(_xenctrl.get(), XENVER_version, NULL);
   return XenVersion {
     version >> 16,
     version & ((1 << 16) - 1)
@@ -31,7 +29,7 @@ Xenctrl::XenVersion Xenctrl::xen_version() {
 
 DomInfo Xenctrl::get_domain_info(Domain& domain) {
   xc_dominfo_t dominfo;
-  int ret = xc_domain_getinfo(_xenctrl, domain.domid(), 1, &dominfo);
+  int ret = xc_domain_getinfo(_xenctrl.get(), domain.domid(), 1, &dominfo);
 
   if (ret != 1 || dominfo.domid != domain.domid())
     throw std::runtime_error("Failed to get domain info!");
@@ -62,9 +60,9 @@ void Xenctrl::get_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
 
 }
 
-int xd::xen::Xenctrl::get_domain_word_size(Domain &domain) {
-  int word_size;
-  if (xc_domain_get_guest_width(_xenctrl, domain.domid(), &word_size)) {
+WordSize xd::xen::Xenctrl::get_domain_word_size(Domain &domain) {
+  unsigned int word_size;
+  if (xc_domain_get_guest_width(_xenctrl.get(), domain.domid(), &word_size)) {
     throw XenException(
       "Failed to get word size for domain " + std::to_string(domain.domid()) + "!");
   }
@@ -77,7 +75,7 @@ void Xenctrl::set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id)
         "Tried to " + std::string(enable ? "enable" : "disable") + " debugging for nonexistent VCPU " +
         std::to_string(vcpu_id) + " on domain " + std::to_string(domain.domid()) + "!");
 
-  if (xc_domain_setdebugging(_xenctrl, domain.domid(), (unsigned int)enable)) {
+  if (xc_domain_setdebugging(_xenctrl.get(), domain.domid(), (unsigned int)enable)) {
     throw XenException(
         "Failed to enable debugging on domain " + std::to_string(domain.domid()) + "!");
   }
@@ -93,7 +91,7 @@ void Xenctrl::set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_i
         "Tried to " + std::string(enable ? "enable" : "disable") + " single-step mode for nonexistent VCPU " +
         std::to_string(vcpu_id) + " on domain " + std::to_string(domain.domid()) + "!");
 
-  if (xc_domain_debug_control(_xenctrl, domain.domid(), op, vcpu_id)) {
+  if (xc_domain_debug_control(_xenctrl.get(), domain.domid(), op, vcpu_id)) {
     throw XenException(
         "Failed to " + std::string(enable ? "enable" : "disable") + " single-step mode for VCPU " +
         std::to_string(vcpu_id) + " on domain " + std::to_string(domain.domid()) + "!");
@@ -101,20 +99,20 @@ void Xenctrl::set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_i
 }
 
 void Xenctrl::pause_domain(Domain &domain) {
-  if (xc_domain_pause(_xenctrl), domain.domid())
+  if (xc_domain_pause(_xenctrl.get(), domain.domid()))
     throw XenException(
         "Failed pause domain " + std::to_string(domain.domid()) + "!");
 }
 
 void Xenctrl::unpause_domain(Domain &domain) {
-  if (xc_domain_unpause(_xenctrl), domain.domid())
+  if (xc_domain_unpause(_xenctrl.get(), domain.domid()))
     throw XenException(
         "Failed unpause domain " + std::to_string(domain.domid()) + "!");
 }
 
 struct hvm_hw_cpu xd::xen::Xenctrl::get_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id) {
   struct hvm_hw_cpu cpu_context;
-  if (xc_domain_hvm_getcontext_partial(_xenctrl, domain.domid(), HVM_SAVE_CODE(CPU),
+  if (xc_domain_hvm_getcontext_partial(_xenctrl.get(), domain.domid(), HVM_SAVE_CODE(CPU),
                                        (uint16_t)vcpu_id, &cpu_context, sizeof(cpu_context))) {
     throw XenException(
       "Failed get HVM CPU context for VCPU " + std::to_string(vcpu_id) + " of domain " +
@@ -125,7 +123,7 @@ struct hvm_hw_cpu xd::xen::Xenctrl::get_cpu_context_hvm(Domain &domain, VCPU_ID 
 
 vcpu_guest_context_any_t Xenctrl::get_cpu_context_pv(Domain &domain, VCPU_ID vcpu_id) {
   vcpu_guest_context_any_t context_any;
-  if (xc_vcpu_getcontext(_xenctrl, domain.domid(), (uint16_t)vcpu_id, &context_any)) {
+  if (xc_vcpu_getcontext(_xenctrl.get(), domain.domid(), (uint16_t)vcpu_id, &context_any)) {
     throw XenException(
         "Failed get x32 PV CPU context for VCPU " + std::to_string(vcpu_id) + " of domain " +
         std::to_string(domain.domid()) + "!");

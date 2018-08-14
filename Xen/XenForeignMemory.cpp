@@ -2,11 +2,13 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
-#include <xenforeignmemory.h>
-
 #include "Domain.hpp"
 #include "XenForeignMemory.hpp"
 #include "XenException.hpp"
+
+// NOTE: This needs to be declared after Domain.hpp, which includes xenctrl.h.
+// For some reason, including xenforeignmemory.h before that header will fail. 
+#include <xenforeignmemory.h>
 
 using xd::xen::XenForeignMemory;
 using xd::xen::XenException;
@@ -19,7 +21,7 @@ XenForeignMemory::XenForeignMemory()
 }
 
 XenForeignMemory::MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) {
-  Address base_page_frame_num = address >> XC_PAGE_SHIFT;
+  xen_pfn_t base_page_frame_num = ((uintptr_t)address) >> XC_PAGE_SHIFT;
   size_t num_pages = base_page_frame_num;
 
   auto pages = (xen_pfn_t*)malloc(num_pages * sizeof(xen_pfn_t));
@@ -34,7 +36,8 @@ XenForeignMemory::MappedMemory XenForeignMemory::map(Domain &domain, Address add
     pages[i] = base_page_frame_num + 1;
   }
 
-  void *mem = xenforeignmemory_map(_xen_foreign_memory, domain.domid(), prot, num_pages, pages, errors));
+  void *mem = xenforeignmemory_map(_xen_foreign_memory.get(), domain.domid(),
+      prot, num_pages, pages, errors);
 
   for (int i = 0; i < num_pages; ++i) {
     if (errors[i])
@@ -43,7 +46,7 @@ XenForeignMemory::MappedMemory XenForeignMemory::map(Domain &domain, Address add
 
   return std::shared_ptr<void>(mem, [this, address, num_pages](void *memory) {
     if (memory) {
-      xenforeignmemory_unmap(_xen_foreign_memory, address, num_pages);
+      xenforeignmemory_unmap(_xen_foreign_memory.get(), address, num_pages);
     }
   });
 }

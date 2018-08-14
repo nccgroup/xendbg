@@ -7,8 +7,6 @@
 
 #include <string>
 
-#include <xenctrl.h>
-
 #include "Common.hpp"
 
 namespace xd::xen {

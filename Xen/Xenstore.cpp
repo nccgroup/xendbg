@@ -12,7 +12,7 @@ using xd::xen::XenException;
 using xd::xen::Xenstore;
 
 Xenstore::Xenstore()
-    : _xenstore(xs_open(0), xs_close)
+    : _xenstore(xs_open(0), &xs_close)
 {
   if (!_xenstore)
     throw XenException("Failed to open Xenstore handle!");
@@ -20,7 +20,7 @@ Xenstore::Xenstore()
 
 std::vector<std::string> Xenstore::read_directory(const std::string &dir) {
   unsigned int num_entries;
-  char **entries= xs_directory(_xenstore, XBT_NULL, dir, &num_entries);
+  char **entries = xs_directory(_xenstore.get(), XBT_NULL, dir.c_str(), &num_entries);
 
   if (!entries)
     throw XenException("Read from directory \"" + dir + "\" failed!");
@@ -38,11 +38,10 @@ std::vector<std::string> Xenstore::read_directory(const std::string &dir) {
 }
 
 std::string Xenstore::read(const std::string &file) {
-  xs_transaction_t transaction;
 
-  auto transaction_handle = xs_transaction_start(_xenstore, transaction);
-  char *contents = (char*)xs_read(_xenstore, transaction, file.c_str(), nullptr);
-  xs_transaction_end(_xenstore, transaction, false);
+  auto transaction = xs_transaction_start(_xenstore.get());
+  char *contents = (char*)xs_read(_xenstore.get(), transaction, file.c_str(), nullptr);
+  xs_transaction_end(_xenstore.get(), transaction, false);
 
   if (!contents)
     throw XenException("Read from \"" + file + "\" failed!");
@@ -51,11 +50,11 @@ std::string Xenstore::read(const std::string &file) {
 }
 
 DomID Xenstore::get_domid_from_name(const std::string& name) {
-  auto domain_ids = _xenstore.read_directory("/local/domain");
+  auto domain_ids = read_directory("/local/domain");
 
   for (auto domid : domain_ids) {
     auto path = "local/domain/" + domid + "/name";
-    auto name_candidate = _xenstore.read(path);
+    auto name_candidate = read(path);
 
     if (name_candidate == name) {
       return (uint32_t)std::stoul(domid, nullptr, 10);

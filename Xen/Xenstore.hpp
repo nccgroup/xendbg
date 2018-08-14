@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include <xenstore.h>
+
 #include "Common.hpp"
 
 namespace xd::xen {
@@ -22,7 +24,7 @@ namespace xd::xen {
     DomID get_domid_from_name(const std::string& name);
 
   private:
-    std::unique_ptr<struct xs_handle> _xenstore;
+    std::unique_ptr<struct xs_handle, decltype(&xs_close)> _xenstore;
   };
 
 }

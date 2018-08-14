@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include <xenctrl.h>
+
 #include "Common.hpp"
 
 namespace xd::xen {
@@ -27,7 +29,7 @@ namespace xd::xen {
 
     DomInfo get_domain_info(Domain& domain);
     void get_cpu_context(Domain& domain, VCPU_ID vcpu_id);
-    int get_domain_word_size(Domain &domain);
+    WordSize get_domain_word_size(Domain &domain);
 
     void set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id);
     void set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_id);
@@ -39,7 +41,7 @@ namespace xd::xen {
     vcpu_guest_context_any_t get_cpu_context_pv(Domain& domain, VCPU_ID vcpu_id);
 
   private:
-    std::unique_ptr<xc_interface> _xenctrl;
+    std::unique_ptr<xc_interface, decltype(&xc_interface_close)> _xenctrl;
   };
 
 }

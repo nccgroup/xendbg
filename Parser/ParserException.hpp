@@ -5,6 +5,7 @@
 #ifndef XENDBG_PARSEREXCEPTION_HPP
 #define XENDBG_PARSEREXCEPTION_HPP
 
+#include <cstring>
 #include <stdexcept>
 #include <string>
 

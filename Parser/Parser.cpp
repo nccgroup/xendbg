@@ -83,7 +83,6 @@ ExpressionPtr Parser::parse(std::string input) {
   clear(_tokens);
 
   tokenize(input, _tokens, _tokens_pos);
-  assert(_tokens.size() == _tokens_pos.size());
 
   _operators.push(Sentinel());
   parse_expression();

@@ -7,8 +7,6 @@
 
 #include <memory>
 
-#include <arch-x86_64.h> // TODO: remove?
-
 #include "Common.hpp"
 
 struct xenforeignmemory_handle;

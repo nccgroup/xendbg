@@ -15,9 +15,9 @@
 
 namespace xd::xen {
 
-  class Xenstore {
+  class XenStore {
   public:
-    Xenstore();
+    XenStore();
 
     std::string read(const std::string& file);
     std::vector<std::string> read_directory(const std::string& dir);

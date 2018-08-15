@@ -10,7 +10,7 @@
 namespace repl {
 
   void set_prompt(const std::string& prompt);
-  void do_repl();
+  void start();
 
 }
 

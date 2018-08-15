@@ -10,25 +10,23 @@
 #include "BridgeHeaders/xenctrl.h"
 
 #include "Common.hpp"
+#include "Registers.hpp"
 
 namespace xd::xen {
 
   class Domain;
-  class Registers;
 
-  class Xenctrl {
+  class XenCtrl {
   private:
     struct XenVersion {
       int major, minor;
     };
 
   public:
-    Xenctrl();
-
     XenVersion xen_version();
 
     DomInfo get_domain_info(Domain& domain);
-    void get_cpu_context(Domain& domain, VCPU_ID vcpu_id);
+    Registers get_cpu_context(Domain& domain, VCPU_ID vcpu_id);
     WordSize get_domain_word_size(Domain &domain);
 
     void set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id);

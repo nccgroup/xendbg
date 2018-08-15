@@ -1,32 +1,44 @@
 #include "REPL/REPL.hpp"
+
+int main() {
+  repl::set_prompt("> ");
+  repl::start();
+}
+
+/*
 #include "Xen/Domain.hpp"
+#include "Xen/XenException.hpp"
 #include "Xen/Xenctrl.hpp"
 #include "Xen/Xenstore.hpp"
 #include "Xen/XenForeignMemory.hpp"
 
+#include <iostream>
 #include <sys/mman.h>
 
 using xd::xen::DomID;
 using xd::xen::Domain;
-using xd::xen::Xenctrl;
+using xd::xen::XenCtrl;
+using xd::xen::XenException;
 using xd::xen::XenForeignMemory;
-using xd::xen::Xenstore;
+using xd::xen::XenStore;
 
 int main() {
-  Xenctrl xenctrl;
+  XenCtrl xenctrl;
   XenForeignMemory xen_foreign_memory;
-  Xenstore xenstore;
+  XenStore xenstore;
 
-  DomID domid = 1;
-  Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
-  domain.pause();
-  domain.set_debugging(true);
-  domain.map_memory((void*)0x0, 1024, PROT_READ);
-  domain.unpause();
-
-  repl::set_prompt("> ");
-  repl::do_repl();
+  try {
+    DomID domid = 1;
+    Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
+    domain.pause();
+    domain.set_debugging(true);
+    domain.map_memory((void *) 0x0, 1024, PROT_READ);
+    domain.unpause();
+  } catch (const XenException& e) {
+    std::cerr << e.what() << std::endl;
+  }
 }
+*/
 
 /*
 #include "Parser/ParserException.hpp"

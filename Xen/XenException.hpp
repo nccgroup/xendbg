@@ -10,7 +10,7 @@
 
 namespace xd::xen {
 
-  class XenException : std::runtime_error {
+  class XenException : public std::runtime_error {
   public:
     explicit XenException(const std::string& what)
         : std::runtime_error(what.c_str()) {}

@@ -17,21 +17,29 @@ void init_repl();
 char **completer(const char *text, int begin, int end);
 char *completion_generator(const char *text, int status);
 
+char *completion_options[] = {
+    "helloworld",
+    "test",
+    "thisisatest",
+    "stillatest",
+    NULL
+};
+
 void repl::set_prompt(const std::string &prompt) {
   _prompt = prompt;
 }
 
-void repl::do_repl() {
+void repl::start() {
   if (!_needs_init) {
     init_repl();
     _needs_init = false;
   }
 
-  bool has_quit = false;
-  while (!has_quit) {
+  bool should_quit = false;
+  while (!should_quit) {
     auto input = get_input(_prompt);
     std::cout << input << std::endl;
-    has_quit = (input == "quit");
+    should_quit = (input == "quit");
   }
 }
 
@@ -50,6 +58,20 @@ char **completer(const char *text, int begin, int end) {
   return rl_completion_matches(text, completion_generator);
 }
 
-char *completion_generator(const char *text, int status) {
+char *completion_generator(const char *text, int state) {
+  static int list_index, len;
+  char *result;
+
+  if (!state) {
+    list_index = 0;
+    len = strlen(text);
+  }
+
+  while ((result = completion_options[list_index++])) {
+    if (strncmp(result, text, len) == 0) {
+      return strdup(result);
+    }
+  }
+
   return NULL;
 }

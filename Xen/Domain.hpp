@@ -11,18 +11,18 @@
 
 namespace xd::xen {
 
-  class Xenctrl;
+  class XenCtrl;
   class XenForeignMemory;
-  class Xenstore;
+  class XenStore;
 
   class Domain {
   public:
-    Domain(Xenctrl& xenctrl, Xenstore& xenstore, XenForeignMemory& xen_foreign_memory, DomID domid);
+    Domain(XenCtrl& xenctrl, XenStore& xenstore, XenForeignMemory& xen_foreign_memory, DomID domid);
 
-    DomID domid() { return _domid; };
-    std::string name();
-    DomInfo info();
-    int word_size();
+    DomID get_domid() { return _domid; };
+    std::string get_name();
+    DomInfo get_info();
+    int get_word_size();
 
     MappedMemory map_memory(Address address, size_t size, int prot);
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0);
@@ -31,8 +31,8 @@ namespace xd::xen {
     void unpause();
 
   private:
-    Xenctrl& _xenctrl;
-    Xenstore& _xenstore;
+    XenCtrl& _xenctrl;
+    XenStore& _xenstore;
     XenForeignMemory& _xen_foreign_memory;
 
     const DomID _domid;

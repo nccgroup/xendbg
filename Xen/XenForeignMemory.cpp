@@ -37,7 +37,7 @@ MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size,
     pages[i] = base_page_frame_num + 1;
   }
 
-  void *mem = xenforeignmemory_map(_xen_foreign_memory.get(), domain.domid(),
+  void *mem = xenforeignmemory_map(_xen_foreign_memory.get(), domain.get_domid(),
       prot, num_pages, pages, errors);
 
   for (int i = 0; i < num_pages; ++i) {

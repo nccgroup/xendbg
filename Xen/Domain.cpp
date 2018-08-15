@@ -10,24 +10,24 @@
 using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::MappedMemory;
-using xd::xen::Xenctrl;
+using xd::xen::XenCtrl;
 
-Domain::Domain(Xenctrl& xenctrl, Xenstore& xenstore, XenForeignMemory& xen_foreign_memory, DomID domid)
+Domain::Domain(XenCtrl& xenctrl, XenStore& xenstore, XenForeignMemory& xen_foreign_memory, DomID domid)
     : _xenctrl(xenctrl), _xenstore(xenstore), _xen_foreign_memory(xen_foreign_memory), _domid(domid)
 {
-  info(); // Make sure the domain is behaving properly
+  get_info(); // Make sure the domain is behaving properly
 }
 
-std::string xd::xen::Domain::name() {
+std::string xd::xen::Domain::get_name() {
   const auto path = "/local/domain/" + std::to_string(_domid) + "/name";
   return _xenstore.read(path);
 }
 
-DomInfo Domain::info() {
+DomInfo Domain::get_info() {
   return _xenctrl.get_domain_info(*this);
 }
 
-int xd::xen::Domain::word_size() {
+int xd::xen::Domain::get_word_size() {
   return _xenctrl.get_domain_word_size(*this);
 }
 

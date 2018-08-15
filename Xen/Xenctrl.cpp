@@ -45,9 +45,9 @@ Registers XenCtrl::get_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
   } else {
     auto context_any = get_cpu_context_pv(domain, vcpu_id);
     const int word_size = get_domain_word_size(domain);
-    if (word_size == 64) {
+    if (word_size == 8) {
       return convert_gp_registers_64(context_any.x64.user_regs, Registers64{});
-    } else if (word_size == 32) {
+    } else if (word_size == 4) {
       return convert_gp_registers_32(context_any.x32.user_regs, Registers32{});
     } else {
       throw XenException(

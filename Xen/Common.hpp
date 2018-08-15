@@ -14,7 +14,7 @@ namespace xd::xen {
   using Address = void*;
   using DomID = uint32_t;
   using DomInfo = xc_dominfo_t;
-  using MappedMemory = std::shared_ptr<void>;
+  using MappedMemory = std::shared_ptr<char>;
   using VCPU_ID = uint32_t;
   using WordSize = unsigned int;
 }

@@ -1,12 +1,14 @@
+/*
 #include "REPL/REPL.hpp"
 
 int main() {
   repl::set_prompt("> ");
   repl::start();
 }
+*/
 
-/*
 #include "Xen/Domain.hpp"
+#include "Xen/Registers.hpp"
 #include "Xen/XenException.hpp"
 #include "Xen/Xenctrl.hpp"
 #include "Xen/Xenstore.hpp"
@@ -17,6 +19,7 @@ int main() {
 
 using xd::xen::DomID;
 using xd::xen::Domain;
+using xd::xen::Registers64;
 using xd::xen::XenCtrl;
 using xd::xen::XenException;
 using xd::xen::XenForeignMemory;
@@ -28,17 +31,19 @@ int main() {
   XenStore xenstore;
 
   try {
-    DomID domid = 1;
+    DomID domid = 6;
     Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
+    auto regs = std::get<Registers64>(xenctrl.get_cpu_context(domain, 0));
     domain.pause();
     domain.set_debugging(true);
-    domain.map_memory((void *) 0x0, 1024, PROT_READ);
+    printf("%p\n", regs.rip);
+    auto mem = domain.map_memory((void *) regs.rip-0x11, XC_PAGE_SIZE, PROT_READ);
+    printf("%llx%llx%llx%llx%llx%llx\n", *mem);
     domain.unpause();
   } catch (const XenException& e) {
     std::cerr << e.what() << std::endl;
   }
 }
-*/
 
 /*
 #include "Parser/ParserException.hpp"

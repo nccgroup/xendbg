@@ -9,7 +9,7 @@ using xd::xen::DomID;
 using xd::xen::XenException;
 using xd::xen::XenStore;
 
-XenStore::Xenstore()
+XenStore::XenStore()
     : _xenstore(xs_open(0), &xs_close)
 {
   if (!_xenstore)

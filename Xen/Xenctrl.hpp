@@ -23,6 +23,8 @@ namespace xd::xen {
     };
 
   public:
+    XenCtrl();
+
     XenVersion xen_version();
 
     DomInfo get_domain_info(Domain& domain);

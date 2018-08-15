@@ -30,7 +30,7 @@ void repl::set_prompt(const std::string &prompt) {
 }
 
 void repl::start() {
-  if (!_needs_init) {
+  if (_needs_init) {
     init_repl();
     _needs_init = false;
   }

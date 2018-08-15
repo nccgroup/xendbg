@@ -20,13 +20,13 @@ namespace xd::xen {
     uint32_t ebp;
     uint32_t esp;
     uint32_t ss;
-    uint32_t eflags;
+    uint16_t eflags;
     uint32_t eip;
-    uint32_t cs_base;
-    uint32_t ds_base;
-    uint32_t es_base;
-    uint32_t fs_base;
-    uint32_t gs_base;
+    uint16_t cs;
+    uint16_t ds;
+    uint16_t es;
+    uint16_t fs;
+    uint16_t gs;
   };
 
   struct Registers64 {
@@ -46,17 +46,19 @@ namespace xd::xen {
     uint64_t r13;
     uint64_t r14;
     uint64_t r15;
-    uint64_t rflags;
+    uint16_t rflags;
     uint64_t rip;
-    uint64_t fs_base;
-    uint64_t gs_base;
-    uint64_t cs_base;
+    uint64_t fs;
+    uint64_t gs;
+    uint64_t cs;
+    uint64_t ds;
+    uint64_t ss;
   };
 
   using Registers = std::variant<Registers32, Registers64>;
 
   template <typename Source_t, typename Result_t>
-  Result_t convert_gp_registers_32(Source_t source, Result_t regs_init) {
+  Result_t convert_gp_registers_32(const Source_t& source, Result_t regs_init) {
     regs_init.eax = source.eax;
     regs_init.ebx = source.ebx;
     regs_init.ecx = source.ecx;
@@ -65,19 +67,24 @@ namespace xd::xen {
     regs_init.esi = source.esi;
     regs_init.ebp = source.ebp;
     regs_init.esp = source.esp;
+    regs_init.ss = source.ss;
     regs_init.eflags = source.eflags;
-    regs_init.eip = source.esip;
-    regs_init.cs_base = source.cs_base;
-    regs_init.ds_base = source.ds_base;
-    regs_init.es_base = source.es_base;
-    regs_init.fs_base = source.fs_base;
-    regs_init.gs_base = source.gs_base;
+    regs_init.eip = source.eip;
+    regs_init.cs = source.cs;
+    regs_init.ds = source.ds;
+    regs_init.es = source.es;
+    regs_init.fs = source.fs;
+    regs_init.gs = source.gs;
 
     return regs_init;
   }
 
+  /*
+   * This is all needed because registers like fs, gs, etc. aren't
+   * named consistently between the PV and HVM register data structures.
+   */
   template <typename Source_t, typename Result_t>
-  Result_t convert_gp_registers_64(Source_t source, Result_t regs_init) {
+  Result_t _convert_gp_registers_any64_partial(const Source_t &source, Result_t regs_init) {
     regs_init.rax = source.rax;
     regs_init.rbx = source.rbx;
     regs_init.rcx = source.rcx;
@@ -96,11 +103,52 @@ namespace xd::xen {
     regs_init.r15 = source.r15;
     regs_init.rip = source.rip;
     regs_init.rflags = source.rflags;
-    regs_init.fs_base = source.fs_base;
-    regs_init.gs_base = source.gs_base;
-    regs_init.cs_base = source.cs_base;
 
     return regs_init;
+  }
+
+  template <typename Source_t, typename Result_t>
+  struct _convert_gp_registers_64_impl {
+    static Result_t convert(const Source_t &source, Result_t regs_init) {
+      auto regs = _convert_gp_registers_any64_partial(source, regs_init);
+      regs.fs = source.fs;
+      regs.gs = source.gs;
+      regs.cs = source.cs;
+      regs.ds = source.ds;
+      regs.ss = source.ss;
+      return regs;
+    }
+  };
+
+  template <>
+  struct _convert_gp_registers_64_impl<struct hvm_hw_cpu, Registers64> {
+    static Registers64 convert(const struct hvm_hw_cpu& source, Registers64 regs_init) {
+      auto regs = _convert_gp_registers_any64_partial(source, regs_init);
+      regs.fs = source.fs_base;
+      regs.gs = source.gs_base;
+      regs.cs = source.cs_base;
+      regs.ds = source.ds_base;
+      regs.ss = source.ss_base;
+      return regs;
+    }
+  };
+
+  template <>
+  struct _convert_gp_registers_64_impl<Registers64, struct hvm_hw_cpu> {
+    static struct hvm_hw_cpu convert(const Registers64& source, struct hvm_hw_cpu regs_init) {
+      auto regs = _convert_gp_registers_any64_partial(source, regs_init);
+      regs.fs_base = source.fs;
+      regs.gs_base = source.gs;
+      regs.cs_base = source.cs;
+      regs.ds_base = source.ds;
+      regs.ss_base = source.ss;
+      return regs;
+    }
+  };
+
+  template <typename Source_t, typename Result_t>
+  Result_t convert_gp_registers_64(const Source_t &source, Result_t regs_init) {
+    return _convert_gp_registers_64_impl<Source_t, Result_t>::convert(source, regs_init);
   }
 }
 

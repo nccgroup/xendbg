@@ -46,9 +46,9 @@ Registers XenCtrl::get_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
     auto context_any = get_cpu_context_pv(domain, vcpu_id);
     const int word_size = get_domain_word_size(domain);
     if (word_size == 64) {
-      return convert_gp_registers_x64(context_any.x64, Registers64{});
+      return convert_gp_registers_64(context_any.x64, Registers64{});
     } else if (word_size == 32) {
-      return convert_gp_registers_x64(context_any.x32, Registers32{});
+      return convert_gp_registers_64(context_any.x32, Registers32{});
     } else {
       throw XenException(
           "Unsupported word size " + std::to_string(word_size) + " for domain " +

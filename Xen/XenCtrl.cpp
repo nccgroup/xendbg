@@ -8,12 +8,11 @@
 #include "XenCtrl.hpp"
 #include "XenException.hpp"
 
-#include "BridgeHeaders/xenguest.h"
-
 #include <sys/mman.h>
 
 using xd::xen::DomInfo;
 using xd::xen::Domain;
+using xd::xen::MemInfo;
 using xd::xen::Registers;
 using xd::xen::WordSize;
 using xd::xen::XenCtrl;
@@ -74,15 +73,33 @@ WordSize xd::xen::XenCtrl::get_domain_word_size(Domain &domain) {
   return word_size;
 }
 
+MemInfo XenCtrl::map_domain_meminfo(Domain &domain) {
+  auto xenctrl = _xenctrl;
+  auto deleter = [xenctrl](xc_domain_meminfo *p) {
+    xc_unmap_domain_meminfo(xenctrl.get(), p);
+  };
+  auto meminfo = std::unique_ptr<xc_domain_meminfo, decltype(deleter)>(
+    new struct xc_domain_meminfo(), deleter);
+
+  int err;
+  if (err = xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo.get())) {
+    throw XenException(
+      "Failed to map meminfo for domain " + std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
+  }
+
+  return meminfo;
+}
+
 void XenCtrl::set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id) {
   if (vcpu_id > domain.get_info().max_vcpu_id)
     throw XenException(
         "Tried to " + std::string(enable ? "enable" : "disable") + " debugging for nonexistent VCPU " +
         std::to_string(vcpu_id) + " on domain " + std::to_string(domain.get_domid()) + "!");
 
-  if (xc_domain_setdebugging(_xenctrl.get(), domain.get_domid(), (unsigned int)enable)) {
+  int err;
+  if (err = xc_domain_setdebugging(_xenctrl.get(), domain.get_domid(), (unsigned int)enable)) {
     throw XenException(
-        "Failed to enable debugging on domain " + std::to_string(domain.get_domid()) + "!");
+        "Failed to enable debugging on domain " + std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
   }
 }
 
@@ -139,26 +156,4 @@ vcpu_guest_context_any_t XenCtrl::get_cpu_context_pv(Domain &domain, VCPU_ID vcp
         std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
   }
   return context_any;
-}
-
-// See xen/tools/libxc/xc_offline_page.c:389
-xen_pfn_t XenCtrl::pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *pfn_to_gfn_table, WordSize word_size) {
-  if (word_size == sizeof(uint64_t)) {
-    return ((uint64_t*)pfn_to_gfn_table)[pfn];
-  } else {
-    uint32_t mfn = ((uint32_t*)pfn_to_gfn_table);
-    return (mfn == ~0U) ? INVALID_MFN : mfn;
-  }
-}
-
-std::unique_ptr<struct xc_domain_meminfo> XenCtrl::map_domain_meminfo(Domain &domain) {
-  std::unique_ptr<struct xc_domain_meminfo> meminfo(new struct xc_domain_meminfo(),
-      [this](struct xc_domain_meminfo *meminfo) {
-        xc_unmap_domain_meminfo(_xenctrl.get(), meminfo);
-      });
-
-  if (xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo.get())) {
-    throw XenException("Failed to get meminfo!"); // TODO
-  }
-  return
 }

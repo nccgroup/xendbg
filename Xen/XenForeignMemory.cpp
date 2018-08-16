@@ -13,6 +13,7 @@
 #include "BridgeHeaders/xenforeignmemory.h"
 
 using xd::xen::MappedMemory;
+using xd::xen::WordSize;
 using xd::xen::XenForeignMemory;
 using xd::xen::XenException;
 
@@ -24,7 +25,9 @@ XenForeignMemory::XenForeignMemory()
 }
 
 MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) {
-  xen_pfn_t base_page_frame_num = address >> XC_PAGE_SHIFT;
+  auto meminfo = domain.map_meminfo();
+  xen_pfn_t base_mfn = pfn_to_mfn_pv(address >> XC_PAGE_SHIFT, meminfo->p2m_table, domain.get_word_size());
+
   size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
   auto pages = (xen_pfn_t*)malloc(num_pages * sizeof(xen_pfn_t));
@@ -36,7 +39,7 @@ MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size,
     throw XenException("Failed to allocate error table!"); // TODO
 
   for (int i = 0; i < num_pages; ++i) {
-    pages[i] = base_page_frame_num + 1;
+    pages[i] = base_mfn + 1;
   }
 
   char *mem_page_base = (char*)xenforeignmemory_map(_xen_foreign_memory.get(), domain.get_domid(), prot, num_pages, pages, errors);
@@ -47,9 +50,20 @@ MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size,
       throw XenException("Failed to map page " + std::to_string(i+1) + " of " + std::to_string(num_pages) + ": " + std::strerror(-errors[i])); // TODO
   }
 
-  return std::shared_ptr<char>(mem, [this, address, num_pages](void *memory) {
+  auto fmem = _xen_foreign_memory;
+  return std::shared_ptr<char>(mem, [fmem, address, num_pages](void *memory) {
     if (memory) {
-      xenforeignmemory_unmap(_xen_foreign_memory.get(), (void*)address, num_pages);
+      xenforeignmemory_unmap(fmem.get(), (void*)address, num_pages);
     }
   });
+}
+
+// See xen/tools/libxc/xc_offline_page.c:389
+xen_pfn_t XenForeignMemory::pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *p2m_table, WordSize word_size) {
+  if (word_size == sizeof(uint64_t)) {
+    return ((uint64_t*)p2m_table)[pfn];
+  } else {
+    uint32_t mfn = ((uint32_t*)p2m_table)[pfn];
+    return (mfn == ~0U) ? INVALID_MFN : mfn;
+  }
 }

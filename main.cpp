@@ -34,12 +34,11 @@ int main(int argc, char** argv) {
   Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
   try {
     auto regs = std::get<Registers64>(xenctrl.get_cpu_context(domain));
-    //domain.pause();
     domain.set_debugging(true);
-    //domain.set_single_step(true); // NOTE: Only works on HVM guests
-    printf("%p\n", regs.rsp);
-    auto mem = domain.map_memory(regs.rsp, XC_PAGE_SIZE, PROT_READ);
-    printf("%llx%llx%llx%llx%llx%llx\n", *mem);
+    printf("mapping memory at rip: %p\n", regs.rip);
+    auto mem = domain.map_memory(regs.rip, XC_PAGE_SIZE, PROT_READ | PROT_WRITE);
+    auto p = (uint64_t*)mem.get();
+    printf("*p: %lx\n", *p);
   } catch (const XenException& e) {
     std::cerr << e.what() << std::endl;
   }

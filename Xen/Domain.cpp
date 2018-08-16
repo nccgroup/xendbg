@@ -11,6 +11,7 @@ using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::Registers;
 using xd::xen::MappedMemory;
+using xd::xen::MemInfo;
 using xd::xen::XenCtrl;
 
 Domain::Domain(XenCtrl& xenctrl, XenStore& xenstore, XenForeignMemory& xen_foreign_memory, DomID domid)
@@ -30,6 +31,10 @@ DomInfo Domain::get_info() {
 
 int xd::xen::Domain::get_word_size() {
   return _xenctrl.get_domain_word_size(*this);
+}
+
+MemInfo Domain::map_meminfo() {
+  return _xenctrl.map_domain_meminfo(*this);
 }
 
 MappedMemory Domain::map_memory(Address address, size_t size, int prot) {

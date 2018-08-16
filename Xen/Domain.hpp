@@ -25,6 +25,7 @@ namespace xd::xen {
     DomInfo get_info();
     int get_word_size();
 
+    MemInfo map_meminfo();
     MappedMemory map_memory(Address address, size_t size, int prot);
     Registers get_cpu_context(VCPU_ID vcpu_id = 0);
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0);

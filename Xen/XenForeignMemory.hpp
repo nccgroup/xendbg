@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include "BridgeHeaders/xenctrl.h"
+
 #include "Common.hpp"
 
 struct xenforeignmemory_handle;
@@ -21,6 +23,9 @@ namespace xd::xen {
     XenForeignMemory();
 
     MappedMemory map(Domain& domain, Address address, size_t size, int prot);
+    
+  private:
+    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *p2m_table, WordSize word_size);
 
   private:
     std::shared_ptr<xenforeignmemory_handle> _xen_foreign_memory;

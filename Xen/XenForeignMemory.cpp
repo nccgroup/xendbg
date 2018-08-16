@@ -25,8 +25,12 @@ XenForeignMemory::XenForeignMemory()
 }
 
 MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) {
+  if (address < XC_PAGE_SIZE) {
+    throw XenException("Addresses below 0x1000 cannot be mapped!");
+  }
+
   auto meminfo = domain.map_meminfo();
-  xen_pfn_t base_mfn = pfn_to_mfn_pv(address >> XC_PAGE_SHIFT, meminfo->p2m_table, domain.get_word_size());
+  xen_pfn_t base_mfn = pfn_to_mfn_pv((address >> XC_PAGE_SHIFT)-1, meminfo->p2m_table, domain.get_word_size());
 
   size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
@@ -34,9 +38,9 @@ MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size,
   auto errors = (int*)malloc(num_pages * sizeof(int));
 
   if (!pages)
-    throw XenException("Failed to allocate PFN table!");
+    throw XenException("Failed to allocate PFN table: " + std::string(std::strerror(errno)));
   if (!errors)
-    throw XenException("Failed to allocate error table!"); // TODO
+    throw XenException("Failed to allocate error table: " + std::string(std::strerror(errno)));
 
   for (int i = 0; i < num_pages; ++i) {
     pages[i] = base_mfn + 1;

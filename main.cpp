@@ -33,12 +33,27 @@ int main(int argc, char** argv) {
   DomID domid = std::stoul(argv[1]);
   Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
   try {
+
     auto regs = std::get<Registers64>(xenctrl.get_cpu_context(domain));
-    domain.set_debugging(true);
-    printf("mapping memory at rip: %p\n", regs.rip);
-    auto mem = domain.map_memory(regs.rip, XC_PAGE_SIZE, PROT_READ | PROT_WRITE);
-    auto p = (uint64_t*)mem.get();
-    printf("*p: %lx\n", *p);
+    {
+      printf("mapping memory at rip: %p\n", regs.rip);
+      auto mem = domain.map_memory(regs.rip, XC_PAGE_SIZE, PROT_READ | PROT_WRITE);
+      auto p = (uint64_t*)mem.get();
+      printf("0x%.06lx: %.016lx\n", regs.rip, *p);
+    }
+
+    //domain.set_debugging(true);
+    /*
+    for (uint64_t addr = XC_PAGE_SIZE;; addr += XC_PAGE_SIZE) {
+      auto mem = domain.map_memory(addr, XC_PAGE_SIZE, PROT_READ);
+      printf("mapped page %p\n", addr);
+      auto p = (uint64_t*)mem.get();
+      for (uint64_t i = 0; i < XC_PAGE_SIZE/sizeof(uint64_t); ++i) {
+        printf("0x%.06lx: %.016lx\n", addr + i*sizeof(uint64_t), *p);
+        ++p;
+      }
+    }
+    */
   } catch (const XenException& e) {
     std::cerr << e.what() << std::endl;
   }

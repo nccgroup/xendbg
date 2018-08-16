@@ -3,9 +3,9 @@
 //
 
 #include "Domain.hpp"
-#include "Xenctrl.hpp"
+#include "XenCtrl.hpp"
 #include "XenForeignMemory.hpp"
-#include "Xenstore.hpp"
+#include "XenStore.hpp"
 
 using xd::xen::Domain;
 using xd::xen::DomInfo;

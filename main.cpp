@@ -10,8 +10,8 @@ int main() {
 #include "Xen/Domain.hpp"
 #include "Xen/Registers.hpp"
 #include "Xen/XenException.hpp"
-#include "Xen/Xenctrl.hpp"
-#include "Xen/Xenstore.hpp"
+#include "Xen/XenCtrl.hpp"
+#include "Xen/XenStore.hpp"
 #include "Xen/XenForeignMemory.hpp"
 
 #include <iostream>

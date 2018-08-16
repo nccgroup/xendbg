@@ -3,8 +3,12 @@
 //
 
 #include "Domain.hpp"
-#include "Xenctrl.hpp"
+#include "XenCtrl.hpp"
 #include "XenException.hpp"
+
+#include "BridgeHeaders/xenguest.h"
+
+#include <sys/mman.h>
 
 using xd::xen::DomInfo;
 using xd::xen::Domain;
@@ -45,9 +49,9 @@ Registers XenCtrl::get_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
   } else {
     auto context_any = get_cpu_context_pv(domain, vcpu_id);
     const int word_size = get_domain_word_size(domain);
-    if (word_size == 8) {
+    if (word_size == sizeof(uint64_t)) {
       return convert_gp_registers_64(context_any.x64.user_regs, Registers64{});
-    } else if (word_size == 4) {
+    } else if (word_size == sizeof(uint32_t)) {
       return convert_gp_registers_32(context_any.x32.user_regs, Registers32{});
     } else {
       throw XenException(
@@ -129,3 +133,24 @@ vcpu_guest_context_any_t XenCtrl::get_cpu_context_pv(Domain &domain, VCPU_ID vcp
   return context_any;
 }
 
+// See xen/tools/libxc/xc_offline_page.c:389
+xen_pfn_t XenCtrl::pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *pfn_to_gfn_table, WordSize word_size) {
+  if (word_size == sizeof(uint64_t)) {
+    return ((uint64_t*)pfn_to_gfn_table)[pfn];
+  } else {
+    uint32_t mfn = ((uint32_t*)pfn_to_gfn_table);
+    return (mfn == ~0U) ? INVALID_MFN : mfn;
+  }
+}
+
+std::unique_ptr<struct xc_domain_meminfo> XenCtrl::map_domain_meminfo(Domain &domain) {
+  std::unique_ptr<struct xc_domain_meminfo> meminfo(new struct xc_domain_meminfo(),
+      [this](struct xc_domain_meminfo *meminfo) {
+        xc_unmap_domain_meminfo(_xenctrl.get(), meminfo);
+      });
+
+  if (xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo.get())) {
+    throw XenException("Failed to get meminfo!"); // TODO
+  }
+  return
+}

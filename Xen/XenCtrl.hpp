@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "BridgeHeaders/xenctrl.h"
+#include "BridgeHeaders/XenCtrl.h"
 
 #include "Common.hpp"
 #include "Registers.hpp"
@@ -39,6 +39,8 @@ namespace xd::xen {
   private:
     struct hvm_hw_cpu get_cpu_context_hvm(Domain& domain, VCPU_ID vcpu_id);
     vcpu_guest_context_any_t get_cpu_context_pv(Domain& domain, VCPU_ID vcpu_id);
+    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *pfn_to_gfn_table, WordSize word_size);
+    std::unique_ptr<struct xc_domain_meminfo> map_domain_meminfo(Domain& domain);
 
   private:
     std::unique_ptr<xc_interface, decltype(&xc_interface_close)> _xenctrl;

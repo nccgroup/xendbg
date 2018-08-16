@@ -24,7 +24,7 @@ XenForeignMemory::XenForeignMemory()
 }
 
 MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) {
-  xen_pfn_t base_page_frame_num = ((uintptr_t)address) >> XC_PAGE_SHIFT;
+  xen_pfn_t base_page_frame_num = address >> XC_PAGE_SHIFT;
   size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
   auto pages = (xen_pfn_t*)malloc(num_pages * sizeof(xen_pfn_t));
@@ -40,7 +40,7 @@ MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size,
   }
 
   char *mem_page_base = (char*)xenforeignmemory_map(_xen_foreign_memory.get(), domain.get_domid(), prot, num_pages, pages, errors);
-  char *mem = mem_page_base + ((uintptr_t)address) % XC_PAGE_SIZE;
+  char *mem = mem_page_base + address % XC_PAGE_SIZE;
 
   for (int i = 0; i < num_pages; ++i) {
     if (errors[i])
@@ -49,7 +49,7 @@ MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size,
 
   return std::shared_ptr<char>(mem, [this, address, num_pages](void *memory) {
     if (memory) {
-      xenforeignmemory_unmap(_xen_foreign_memory.get(), address, num_pages);
+      xenforeignmemory_unmap(_xen_foreign_memory.get(), (void*)address, num_pages);
     }
   });
 }

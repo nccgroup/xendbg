@@ -28,7 +28,7 @@ namespace xd::xen {
     XenVersion xen_version();
 
     DomInfo get_domain_info(Domain& domain);
-    Registers get_cpu_context(Domain& domain, VCPU_ID vcpu_id);
+    Registers get_cpu_context(Domain& domain, VCPU_ID vcpu_id = 0);
     WordSize get_domain_word_size(Domain &domain);
 
     void set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id);

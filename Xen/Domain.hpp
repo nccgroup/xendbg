@@ -8,6 +8,7 @@
 #include <string>
 
 #include "Common.hpp"
+#include "Registers.hpp"
 
 namespace xd::xen {
 
@@ -25,6 +26,7 @@ namespace xd::xen {
     int get_word_size();
 
     MappedMemory map_memory(Address address, size_t size, int prot);
+    Registers get_cpu_context(VCPU_ID vcpu_id = 0);
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0);
     void set_single_step(bool enabled, VCPU_ID vcpu_id = 0);
     void pause();

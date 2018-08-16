@@ -11,7 +11,7 @@
 #include "BridgeHeaders/xenctrl.h"
 
 namespace xd::xen {
-  using Address = void*;
+  using Address = uintptr_t;
   using DomID = uint32_t;
   using DomInfo = xc_dominfo_t;
   using MappedMemory = std::shared_ptr<char>;

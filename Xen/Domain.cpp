@@ -9,6 +9,7 @@
 
 using xd::xen::Domain;
 using xd::xen::DomInfo;
+using xd::xen::Registers;
 using xd::xen::MappedMemory;
 using xd::xen::XenCtrl;
 
@@ -33,6 +34,10 @@ int xd::xen::Domain::get_word_size() {
 
 MappedMemory Domain::map_memory(Address address, size_t size, int prot) {
   return _xen_foreign_memory.map(*this, address, size, prot);
+}
+
+Registers xd::xen::Domain::get_cpu_context(VCPU_ID vcpu_id) {
+  _xenctrl.get_cpu_context(*this, vcpu_id);
 }
 
 void xd::xen::Domain::set_debugging(bool enabled, VCPU_ID vcpu_id) {

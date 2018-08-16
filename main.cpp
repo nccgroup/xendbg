@@ -25,21 +25,21 @@ using xd::xen::XenException;
 using xd::xen::XenForeignMemory;
 using xd::xen::XenStore;
 
-int main() {
+int main(int argc, char** argv) {
   XenCtrl xenctrl;
   XenForeignMemory xen_foreign_memory;
   XenStore xenstore;
 
+  DomID domid = std::stoul(argv[1]);
+  Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
   try {
-    DomID domid = 6;
-    Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
-    auto regs = std::get<Registers64>(xenctrl.get_cpu_context(domain, 0));
-    domain.pause();
+    auto regs = std::get<Registers64>(xenctrl.get_cpu_context(domain));
+    //domain.pause();
     domain.set_debugging(true);
-    printf("%p\n", regs.rip);
-    auto mem = domain.map_memory((void *) regs.rip-0x11, XC_PAGE_SIZE, PROT_READ);
+    //domain.set_single_step(true); // NOTE: Only works on HVM guests
+    printf("%p\n", regs.rsp);
+    auto mem = domain.map_memory(regs.rsp, XC_PAGE_SIZE, PROT_READ);
     printf("%llx%llx%llx%llx%llx%llx\n", *mem);
-    domain.unpause();
   } catch (const XenException& e) {
     std::cerr << e.what() << std::endl;
   }

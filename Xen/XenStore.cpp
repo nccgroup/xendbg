@@ -3,7 +3,7 @@
 //
 
 #include "XenException.hpp"
-#include "Xenstore.hpp"
+#include "XenStore.hpp"
 
 using xd::xen::DomID;
 using xd::xen::XenException;

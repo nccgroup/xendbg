@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "BridgeHeaders/xenstore.h"
+#include "BridgeHeaders/XenStore.h"
 
 #include "Common.hpp"
 

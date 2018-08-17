@@ -24,7 +24,10 @@ namespace xd::xen {
     DomInfo get_info();
     int get_word_size();
 
-    void hypercall_domctl(uint32_t command, PrivCmd::DomCtlInitFn init_domctl = {}, void *arg = nullptr, int size = 0);
+    template<InitFn_t, CleanupFn_t>
+    void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
+      _xen.privcmd.hypercall_domctl(*this, command, init_domctl, cleanup);
+    }
 
     MemInfo map_meminfo();
     MappedMemory map_memory(Address address, size_t size, int prot);

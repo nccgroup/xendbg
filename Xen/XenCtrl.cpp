@@ -25,7 +25,7 @@ xd::xen::XenCtrl::XenCtrl()
     throw XenException("Failed to open Xenctrl handle!");
 }
 
-XenCtrl::XenVersion XenCtrl::xen_version() {
+XenCtrl::XenVersion XenCtrl::get_xen_version() {
   int version = xc_version(_xenctrl.get(), XENVER_version, NULL);
   return XenVersion {
     version >> 16,
@@ -41,7 +41,7 @@ DomInfo XenCtrl::get_domain_info(Domain& domain) {
     throw std::runtime_error("Failed to get domain info!");
 }
 
-Registers XenCtrl::get_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
+Registers XenCtrl::get_domain_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
   bool is_hvm = (domain.get_info().hvm == 1);
 
   if (is_hvm) {

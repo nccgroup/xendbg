@@ -45,7 +45,12 @@ int main(int argc, char** argv) {
     memio.uva = (uint64_aligned_t)((unsigned long)buf);
     memio.len = buf_len;
     memio.gwr = 0;
-  }, buf, buf_len);
+
+    if (mlock(buf, buf_len))
+      throw XenException("mlock failed!");
+  }, [buf, buf_len]() {
+    munlock(buf, buflen);
+  });
 
   for (unsigned long i = 0; i < buf_len/sizeof(uint64_t); ++i) {
     printf("%.016lx\n", *((uint64_t*)buf+i));

@@ -35,26 +35,3 @@ PrivCmd::~PrivCmd() {
   close(_privcmd_fd);
 }
 
-void PrivCmd::hypercall_domctl(Domain& domain, uint32_t command, DomCtlInitFn init_domctl, void *arg, int size) {
-  xen_domctl domctl;
-  domctl.domain = domain.get_domid();
-  domctl.interface_version = XEN_DOMCTL_INTERFACE_VERSION;
-  domctl.cmd = command;
-
-  memset(&domctl.u, 0, sizeof(domctl.u));
-  init_domctl(&domctl.u);
-
-  privcmd_hypercall hypercall;
-  hypercall.op = __HYPERVISOR_domctl;
-  hypercall.arg[0] = (unsigned long)&domctl;
-
-  if (arg && size && mlock(arg, size))
-    throw XenException("Failed to pin domctl arg: " + std::string(std::strerror(errno)));
-
-  if (ioctl(_privcmd_fd, IOCTL_PRIVCMD_HYPERCALL, &hypercall))
-    throw XenException("Hypercall failed: " + std::string(std::strerror(errno)));
-
-  if (arg && size)
-    munlock(arg, size);
-
-}

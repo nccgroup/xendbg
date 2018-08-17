@@ -32,10 +32,6 @@ int Domain::get_word_size() {
   return _xen.xenctrl.get_domain_word_size(*this);
 }
 
-void Domain::hypercall_domctl(uint32_t command, PrivCmd::DomCtlInitFn init_domctl, void *arg, int size) {
-  _xen.privcmd.hypercall_domctl(*this, command, init_domctl, arg, size);
-}
-
 MemInfo Domain::map_meminfo() {
   return _xen.xenctrl.map_domain_meminfo(*this);
 }

@@ -28,10 +28,10 @@ namespace xd::xen {
   public:
     XenCtrl();
 
-    XenVersion xen_version();
+    XenVersion get_xen_version();
 
     DomInfo get_domain_info(Domain& domain);
-    Registers get_cpu_context(Domain& domain, VCPU_ID vcpu_id = 0);
+    Registers get_domain_cpu_context(Domain &domain, VCPU_ID vcpu_id = 0);
     WordSize get_domain_word_size(Domain &domain);
     MemInfo map_domain_meminfo(Domain& domain);
 

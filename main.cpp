@@ -8,6 +8,7 @@ int main() {
 */
 
 #include "Xen/Domain.hpp"
+#include "Xen/DomCtl.hpp"
 #include "Xen/Registers.hpp"
 #include "Xen/XenException.hpp"
 #include "Xen/XenCtrl.hpp"
@@ -19,6 +20,7 @@ int main() {
 
 using xd::xen::DomID;
 using xd::xen::Domain;
+using xd::xen::DomCtl;
 using xd::xen::Registers64;
 using xd::xen::XenCtrl;
 using xd::xen::XenException;
@@ -32,31 +34,22 @@ int main(int argc, char** argv) {
 
   DomID domid = std::stoul(argv[1]);
   Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
-  try {
 
-    auto regs = std::get<Registers64>(xenctrl.get_cpu_context(domain));
-    {
-      printf("mapping memory at rip: %p\n", regs.rip);
-      auto mem = domain.map_memory(regs.rip, XC_PAGE_SIZE, PROT_READ | PROT_WRITE);
-      auto p = (uint64_t*)mem.get();
-      printf("0x%.06lx: %.016lx\n", regs.rip, *p);
-      *((uint8_t*)p) = 0x9090;
-    }
+  int buf_len = 0x1000;
+  void* buf = malloc(buf_len);
+  DomCtl domctl;
 
-    //domain.set_debugging(true);
-    /*
-    for (uint64_t addr = XC_PAGE_SIZE;; addr += XC_PAGE_SIZE) {
-      auto mem = domain.map_memory(addr, XC_PAGE_SIZE, PROT_READ);
-      printf("mapped page %p\n", addr);
-      auto p = (uint64_t*)mem.get();
-      for (uint64_t i = 0; i < XC_PAGE_SIZE/sizeof(uint64_t); ++i) {
-        printf("0x%.06lx: %.016lx\n", addr + i*sizeof(uint64_t), *p);
-        ++p;
-      }
-    }
-    */
-  } catch (const XenException& e) {
-    std::cerr << e.what() << std::endl;
+  domctl.do_domctl(domain, XEN_DOMCTL_gdbsx_guestmemio, [buf, buf_len](auto u) {
+    auto& memio = u->gdbsx_guest_memio;
+    memio.pgd3val = 0;
+    memio.gva = 0xfeeb8;
+    memio.uva = (uint64_aligned_t)((unsigned long)buf);
+    memio.len = buf_len;
+    memio.gwr = 0;
+  }, buf, buf_len);
+
+  for (int i = 0; i < buf_len/sizeof(uint64_t); ++i) {
+    printf("%lx\n", *((uint64_t*)buf+i));
   }
 }
 

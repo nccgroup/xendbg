@@ -7,11 +7,10 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "BridgeHeaders/domctl.h"
-#include "BridgeHeaders/privcmd.h"
-
-#include "DomCtl.h"
+#include "DomCtl.hpp"
 #include "XenException.hpp"
+
+#include "BridgeHeaders/privcmd.h"
 
 using xd::xen::DomCtl;
 using xd::xen::XenException;
@@ -46,5 +45,5 @@ void xd::xen::DomCtl::do_hypercall(xen_domctl& domctl, void *arg, int size) {
     throw XenException("Hypercall failed: " + std::string(std::strerror(errno)));
 
   if (arg && size)
-    munlock(arg, size)
+    munlock(arg, size);
 }

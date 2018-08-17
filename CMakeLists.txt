@@ -46,6 +46,6 @@ add_executable(xendbg
     Xen/XenForeignMemory.hpp Xen/Common.hpp Xen/Registers.hpp
     Xen/BridgeHeaders/xenctrl.h Xen/BridgeHeaders/xenstore.h
     Xen/BridgeHeaders/xenforeignmemory.h Xen/BridgeHeaders/xenguest.h
-    Xen/BridgeHeaders/domctl.h Xen/DomCtl.cpp Xen/DomCtl.hpp)
+    Xen/BridgeHeaders/domctl.h Xen/PrivCmd.cpp Xen/PrivCmd.hpp Xen/XenContext.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)

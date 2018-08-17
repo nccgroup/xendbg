@@ -7,15 +7,15 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "DomCtl.hpp"
+#include "PrivCmd.hpp"
 #include "XenException.hpp"
 
 #include "BridgeHeaders/privcmd.h"
 
-using xd::xen::DomCtl;
+using xd::xen::PrivCmd;
 using xd::xen::XenException;
 
-DomCtl::DomCtl()
+PrivCmd::DomCtl()
   : _privcmd_fd(open("/dev/xen/privcmd", O_RDWR))
 {
   if (_privcmd_fd < 0)
@@ -29,14 +29,22 @@ DomCtl::DomCtl()
     throw XenException("Failed to set file handle flags: " + std::string(std::strerror(errno)));
 }
 
-DomCtl::~DomCtl() {
+PrivCmd::~DomCtl() {
   close(_privcmd_fd);
 }
 
-void xd::xen::DomCtl::do_hypercall(xen_domctl& domctl, void *arg, int size) {
+void hypercall_domctl(Domain& domain, uint32_t command, DomCtlInitFn init_domctl, void *arg = nullptr, int size = 0) {
+  xen_domctl domctl;
+  domctl.domain = domain.get_domid();
+  domctl.interface_version = XEN_DOMCTL_INTERFACE_VERSION;
+  domctl.cmd = command;
+
+  memset(&domctl.u, 0, sizeof(domctl.u));
+  init_domctl(&domctl.u);
+
   privcmd_hypercall hypercall;
   hypercall.op = __HYPERVISOR_domctl;
-  hypercall.arg[0] = (unsigned long)&domctl;
+  hypercall.arg[0] = (unsigned long)&domctl;}
 
   if (arg && size && mlock(arg, size))
     throw XenException("Failed to pin domctl arg: " + std::string(std::strerror(errno)));
@@ -46,4 +54,5 @@ void xd::xen::DomCtl::do_hypercall(xen_domctl& domctl, void *arg, int size) {
 
   if (arg && size)
     munlock(arg, size);
+
 }

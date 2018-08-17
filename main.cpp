@@ -8,9 +8,10 @@ int main() {
 */
 
 #include "Xen/Domain.hpp"
-#include "Xen/DomCtl.hpp"
+#include "Xen/PrivCmd.hpp"
 #include "Xen/Registers.hpp"
 #include "Xen/XenException.hpp"
+#include "Xen/XenContext.hpp"
 #include "Xen/XenCtrl.hpp"
 #include "Xen/XenStore.hpp"
 #include "Xen/XenForeignMemory.hpp"
@@ -20,26 +21,26 @@ int main() {
 
 using xd::xen::DomID;
 using xd::xen::Domain;
-using xd::xen::DomCtl;
+using xd::xen::PrivCmd;
 using xd::xen::Registers64;
+using xd::xen::XenContext;
 using xd::xen::XenCtrl;
 using xd::xen::XenException;
 using xd::xen::XenForeignMemory;
 using xd::xen::XenStore;
 
 int main(int argc, char** argv) {
-  XenCtrl xenctrl;
-  XenForeignMemory xen_foreign_memory;
-  XenStore xenstore;
+  XenContext context;
 
   DomID domid = std::stoul(argv[1]);
-  Domain domain(xenctrl, xenstore, xen_foreign_memory, domid);
+  Domain domain(context, domid);
 
   int buf_len = 0x1000;
   void* buf = malloc(buf_len);
-  DomCtl domctl;
 
-  domctl.do_domctl(domain, XEN_DOMCTL_gdbsx_guestmemio, [buf, buf_len](auto u) {
+  PrivCmd privcmd;
+
+  privcmd.hypercall_domctl(domain, XEN_DOMCTL_gdbsx_guestmemio, [buf, buf_len](auto u) {
     auto& memio = u->gdbsx_guest_memio;
     memio.pgd3val = 0;
     memio.gva = 0xfeeb8;
@@ -49,7 +50,7 @@ int main(int argc, char** argv) {
   }, buf, buf_len);
 
   for (int i = 0; i < buf_len/sizeof(uint64_t); ++i) {
-    printf("%lx\n", *((uint64_t*)buf+i));
+    printf("%p\n", *((uint64_t*)buf+i));
   }
 }
 

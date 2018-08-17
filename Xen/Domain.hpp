@@ -12,13 +12,11 @@
 
 namespace xd::xen {
 
-  class XenCtrl;
-  class XenForeignMemory;
-  class XenStore;
+  class XenContext;
 
   class Domain {
   public:
-    Domain(XenCtrl& xenctrl, XenStore& xenstore, XenForeignMemory& xen_foreign_memory, DomID domid);
+    Domain(XenContext& xen, DomID domid);
 
     DomID get_domid() { return _domid; };
     std::string get_name();
@@ -34,10 +32,7 @@ namespace xd::xen {
     void unpause();
 
   private:
-    XenCtrl& _xenctrl;
-    XenStore& _xenstore;
-    XenForeignMemory& _xen_foreign_memory;
-
+    XenContext& _xen;
     const DomID _domid;
   };
 

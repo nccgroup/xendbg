@@ -34,14 +34,13 @@ add_executable(xendbg
     Parser/Token/Label.hpp
     Parser/Token/Symbol.hpp
     Parser/Token/Match.hpp
-    Parser/Token/Match.cpp
-    Parser/Predicate.hpp
+        Parser/Predicate.hpp
     Util/overloaded.hpp
     Util/pop_ret.hpp
     Util/clear.hpp
     REPL/REPL.cpp
     REPL/REPL.hpp
         Xen/Domain.cpp
-    Xen/Domain.hpp Xen/XenException.hpp Xen/XenStore.cpp Xen/XenStore.hpp Xen/XenCtrl.cpp Xen/XenCtrl.hpp Xen/XenForeignMemory.cpp Xen/XenForeignMemory.hpp Xen/Common.hpp Xen/Registers.hpp Xen/BridgeHeaders/xenctrl.h Xen/BridgeHeaders/xenstore.h Xen/BridgeHeaders/xenforeignmemory.h Xen/BridgeHeaders/xenguest.h)
+    Xen/Domain.hpp Xen/XenException.hpp Xen/XenStore.cpp Xen/XenStore.hpp Xen/XenCtrl.cpp Xen/XenCtrl.hpp Xen/XenForeignMemory.cpp Xen/XenForeignMemory.hpp Xen/Common.hpp Xen/Registers.hpp Xen/BridgeHeaders/xenctrl.h Xen/BridgeHeaders/xenstore.h Xen/BridgeHeaders/xenforeignmemory.h Xen/BridgeHeaders/xenguest.h Parser/Token/TokenMatchResult.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)

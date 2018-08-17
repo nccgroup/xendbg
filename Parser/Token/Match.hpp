@@ -14,34 +14,10 @@
 #include "Constant.hpp"
 #include "Label.hpp"
 #include "Symbol.hpp"
+#include "TokenMatchResult.hpp"
 #include "Variable.hpp"
 
 namespace xd::parser::token {
-
-  template <typename Token_t>
-  using TokenMatchResult = std::pair<std::optional<Token_t>, std::string::const_iterator>;
-
-  template <typename Token_t>
-  TokenMatchResult<Token_t> match_token(
-      std::string::const_iterator begin, std::string::const_iterator /*end*/) {
-    return std::make_pair(std::optional<Token_t>(), begin);
-  };
-
-  template <>
-  TokenMatchResult<Constant> match_token<Constant>(
-      std::string::const_iterator begin, std::string::const_iterator end);
-
-  template <>
-  TokenMatchResult<Label> match_token<Label>(
-      std::string::const_iterator begin, std::string::const_iterator end);
-
-  template <>
-  TokenMatchResult<Symbol> match_token<Symbol>(
-      std::string::const_iterator begin, std::string::const_iterator end);
-
-  template <>
-  TokenMatchResult<Variable> match_token<Variable>(
-      std::string::const_iterator begin, std::string::const_iterator end);
 
   template <typename Token_t, typename... Tokens_t>
   struct _match_tokens_impl;
@@ -51,8 +27,11 @@ namespace xd::parser::token {
     static TokenMatchResult<Token_t> match(
         std::string::const_iterator begin, std::string::const_iterator end)
     {
-      auto m = match_token<Tokens_t_first>(begin, end);
-      if (m.first) return m;
+      auto result = Tokens_t_first::match(begin, end);
+
+      if (result.first)
+        return result;
+
       else return _match_tokens_impl<Token_t, Tokens_t...>::match(begin, end);
     }
   };

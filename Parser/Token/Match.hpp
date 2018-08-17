@@ -41,7 +41,7 @@ namespace xd::parser::token {
     static TokenMatchResult<Token_t> match(
         std::string::const_iterator begin, std::string::const_iterator end)
     {
-      return std::make_pair(std::optional<Token_t>(), begin);
+      return std::make_pair(std::nullopt, begin);
     }
   };
 

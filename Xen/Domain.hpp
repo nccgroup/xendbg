@@ -8,6 +8,7 @@
 #include <string>
 
 #include "Common.hpp"
+#include "PrivCmd.hpp"
 #include "Registers.hpp"
 
 namespace xd::xen {
@@ -22,6 +23,8 @@ namespace xd::xen {
     std::string get_name();
     DomInfo get_info();
     int get_word_size();
+
+    void hypercall_domctl(uint32_t command, PrivCmd::DomCtlInitFn init_domctl = {}, void *arg = nullptr, int size = 0);
 
     MemInfo map_meminfo();
     MappedMemory map_memory(Address address, size_t size, int prot);

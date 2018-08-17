@@ -5,6 +5,11 @@
 #ifndef XENDBG_XENCONTEXT_HPP
 #define XENDBG_XENCONTEXT_HPP
 
+#include "PrivCmd.hpp"
+#include "XenCtrl.hpp"
+#include "XenForeignMemory.hpp"
+#include "XenStore.hpp"
+
 namespace xd::xen {
   class XenContext {
   public:

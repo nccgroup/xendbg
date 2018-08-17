@@ -13,18 +13,19 @@
 #include <type_traits>
 #include <utility>
 
-#include "Domain.hpp"
-
 #include "BridgeHeaders/domctl.h"
 
 namespace xd::xen {
 
+  class Domain;
+
   class PrivCmd {
   private:
     static xen_domctl __dummy_domctl;
-    using DomCtlInitFn = std::function<void(decltype(__dummy_domctl.u)*)>;
 
   public:
+    using DomCtlInitFn = std::function<void(decltype(__dummy_domctl.u)*)>;
+
     PrivCmd();
     ~PrivCmd();
 

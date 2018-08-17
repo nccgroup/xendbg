@@ -3,15 +3,14 @@
 //
 
 #include "Domain.hpp"
-#include "XenCtrl.hpp"
-#include "XenForeignMemory.hpp"
-#include "XenStore.hpp"
+#include "XenContext.hpp"
 
 using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::Registers;
 using xd::xen::MappedMemory;
 using xd::xen::MemInfo;
+using xd::xen::XenContext;
 using xd::xen::XenCtrl;
 
 Domain::Domain(XenContext& xen, DomID domid)
@@ -29,8 +28,12 @@ DomInfo Domain::get_info() {
   return _xen.xenctrl.get_domain_info(*this);
 }
 
-int xd::xen::Domain::get_word_size() {
+int Domain::get_word_size() {
   return _xen.xenctrl.get_domain_word_size(*this);
+}
+
+void Domain::hypercall_domctl(uint32_t command, PrivCmd::DomCtlInitFn init_domctl, void *arg, int size) {
+  _xen.privcmd.hypercall_domctl(*this, command, init_domctl, arg, size);
 }
 
 MemInfo Domain::map_meminfo() {

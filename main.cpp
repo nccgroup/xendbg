@@ -38,9 +38,7 @@ int main(int argc, char** argv) {
   int buf_len = 0x1000;
   void* buf = malloc(buf_len);
 
-  PrivCmd privcmd;
-
-  privcmd.hypercall_domctl(domain, XEN_DOMCTL_gdbsx_guestmemio, [buf, buf_len](auto u) {
+  domain.hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio, [buf, buf_len](auto u) {
     auto& memio = u->gdbsx_guest_memio;
     memio.pgd3val = 0;
     memio.gva = 0xfeeb8;
@@ -50,7 +48,7 @@ int main(int argc, char** argv) {
   }, buf, buf_len);
 
   for (int i = 0; i < buf_len/sizeof(uint64_t); ++i) {
-    printf("%p\n", *((uint64_t*)buf+i));
+    printf("%.016p\n", *((uint64_t*)buf+i));
   }
 }
 

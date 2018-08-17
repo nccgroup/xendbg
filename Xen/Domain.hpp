@@ -8,7 +8,6 @@
 #include <string>
 
 #include "Common.hpp"
-#include "PrivCmd.hpp"
 #include "Registers.hpp"
 
 namespace xd::xen {
@@ -24,9 +23,9 @@ namespace xd::xen {
     DomInfo get_info();
     int get_word_size();
 
-    template<InitFn_t, CleanupFn_t>
+    template<typename InitFn_t, typename CleanupFn_t>
     void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
-      _xen.privcmd.hypercall_domctl(*this, command, init_domctl, cleanup);
+      _xen.privcmd.hypercall_domctl(_domid, command, init_domctl, cleanup);
     }
 
     MemInfo map_meminfo();

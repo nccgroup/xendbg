@@ -33,7 +33,7 @@ XenCtrl::XenVersion XenCtrl::get_xen_version() {
   };
 }
 
-DomInfo XenCtrl::get_domain_info(Domain& domain) {
+DomInfo XenCtrl::get_domain_info(Domain &domain) {
   xc_dominfo_t dominfo;
   int ret = xc_domain_getinfo(_xenctrl.get(), domain.get_domid(), 1, &dominfo);
 
@@ -45,10 +45,10 @@ Registers XenCtrl::get_domain_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
   bool is_hvm = (domain.get_info().hvm == 1);
 
   if (is_hvm) {
-    auto context = get_cpu_context_hvm(domain, vcpu_id);
+    auto context = get_domain_cpu_context_hvm(domain, vcpu_id);
     return convert_gp_registers_64(context, Registers64{});
   } else {
-    auto context_any = get_cpu_context_pv(domain, vcpu_id);
+    auto context_any = get_domain_cpu_context_pv(domain, vcpu_id);
     const int word_size = get_domain_word_size(domain);
     if (word_size == sizeof(uint64_t)) {
       return convert_gp_registers_64(context_any.x64.user_regs, Registers64{});
@@ -135,7 +135,7 @@ void XenCtrl::unpause_domain(Domain &domain) {
         "Failed to unpause domain " + std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
 }
 
-struct hvm_hw_cpu XenCtrl::get_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id) {
+struct hvm_hw_cpu XenCtrl::get_domain_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id) {
   int err;
   struct hvm_hw_cpu cpu_context;
   if (err = xc_domain_hvm_getcontext_partial(_xenctrl.get(), domain.get_domid(), HVM_SAVE_CODE(CPU),
@@ -147,7 +147,7 @@ struct hvm_hw_cpu XenCtrl::get_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id) 
   return cpu_context;
 }
 
-vcpu_guest_context_any_t XenCtrl::get_cpu_context_pv(Domain &domain, VCPU_ID vcpu_id) {
+vcpu_guest_context_any_t XenCtrl::get_domain_cpu_context_pv(Domain &domain, VCPU_ID vcpu_id) {
   int err;
   vcpu_guest_context_any_t context_any;
   if (err = xc_vcpu_getcontext(_xenctrl.get(), domain.get_domid(), (uint16_t)vcpu_id, &context_any)) {

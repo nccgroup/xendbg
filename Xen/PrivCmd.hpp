@@ -2,34 +2,38 @@
 // Created by Spencer Michaels on 8/17/18.
 //
 
-#ifndef XENDBG_PRIVCMD_H
-#define XENDBG_PRIVCMD_H
+#ifndef XENDBG_PRIVCMD_HPP
+#define XENDBG_PRIVCMD_HPP
 
 #include <cstring>
 #include <cstddef>
 #include <functional>
 #include <optional>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <type_traits>
 #include <utility>
 
+#include "Common.hpp"
+#include "XenException.hpp"
+
 #include "BridgeHeaders/domctl.h"
+#include "BridgeHeaders/privcmd.h"
 
 namespace xd::xen {
-
-  class Domain;
 
   class PrivCmd {
   private:
     static xen_domctl __dummy_domctl;
 
+  public:
     PrivCmd();
     ~PrivCmd();
 
-    template<InitFn_t, CleanupFn_t>
-    void hypercall_domctl(Domain& domain, uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
+    template<typename InitFn_t, typename CleanupFn_t>
+    void hypercall_domctl(DomID domid, uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
       xen_domctl domctl;
-      domctl.domain = domain.get_domid();
+      domctl.domain = domid;
       domctl.interface_version = XEN_DOMCTL_INTERFACE_VERSION;
       domctl.cmd = command;
 
@@ -53,4 +57,4 @@ namespace xd::xen {
 
 }
 
-#endif //XENDBG_PRIVCMD_H
+#endif //XENDBG_PRIVCMD_HPP

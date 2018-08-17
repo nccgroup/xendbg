@@ -4,16 +4,10 @@
 
 #include <fcntl.h>
 #include <sys/errno.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "Domain.hpp"
 #include "PrivCmd.hpp"
-#include "XenException.hpp"
 
-#include "BridgeHeaders/privcmd.h"
-
-using xd::xen::Domain;
 using xd::xen::PrivCmd;
 using xd::xen::XenException;
 

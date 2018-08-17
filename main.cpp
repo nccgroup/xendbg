@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     if (mlock(buf, buf_len))
       throw XenException("mlock failed!");
   }, [buf, buf_len]() {
-    munlock(buf, buflen);
+    munlock(buf, buf_len);
   });
 
   for (unsigned long i = 0; i < buf_len/sizeof(uint64_t); ++i) {

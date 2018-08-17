@@ -40,6 +40,7 @@ int main(int argc, char** argv) {
       auto mem = domain.map_memory(regs.rip, XC_PAGE_SIZE, PROT_READ | PROT_WRITE);
       auto p = (uint64_t*)mem.get();
       printf("0x%.06lx: %.016lx\n", regs.rip, *p);
+      *((uint8_t*)p) = 0x9090;
     }
 
     //domain.set_debugging(true);

@@ -31,7 +31,6 @@ using xd::parser::op::precedence_of;
 using xd::parser::op::BinaryOperator;
 using xd::parser::op::Sentinel;
 using xd::parser::op::UnaryOperator;
-using xd::parser::token::match_token;
 using xd::parser::pred::is_binary_operator_symbol;
 using xd::parser::pred::is_constant;
 using xd::parser::pred::is_label;

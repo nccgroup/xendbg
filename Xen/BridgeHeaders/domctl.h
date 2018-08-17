@@ -6,7 +6,7 @@
 #define XENDBG_BRIDGE_DOMCTL_H
 
 extern "C" {
-  #include <domctl.h>
+  #include <xen/domctl.h>
 };
 
 #endif //XENDBG_BRIDGE_DOMCTL_H

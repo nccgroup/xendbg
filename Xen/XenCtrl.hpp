@@ -7,15 +7,16 @@
 
 #include <memory>
 
+#include "BridgeHeaders/domctl.h"
+#include "BridgeHeaders/hypercall.h"
 #include "BridgeHeaders/xenctrl.h"
 #include "BridgeHeaders/xenguest.h"
 
 #include "Common.hpp"
+#include "Domain.hpp"
 #include "Registers.hpp"
 
 namespace xd::xen {
-
-  class Domain;
 
   class XenCtrl {
   private:
@@ -37,6 +38,18 @@ namespace xd::xen {
     void set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_id);
     void pause_domain(Domain& domain);
     void unpause_domain(Domain& domain);
+
+      template <typename InitFn_t>
+    void hypercall(Domain& domain, uint32_t command, InitFn_t init_domctl) {
+      xen_domctl domctl;
+      domctl.domain = domain.get_domid();
+      domctl.interface_version = XEN_DOMCTL_INTERFACE_VERSION;
+      domctl.cmd = command;
+
+      memset(&domctl.u, 0, sizeof(domctl.u))
+      init_domctl(domctl.u);
+      do_domctl(_xenctrl.get(), &domctl);
+    }
 
   private:
     struct hvm_hw_cpu get_cpu_context_hvm(Domain& domain, VCPU_ID vcpu_id);

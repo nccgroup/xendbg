@@ -135,7 +135,7 @@ void XenCtrl::unpause_domain(Domain &domain) {
         "Failed to unpause domain " + std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
 }
 
-struct hvm_hw_cpu xd::xen::XenCtrl::get_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id) {
+struct hvm_hw_cpu XenCtrl::get_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id) {
   int err;
   struct hvm_hw_cpu cpu_context;
   if (err = xc_domain_hvm_getcontext_partial(_xenctrl.get(), domain.get_domid(), HVM_SAVE_CODE(CPU),

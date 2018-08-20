@@ -6,43 +6,16 @@
 #define XENDBG_VERB_HPP
 
 #include <optional>
-#include <map>
 #include <string>
+#include <utility>
 #include <variant>
+#include <vector>
 
 #include "Action.hpp"
+#include "Argument.hpp"
+#include "Flag.hpp"
 
 namespace xd::repl::cmd {
-
-  class Argument {
-  public:
-    Argument(std::string name, std::string description)
-      : _name(name), _description(description) {};
-
-    virtual std::string::const_iterator match(
-        std::string::const_iterator begin, std::string::const_iterator end) const;
-
-  private:
-    std::string _name;
-    std::string _description;
-  };
-
-  class Flag {
-  public:
-    Flag(char short_name, std::string long_name, std::string description,
-        std::vector<Argument> args)
-      : _short_name(short_name), _long_name(long_name), _description(description),
-        _args(std::move(args)) {};
-
-    std::string::const_iterator match(
-        std::string::const_iterator begin, std::string::const_iterator end) const;
-
-  private:
-    char _short_name;
-    std::string _long_name;
-    std::string _description;
-    std::vector<Argument> _args;
-  };
 
   class Verb {
   private:
@@ -51,8 +24,9 @@ namespace xd::repl::cmd {
       using ArgsList = std::vector<std::pair<std::string, std::string>>;
 
     public:
-      ArgsHandle() {};
-      ArgsHandle(ArgsList args) : _args(std::move(args)) {};
+      void put(std::string name, std::string value) {
+        _args.push_back(std::make_pair(std::move(name), std::move(value)));
+      }
 
       // TODO: no OOB error handling
       template <typename T, typename F>
@@ -82,12 +56,15 @@ namespace xd::repl::cmd {
       }
 
     public:
-      FlagsHandle(FlagsList flags) : _flags(std::move(flags)) {};
+      void put(const Flag& flag, ArgsHandle args) {
+        auto flag_names = std::make_pair(flag.get_short_name(), flag.get_long_name());
+        _flags.push_back(std::make_pair(flag_names, args));
+      }
 
       bool has(char short_name) const {
         return get(short_name).has_value();
       }
-      bool has(std::string long_name) const {
+      bool has(const std::string& long_name) const {
         return get(long_name).has_value();
       }
 
@@ -107,31 +84,35 @@ namespace xd::repl::cmd {
       FlagsList _flags;
     };
 
+    using MakeActionFn = std::function<Action(const FlagsHandle&, const ArgsHandle&)>;
+
   public:
     Verb(std::string name, std::string description,
-        std::vector<Flag> flags, std::vector<Argument> args)
+        std::vector<Flag> flags, std::vector<Argument> args, MakeActionFn make_action)
       : _name(std::move(name)), _description(std::move(description)),
-        _flags(flags), _args(args) {};
+        _flags(std::move(flags)), _args(std::move(args)), _make_action(make_action) {};
 
     std::string get_name() const { return _name; };
 
     std::optional<Action> match(std::string::const_iterator begin,
-        std::string::const_iterator end) const; /*{
-      auto [flags, end_flags] = match_flags(begin, end);
-      auto [args, end_args] = match_args(end_flags, end);
-    };*/
+        std::string::const_iterator end) const;
 
   private:
-    std::pair<int, std::string::const_iterator> match_flags(
+    std::pair<FlagsHandle, std::string::const_iterator> match_flags(
         std::string::const_iterator begin, std::string::const_iterator end) const;
-    std::pair<int, std::string::const_iterator> match_args(
+    std::pair<ArgsHandle, std::string::const_iterator> match_args(
         std::string::const_iterator begin, std::string::const_iterator end) const;
+
+    std::pair<ArgsHandle, std::string::const_iterator> match_args(
+        std::string::const_iterator begin, std::string::const_iterator end,
+        const std::vector<Argument>& args) const;
 
   private:
     const std::string _name;
     const std::string _description;
     std::vector<Flag> _flags;
     std::vector<Argument> _args;
+    MakeActionFn _make_action;
   };
 
 }

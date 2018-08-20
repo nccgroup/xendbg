@@ -167,7 +167,7 @@ Verb::match(It begin, It end) {
   _make_action(flags, args);
 }
 
-_make_action(flags, args) {
+void _make_action(flags, args) {
   auto id = args.get<int>("id");
   auto force = flags.has("force");
   auto value = flags.get("value").get_arg<int>(0);

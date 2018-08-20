@@ -1,3 +1,27 @@
+#include "REPL/Command/Command.hpp"
+#include "REPL/Command/Verb.hpp"
+
+using xd::repl::cmd::Command;
+using xd::repl::cmd::Verb;
+
+int main() {
+  auto cmd = Command("break", "do break");
+  auto cre = Verb("create", "do create");
+  auto del = Verb("delete", "do delete");
+
+  cmd.add_verb(cre);
+  cmd.add_verb(del);
+
+  std::string s = "asdf hjkl";
+  assert(!cmd.match(s.begin(), s.end()));
+  s = "break";
+  assert(!cmd.match(s.begin(), s.end()));
+  s = "break create";
+  assert(!!cmd.match(s.begin(), s.end()));
+  s = "break delete";
+  assert(!!cmd.match(s.begin(), s.end()));
+}
+
 /*
 #include "REPL/REPL.hpp"
 
@@ -7,6 +31,7 @@ int main() {
 }
 */
 
+/*
 #include "Xen/Domain.hpp"
 #include "Xen/PrivCmd.hpp"
 #include "Xen/Registers.hpp"
@@ -56,6 +81,7 @@ int main(int argc, char** argv) {
     printf("%.016lx\n", *((uint64_t*)buf+i));
   }
 }
+*/
 
 /*
 #include "Parser/ParserException.hpp"

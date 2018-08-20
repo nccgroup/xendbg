@@ -1,0 +1,16 @@
+//
+// Created by Spencer Michaels on 8/19/18.
+//
+
+#ifndef XENDBG_ACTION_HPP
+#define XENDBG_ACTION_HPP
+
+#include <functional>
+
+namespace xd::repl::cmd {
+
+  using Action = std::function<void()>;
+
+}
+
+#endif //XENDBG_ACTION_HPP

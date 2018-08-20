@@ -10,10 +10,12 @@ using xd::util::string::skip_whitespace;
 using xd::repl::cmd::Action;
 using xd::repl::cmd::Command;
 
-std::optional<Action> Command::match(std::string::const_iterator begin, std::string::const_iterator end) {
+#include <iostream>
+
+std::optional<Action> Command::match(std::string::const_iterator begin, std::string::const_iterator end) const {
   auto new_begin = expect(_name, skip_whitespace(begin, end), end);
 
-  if (new_begin == end)
+  if (new_begin == begin)
     return std::nullopt;
 
   for (const auto& verb : _verbs) {

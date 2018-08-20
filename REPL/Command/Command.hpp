@@ -19,8 +19,8 @@ namespace xd::repl::cmd {
     Command(std::string name, std::string description)
         : _name(std::move(name)), _description(std::move(description)) {};
 
-    std::string get_name() { return _name; };
-    std::optional<Action> match(std::string::const_iterator begin, std::string::const_iterator end);
+    std::string get_name() const { return _name; };
+    std::optional<Action> match(std::string::const_iterator begin, std::string::const_iterator end) const;
 
     void add_verb(const Verb& verb) { _verbs.push_back(verb); }
 

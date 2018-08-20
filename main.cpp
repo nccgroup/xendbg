@@ -1,3 +1,5 @@
+#include <cassert>
+#include <string>
 #include "REPL/Command/Command.hpp"
 #include "REPL/Command/Verb.hpp"
 
@@ -16,9 +18,9 @@ int main() {
   assert(!cmd.match(s.begin(), s.end()));
   s = "break";
   assert(!cmd.match(s.begin(), s.end()));
-  s = "break create";
+  s = "break create 12";
   assert(!!cmd.match(s.begin(), s.end()));
-  s = "break delete";
+  s = "break delete 21";
   assert(!!cmd.match(s.begin(), s.end()));
 }
 

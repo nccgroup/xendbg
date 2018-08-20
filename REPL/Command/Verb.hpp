@@ -17,9 +17,9 @@ namespace xd::repl::cmd {
     Verb(std::string name, std::string description)
         : _name(std::move(name)), _description(std::move(description)) {};
 
-    std::string get_name() { return _name; };
+    std::string get_name() const { return _name; };
 
-    std::optional<Action> match(std::string::const_iterator begin, std::string::const_iterator end);
+    std::optional<Action> match(std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:
     const std::string _name;

@@ -1,27 +1,59 @@
 #include <cassert>
+#include <functional>
 #include <string>
-#include "REPL/Command/Command.hpp"
-#include "REPL/Command/Verb.hpp"
+#include <variant>
+#include <vector>
 
-using xd::repl::cmd::Command;
-using xd::repl::cmd::Verb;
+class Debugger;
+
+using Action = std::function<void(Debugger&)>;
+
+template <typename T>
+struct Flag {};
+
+template <typename T>
+struct Argument {};
+
+class VerbBase {
+public:
+  virtual Action match(std::string::const_iterator begin, std::string::const_iterator end) = 0;
+};
+
+template <template <typename> class A, typename... Ts>
+struct pack {
+  using Variant = std::variant<A<Ts>...>;
+
+  pack(A<Ts>... is) : items{is...} {};
+  std::vector<Variant> items;
+};
+
+template <typename FlagsPack_t, typename ArgsPack_t>
+class Verb : public VerbBase {
+public:
+  using ActionMaker = std::function<Action(
+      const typename FlagsPack_t::Variant&, const typename ArgsPack_t::Variant&)>;
+
+  Verb(std::string name, std::string description,
+      FlagsPack_t flags, ArgsPack_t args, ActionMaker) {}
+
+  Action match(std::string::const_iterator begin, std::string::const_iterator end) override {
+  };
+};
 
 int main() {
-  auto cmd = Command("break", "do break");
-  auto cre = Verb("create", "do create");
-  auto del = Verb("delete", "do delete");
-
-  cmd.add_verb(cre);
-  cmd.add_verb(del);
-
-  std::string s = "asdf hjkl";
-  assert(!cmd.match(s.begin(), s.end()));
-  s = "break";
-  assert(!cmd.match(s.begin(), s.end()));
-  s = "break create 12";
-  assert(!!cmd.match(s.begin(), s.end()));
-  s = "break delete 21";
-  assert(!!cmd.match(s.begin(), s.end()));
+  auto verb = Verb("do", "do a thing",
+      pack(
+        Flag<long>(),
+        Flag<bool>()
+      ),
+      pack(
+        Argument<int>()
+      ),
+      [](auto &flags, auto &args) {
+        return [](auto &dbg) { 
+          return;
+        };
+      });
 }
 
 /*

@@ -13,6 +13,7 @@ using xd::util::string::skip_whitespace;
 using xd::repl::cmd::ArgsHandle;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::match_args;
+using xd::repl::cmd::validate_default_args;
 
 Flag::Flag(char short_name, std::string long_name, std::string description,
     std::vector<Argument> args)
@@ -23,6 +24,7 @@ Flag::Flag(char short_name, std::string long_name, std::string description,
     throw std::runtime_error("Flag name cannot contain whitespace!");
   if (next_char(_long_name.begin(), _long_name.end(), '-') == _long_name.begin())
     throw std::runtime_error("Flag name cannot start with a '-' character!");
+  validate_default_args(_args);
 }
 
 std::pair<ArgsHandle, std::string::const_iterator> Flag::match(std::string::const_iterator begin, std::string::const_iterator end) const {

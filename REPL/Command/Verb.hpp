@@ -25,9 +25,7 @@ namespace xd::repl::cmd {
 
   public:
     Verb(std::string name, std::string description,
-        std::vector<Flag> flags, std::vector<Argument> args, MakeActionFn make_action)
-      : _name(std::move(name)), _description(std::move(description)),
-        _flags(std::move(flags)), _args(std::move(args)), _make_action(std::move(make_action)) {};
+        std::vector<Flag> flags, std::vector<Argument> args, MakeActionFn make_action);
 
     std::string get_name() const { return _name; };
 

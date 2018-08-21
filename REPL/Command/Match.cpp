@@ -12,6 +12,19 @@ using xd::repl::cmd::FlagsHandle;
 using xd::util::string::skip_whitespace;
 using xd::util::string::StrConstIt ;
 
+void xd::repl::cmd::validate_default_args(const std::vector<Argument> &args) {
+  bool prev_arg_has_default = false;
+  for (const auto& arg : args) {
+    if (arg.get_default_value().empty()) {
+      if (prev_arg_has_default) {
+        throw std::runtime_error("Default args must all be at the end of the args list!");
+      }
+    } else {
+      prev_arg_has_default = true;
+    }
+  }
+}
+
 std::pair<ArgsHandle, StrConstIt> xd::repl::cmd::match_args(
     StrConstIt begin, StrConstIt end, const std::vector<Argument> &args)
 {
@@ -22,10 +35,17 @@ std::pair<ArgsHandle, StrConstIt> xd::repl::cmd::match_args(
     it = skip_whitespace(it, end);
 
     auto arg_end = arg.match(it, end);
-    if (arg_end == it)
-      throw std::runtime_error("failed to match arg!");
+    if (arg_end == it) {
+      auto default_value = arg.get_default_value();
+      if (default_value.empty()) {
+        throw std::runtime_error("Failed to match arg!");
+      } else {
+        args_handle.put(arg, default_value);
+      }
+    } else {
+      args_handle.put(arg, std::string(it, arg_end));
+    }
 
-    args_handle.put(arg, std::string(it, arg_end));
     it = arg_end;
   }
 

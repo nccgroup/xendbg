@@ -6,14 +6,24 @@
 #include "Verb.hpp"
 #include "../../Util/string.hpp"
 
-#include <iostream>
 using xd::repl::cmd::Action;
 using xd::repl::cmd::ArgsHandle;
 using xd::repl::cmd::FlagsHandle;
+using xd::repl::cmd::validate_default_args;
 using xd::repl::cmd::Verb;
 using xd::util::string::expect;
 using xd::util::string::next_whitespace;
 using xd::util::string::skip_whitespace;
+
+Verb::Verb(std::string name, std::string description,
+           std::vector<Flag> flags, std::vector<Argument> args,
+           MakeActionFn make_action)
+  : _name(std::move(name)), _description(std::move(description)),
+    _flags(std::move(flags)), _args(std::move(args)),
+    _make_action(std::move(make_action))
+{
+    validate_default_args(_args);
+};
 
 std::optional<Action> Verb::match(std::string::const_iterator begin, std::string::const_iterator end) const {
   const auto first_non_ws = skip_whitespace(begin, end);

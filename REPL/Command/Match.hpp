@@ -12,6 +12,8 @@
 
 namespace xd::repl::cmd {
 
+  void validate_default_args(const std::vector<Argument> &args);
+
   std::pair<ArgsHandle, std::string::const_iterator> match_args(
       std::string::const_iterator begin, std::string::const_iterator end,
       const std::vector<Argument> &args);

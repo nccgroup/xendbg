@@ -47,129 +47,34 @@ set <<expr1> Equals <expr>>
   where <expr1> is Dereference or Variable
 ```
 
-# Command structure
+# REPL implementation
 
 ```
-command verb [flags...] [args...]
-    where flags are of the form -f or --flag
-    and args are arbitrary space-separated char sequences
-```
-
-## Tentative implementation
-```c++
-class Command {
+class REPL {
 public:
-  get_name(); { return name; }
+  template <typename Ts...>
+  static REPL& init(Ts... args) {
+    _s_instance = REPL(args...);
+    rl_attempted_completion_function = completer;
+  };
+
+  static void deinit() {
+    _s_instance = std::nullopt;
+    rl_attempted_completion_function = nullptr;
+  };
+
+  void add_command(Command cmd);
 
 private:
-  String name;
-  vector<Verb> verbs;
-}
+  static std::optional<REPL> _s_instance;
+  static char **rl_completer(const char *text, int begin, int end);
+  static char *rl_completion_generator(const char *text, int state);
 
-struct Verb {
-  String name;
-  vector<Flag> flags;
-  vector<Argument> args;
-}
+private:
+  REPL() = default;
+  REPL(const std::vector<Command>& commands);
 
-template <typename... Args_t>
-struct Flag {
-  String shortName;
-  String longName;
-}
-
-template <typename TopLevelExpression_t>
-struct Argument {
-}
-
-
-auto break = Command("break");
-break.add_verb(Verb<>("list"));
-
-auto del = Verb(
-  "delete",
-  "Delete a breakpoint.",
-  Flag("f", "flag", // Flag<long>
-    Argument<long>("FLAG", 1337L)),
-  Flag("b", "bool"),
-  Argument<int>("id"),
-  [](auto& flags, auto& args) {
-    auto id = args.get<int>("id");
-
-    return [](auto& dbg) {
-      dbg.breakpoints.delete(id);
-    };
-  });
-// FlagArgs = variant<long>
-// Args = variant<int>
-
-// Args are always required
-del.add_arg<int>("id", "The ID of the breakpoint to delete.")
-// Flags are always optional
-del.add_flag<>("f", "force", "Force deletion of the breakpoint."); 
-del.add_flag<int>("v", "value", "An optional value to use.", 1337); // default value
-break.add_verb(del);
-
-// or
-auto val = Flag("v", "value", "An optional value to use");
-val.add_arg("VALUE", 1337);
-
-// arguments probably only need a few possible types: int and string?
-// could accomplish this with a union
-
-// could template-paramaterize Verb with the list of types its arguments (incl.
-flag arguments)
-
-Verb v("do_thing");
-v.add_flag(Flag<>("f", "flag"));
-// or Flag<>("flag") --> automatically determines -f argument
-
-auto input = get_input();
-for (cmd : _commands) {
-  auto action = cmd.match(input.begin(), input.end());
-  if (action)
-    action(debugger_context);
-}
-```
-
-```
-template <template <typename> class A, typename... Ts>
-struct pack {
-  using Variant = std::variant<A<Ts>...>;
-
-  pack(A<Ts>... is) : items{is...} {};
-  std::vector<Variant> items;
-};
-
--f --value 10 asdf hjkl
-
-  auto next_space = ...;
-  auto flag = find_matching_flag(begin, next_space);
-
-  if (!flag)
-    throw "unknown flag!"
-
-  std::vector<std::string> arg_strs;
-
-  // ...find proto in flag list... begin=begin+1
-  auto proto = Flag("f", "force")
-  for arg in proto.args:
-    auto new_begin = arg.match(begin, end);
-    if (new_begin == begin)
-      throw "flag $f missing an argument"
-    arg_strs.push_back(std::string(begin, new_begin));
-    begin = new_begin;
-
-Verb::match(It begin, It end) {
-  auto flags = _flags.match(begin, end);
-  auto args = _args.match(begin, end);
-
-  _make_action(flags, args);
-}
-
-void _make_action(flags, args) {
-  auto id = args.get<int>("id");
-  auto force = flags.has("force");
-  auto value = flags.get("value").get_arg<int>(0);
+private:
+  std::vector<Command> _commands;
 }
 ```

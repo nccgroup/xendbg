@@ -15,18 +15,32 @@ namespace xd::repl::cmd {
 
   class ArgsHandle {
   private:
-    using ArgsList = std::vector<std::pair<std::string, std::string>>;
+    using ArgName = std::string;
+    using ArgValue = std::string;
+    using ArgsList = std::vector<std::pair<ArgName, ArgValue>>;
 
   public:
-    void put(const Argument& arg, std::string value) {
+    void put(const Argument& arg, ArgValue value) {
       _args.push_back(std::make_pair(arg.get_name(), std::move(value)));
     }
 
-    // TODO: no OOB error handling
     template <typename T, typename F>
-    T get(size_t index, F f) const {
-      auto s = _args.at(index).first;
-      return f(s);
+    T get(size_t index, F convert) const {
+      if (index >= _args.size())
+        throw std::runtime_error("No such argument!");
+
+      auto value = _args.at(index).second;
+      return convert(value);
+    }
+
+    template <typename T, typename F>
+    T get(const std::string &name, F convert) const {
+      auto found = std::find_if(_args.begin(), _args.end(),
+          [name](const auto& arg) {
+            return arg.first == name;
+          });
+
+      return convert(found->second);
     }
 
   private:

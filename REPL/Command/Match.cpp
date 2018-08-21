@@ -38,26 +38,20 @@ std::pair<FlagsHandle, StrConstIt> xd::repl::cmd::match_flags(
   FlagsHandle flags_handle;
 
   auto it = skip_whitespace(begin, end);
-  auto matched_flag = flags.end();
   while (it != end && *it == '-') {
+    auto matched_flag = flags.end();
     for (auto flag_it = flags.begin(); flag_it != flags.end(); ++flag_it) {
-      auto match_pos = flag_it->match(it, end);
-      if (match_pos != it) {
+      auto [args, args_end] = flag_it->match(it, end);
+      if (args_end != it) {
         matched_flag = flag_it;
-        it = match_pos;
+        flags_handle.put(*matched_flag, args);
+        it = skip_whitespace(args_end, end);
         break;
       }
     }
-
     if (matched_flag == flags.end())
-      throw std::runtime_error("unknown flag!");
+      throw std::runtime_error("Unknown flag!");
 
-    const auto& flag = *matched_flag;
-
-    auto [args, args_end] = match_args(it, end);
-    flags_handle.put(flag, args);
-
-    it = skip_whitespace(args_end, end);
   }
 
   return std::make_pair(flags_handle, it);

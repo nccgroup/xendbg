@@ -26,9 +26,9 @@ namespace xd::repl::cmd {
         std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:
-    char _short_name;
-    std::string _long_name;
-    std::string _description;
+    const char _short_name;
+    const std::string _long_name;
+    const std::string _description;
     std::vector<Argument> _args;
   };
 

@@ -10,6 +10,12 @@ using xd::repl::cmd::Flag;
 using xd::repl::cmd::Argument;
 
 int main() {
+  const auto match_number = [](auto begin, auto end) {
+    return std::find_if_not(begin, end, [](char c) {
+      return std::isdigit(static_cast<unsigned char>(c));
+    });
+  };
+
   auto brk = Command("break", "Manage breakpoints.", {
     Verb("create", "Create a breakpoint.",
       {}, {},
@@ -20,23 +26,31 @@ int main() {
     }),
     Verb("delete", "Delete a breakpoint.",
       {
-        Flag('f', "force", "Force deletion.", {})
-      },
-      {
-        Argument("id", "ID of the breakpoint to delete.", [](auto begin, auto end) {
-          return std::find_if_not(begin, end, [](char c) {
-            return std::isdigit(static_cast<unsigned char>(c));
-          });
+        Flag('f', "force", "Force deletion.", {}),
+        Flag('v', "value", "A flag with a value.", {
+          Argument("value", "A value.", match_number)
         })
       },
+      {
+        Argument("id", "ID of the breakpoint to delete.", match_number)
+      },
       [](auto& flags, auto& args) {
-        bool force = flags.has("force");
-        int id = args.template get<int>("id", [](const auto& s) {
+        const auto get_number = [](const auto& s) {
           return std::stoi(s, 0, 0);
-        });
-        return [id, force]() {
+        };
+
+        int id = args.template get<int>("id", get_number);
+        bool force = flags.has("force");
+        auto value_flag = flags.get("value");
+        int val = -1;
+        if (value_flag) {
+          val = value_flag.value().template get<int>("value", get_number);
+        }
+
+        return [id, force, val]() {
           std::cout << "Breakpoint " << id << " deleted." << std::endl;
-          std::cout << "forced: " << force << std::endl;
+          std::cout << "force: " << force << std::endl;
+          std::cout << "value: " << val << std::endl;
         };
   })});
 
@@ -58,7 +72,7 @@ int main() {
   //s = "break delete";
   //std::cout << "s: " << s << std::endl;
   //assert(!brk.match(s.begin(), s.end()));
-  s = "break delete -f 12";
+  s = "break delete  -f -v 34 12";
   std::cout << "s: " << s << std::endl;
   assert(!!brk.match(s.begin(), s.end()));
   auto act = brk.match(s.begin(), s.end());

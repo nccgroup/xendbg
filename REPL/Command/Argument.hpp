@@ -17,11 +17,14 @@ namespace xd::repl::cmd {
     using MatcherFn = std::function<std::string::const_iterator(
         std::string::const_iterator, std::string::const_iterator)>;
 
-    Argument(std::string name, std::string description, MatcherFn matcher)
-        : _name(std::move(name)), _description(std::move(description)), _matcher(std::move(matcher)) {};
+    Argument(std::string name, std::string description,
+             MatcherFn matcher, std::string default_value = "")
+        : _name(std::move(name)), _description(std::move(description)),
+          _matcher(std::move(matcher)), _default_value(std::move(default_value)) {};
 
     const std::string& get_name() const { return _name; };
     const std::string& get_description() const { return _description; };
+    const std::string& get_default_value() const { return _default_value; };
 
     virtual std::string::const_iterator match(
         std::string::const_iterator begin, std::string::const_iterator end) const {
@@ -29,9 +32,10 @@ namespace xd::repl::cmd {
     };
 
   private:
-    std::string _name;
-    std::string _description;
-    MatcherFn _matcher;
+    const std::string _name;
+    const std::string _description;
+    const std::string _default_value;
+    const MatcherFn _matcher;
   };
 
 }

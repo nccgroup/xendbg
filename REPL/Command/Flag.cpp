@@ -48,7 +48,7 @@ std::pair<ArgsHandle, std::string::const_iterator> Flag::match(std::string::cons
   else if (flag_start == begin+2) {
     if (flag_start == next_ws && _long_name.empty())
       flag_end = next_ws;  // Empty long flag: --
-    else if (_long_name.size() == (next_ws - flag_start) && std::equal(
+    else if (_long_name.size() == (size_t)(next_ws - flag_start) && std::equal(
         _long_name.begin(), _long_name.end(), flag_start, next_ws))
       flag_end = next_ws;  // Matched long flag
     else

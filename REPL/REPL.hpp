@@ -6,20 +6,20 @@
 #define XENDBG_REPL_HPP
 
 #include <cassert>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-#include "Command/Command.hpp"
+#include "Command/CommandBase.hpp"
 
 namespace xd::repl {
 
   class REPL {
   public:
-    template <typename... Ts>
-    static REPL& init(Ts... args) {
+    static REPL& init(std::string prompt) {
       assert(!_s_instance.has_value());
-      _s_instance = REPL(args...);
+      _s_instance.emplace(REPL{prompt});
       init_readline();
       return _s_instance.value();
     }
@@ -27,8 +27,8 @@ namespace xd::repl {
     static void deinit();
 
   private:
-    using CommandVector = std::vector<std::unique_ptr<cmd::CommandBase>>;
-    explicit REPL(std::string prompt = "> ", CommandVector commands = {});
+    using CommandPtr = std::unique_ptr<cmd::CommandBase>;
+    explicit REPL(std::string prompt = "> ");
 
     static std::optional<REPL> _s_instance;
     static std::vector<std::string> _s_completion_options;
@@ -42,12 +42,13 @@ namespace xd::repl {
     std::string read_line();
     void interpret_line(const std::string& line);
     void set_prompt(std::string prompt) { _prompt = std::move(prompt); }
-    void add_command(cmd::Command cmd) { _commands.push_back(std::move(cmd)); }
+    void add_command(CommandPtr cmd) { _commands.push_back(std::move(cmd)); }
 
   private:
     std::string _prompt;
-    CommandVector _commands;
+    std::vector<CommandPtr> _commands;
 
+    std::vector<std::string> complete(const std::string &s);
   };
 
 }

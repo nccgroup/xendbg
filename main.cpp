@@ -1,27 +1,38 @@
 #include "REPL/REPL.hpp"
+#include "REPL/Command/MakeCommand.hpp"
+
+#include <memory>
 
 using xd::repl::REPL;
-using xd::repl::cmd::Command;
 using xd::repl::cmd::CommandVerb;
 using xd::repl::cmd::Verb;
 
 int main() {
-  auto repl = REPL::init();
+  auto& repl = REPL::init("> ");
   bool looping = true;
 
-  auto quit = std::make_unique<Verb>("q", "q", {}, {},
+  auto quit = xd::repl::cmd::make(Verb("quit", "Quit.", {}, {},
     [&looping](auto &flags, auto &args) {
       return [&looping](){
         looping = false;
       };
+  }));
+
+  auto cmd = xd::repl::cmd::make("command", "do thing", {
+    Verb("subcmd", "do subthing", {}, {}, [](auto &a, auto &b) {
+      return [](){};
+    })
   });
 
-  repl.add_command(quit);
+  repl.add_command(std::move(quit));
+  repl.add_command(std::move(cmd));
 
   do {
     auto line = repl.read_line();
     repl.interpret_line(line);
   } while (looping);
+
+  REPL::deinit();
 }
 
 /*

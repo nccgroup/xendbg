@@ -47,43 +47,24 @@ set <<expr1> Equals <expr>>
   where <expr1> is Dereference or Variable
 ```
 
-# REPL implementation
+# Completion implementation
 
 ```
-class REPL {
+
+class Command {
 public:
-  template <typename Ts...>
-  static REPL& init(Ts... args) {
-    assert(!_s_instance.has_value());
-    _s_instance = REPL(args...);
-    rl_attempted_completion_function = REPL::rl_completer;
+  StrVec complete(StrConstIt begin, StrConstIt end) {
+    auto next = expect(_name, begin, end);
+
+    if (next == begin)
+      return {};
+
+    for (const auto& verb : _verbs) {
+      auto vc = verb.complete;
+      if (!vc.empty()) {
+        return vc;
+      }
+    }
   };
-
-  static void deinit() {
-    assert(_s_instance.has_value());
-    _s_instance = std::nullopt;
-    rl_attempted_completion_function = nullptr;
-  };
-
-  void add_command(Command cmd);
-
-private:
-  static std::optional<REPL> _s_instance;
-
-  static char **rl_completer(const char *text, int begin, int end) {
-    rl_attempted_completion_over = 1;
-    return rl_completion_matches(text, REPL::rl_completion_generator)
-  }
-
-  static char *rl_completion_generator(const char *text, int state) {
-    // do things with _s_instance
-  }
-
-private:
-  REPL() = default;
-  REPL(const std::vector<Command>& commands);
-
-private:
-  std::vector<Command> _commands;
 }
 ```

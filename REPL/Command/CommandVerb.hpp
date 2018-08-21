@@ -16,6 +16,7 @@ namespace xd::repl::cmd {
         : CommandBase(verb.get_name(), verb.get_description()), _verb(std::move(verb)) {};
 
     std::optional <Action> match(const std::string &s) const override;
+    std::vector<std::string> complete(const std::string& s) const override;
 
   private:
     Verb _verb;

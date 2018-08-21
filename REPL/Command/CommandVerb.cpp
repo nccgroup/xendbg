@@ -14,3 +14,7 @@ std::optional<Action> CommandVerb::match(const std::string& s) const {
 
   return std::nullopt;
 }
+
+std::vector<std::string> CommandVerb::complete(const std::string& s) const {
+  return _verb.complete(s.begin(), s.end());
+}

@@ -48,6 +48,11 @@ std::optional<Action> Verb::match(std::string::const_iterator begin, std::string
   return _make_action(flags, args);
 }
 
+std::vector<std::string> Verb::complete(std::string::const_iterator begin,
+    std::string::const_iterator end) const {
+  return {};
+}
+
 std::pair<std::string::const_iterator, FlagsHandle> Verb::match_flags(
     std::string::const_iterator begin, std::string::const_iterator end) const
 {

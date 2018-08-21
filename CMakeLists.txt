@@ -48,6 +48,13 @@ add_executable(xendbg
     Xen/BridgeHeaders/xenforeignmemory.h Xen/BridgeHeaders/xenguest.h
     Xen/BridgeHeaders/domctl.h Xen/PrivCmd.cpp Xen/PrivCmd.hpp
     Xen/XenContext.hpp REPL/Command/Action.hpp REPL/Command/Command.cpp
-    REPL/Command/Command.hpp Util/string.hpp Util/string.cpp REPL/Command/Verb.cpp REPL/Command/Verb.hpp REPL/Command/Argument.cpp REPL/Command/Argument.hpp REPL/Command/Flag.cpp REPL/Command/Flag.hpp REPL/Command/ArgsHandle.cpp REPL/Command/ArgsHandle.hpp REPL/Command/FlagsHandle.cpp REPL/Command/FlagsHandle.hpp REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp)
+    REPL/Command/Command.hpp Util/string.hpp Util/string.cpp
+    REPL/Command/Verb.cpp REPL/Command/Verb.hpp REPL/Command/Argument.cpp
+    REPL/Command/Argument.hpp REPL/Command/Flag.cpp REPL/Command/Flag.hpp
+    REPL/Command/ArgsHandle.cpp REPL/Command/ArgsHandle.hpp
+    REPL/Command/FlagsHandle.cpp REPL/Command/FlagsHandle.hpp
+    REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp
+    REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
+    REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "Argument.hpp"
+#include "ArgsHandle.hpp"
 
 namespace xd::repl::cmd {
 
@@ -21,7 +22,7 @@ namespace xd::repl::cmd {
     const std::string& get_long_name() const { return _long_name; };
     const std::string& get_description() const { return _description; };
 
-    std::string::const_iterator match(
+    std::pair<ArgsHandle, std::string::const_iterator> match(
         std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:

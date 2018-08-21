@@ -1,3 +1,31 @@
+#include "REPL/REPL.hpp"
+
+using xd::repl::REPL;
+using xd::repl::cmd::Command;
+using xd::repl::cmd::Verb;
+
+int main() {
+  auto repl = REPL::init();
+  bool looping = true;
+
+  auto cmd_quit = Command("quit", "Exit the REPL.", {
+    Verb("q", "q", {}, {},
+      [&looping](auto &flags, auto &args) {
+        return [&looping](){
+          looping = false;
+        };
+      })
+  });
+
+  repl.add_command(cmd_quit);
+
+  do {
+    auto line = repl.read_line();
+    repl.interpret_line(line);
+  } while (looping);
+}
+
+/*
 #include <cassert>
 #include <cctype>
 #include <iostream>
@@ -84,6 +112,7 @@ int main() {
   //assert(!brk.match(s.begin(), s.end()));
 
 }
+*/
 
 /*
 #include "REPL/REPL.hpp"

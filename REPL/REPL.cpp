@@ -9,69 +9,66 @@
 
 #include "REPL.hpp"
 
-static std::string _prompt;
-static bool _needs_init = true;
+using xd::repl::REPL;
 
-std::string get_input(const std::string& prompt);
-void init_repl();
-char **completer(const char *text, int begin, int end);
-char *completion_generator(const char *text, int status);
+std::optional<REPL> REPL::_s_instance;
+std::vector<std::string>REPL:: _s_completion_options;
 
-char *completion_options[] = {
-    "helloworld",
-    "test",
-    "thisisatest",
-    "stillatest",
-    NULL
-};
-
-void repl::set_prompt(const std::string &prompt) {
-  _prompt = prompt;
+void REPL::deinit() {
+  assert(_s_instance.has_value());
+  _s_instance = std::nullopt;
+  deinit_readline();
 }
 
-void repl::start() {
-  if (_needs_init) {
-    init_repl();
-    _needs_init = false;
-  }
-
-  bool should_quit = false;
-  while (!should_quit) {
-    auto input = get_input(_prompt);
-    std::cout << input << std::endl;
-    should_quit = (input == "quit");
-  }
+void REPL::init_readline() {
+  rl_attempted_completion_function = REPL::attempted_completion_function;
 }
 
-void init_repl() {
-  rl_attempted_completion_function = completer;
-  _needs_init = true;
+void REPL::deinit_readline() {
+  rl_attempted_completion_function = nullptr;
 }
 
-std::string get_input(const std::string& prompt) {
-  const char* input = readline(prompt.c_str());
-  return std::string(input);
-}
-
-char **completer(const char *text, int begin, int end) {
+char **REPL::attempted_completion_function(const char *text, int begin, int end) {
   rl_attempted_completion_over = 1;
-  return rl_completion_matches(text, completion_generator);
+
+  return rl_completion_matches(text + begin, REPL::command_generator);
 }
 
-char *completion_generator(const char *text, int state) {
-  static int list_index, len;
-  char *result;
+char *REPL::command_generator(const char *text, int state) {
+  static int index, text_len;
 
   if (!state) {
-    list_index = 0;
-    len = strlen(text);
+    index = 0;
+    text_len = strlen(text);
   }
 
-  while ((result = completion_options[list_index++])) {
-    if (strncmp(result, text, len) == 0) {
-      return strdup(result);
+  for (const auto& s : _s_completion_options) {
+    if (strncmp(text, s.c_str(), text_len) == 0) {
+      return strdup(s.c_str());
     }
   }
 
   return NULL;
+}
+
+REPL::REPL(std::string prompt, std::vector<cmd::Command> commands)
+  : _prompt(prompt), _commands(std::move(commands))
+{
+}
+
+std::string REPL::read_line() {
+  return readline(_prompt.c_str());
+}
+
+void REPL::interpret_line(const std::string& line) {
+  for (const auto &cmd : _commands) {
+    auto action_opt = cmd.match(line);
+    if (action_opt) {
+      auto action = action_opt.value();
+      action();
+      return;
+    }
+  }
+
+  std::cerr << "Invalid input." << std::endl;
 }

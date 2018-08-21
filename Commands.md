@@ -54,11 +54,13 @@ class REPL {
 public:
   template <typename Ts...>
   static REPL& init(Ts... args) {
+    assert(!_s_instance.has_value());
     _s_instance = REPL(args...);
-    rl_attempted_completion_function = completer;
+    rl_attempted_completion_function = REPL::rl_completer;
   };
 
   static void deinit() {
+    assert(_s_instance.has_value());
     _s_instance = std::nullopt;
     rl_attempted_completion_function = nullptr;
   };
@@ -67,8 +69,15 @@ public:
 
 private:
   static std::optional<REPL> _s_instance;
-  static char **rl_completer(const char *text, int begin, int end);
-  static char *rl_completion_generator(const char *text, int state);
+
+  static char **rl_completer(const char *text, int begin, int end) {
+    rl_attempted_completion_over = 1;
+    return rl_completion_matches(text, REPL::rl_completion_generator)
+  }
+
+  static char *rl_completion_generator(const char *text, int state) {
+    // do things with _s_instance
+  }
 
 private:
   REPL() = default;

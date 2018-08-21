@@ -18,11 +18,13 @@ namespace xd::repl::cmd {
     Flag(char short_name, std::string long_name, std::string description,
         std::vector<Argument> args);
 
+    void add_arg(Argument arg);
+
     char get_short_name() const { return _short_name; };
     const std::string& get_long_name() const { return _long_name; };
     const std::string& get_description() const { return _description; };
 
-    std::pair<ArgsHandle, std::string::const_iterator> match(
+    std::pair<std::string::const_iterator, ArgsHandle> match(
         std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:

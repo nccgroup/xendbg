@@ -27,15 +27,17 @@ namespace xd::repl::cmd {
     Verb(std::string name, std::string description,
         std::vector<Flag> flags, std::vector<Argument> args, MakeActionFn make_action);
 
+    void add_arg(Argument arg);
+
     std::string get_name() const { return _name; };
 
     std::optional<Action> match(std::string::const_iterator begin,
         std::string::const_iterator end) const;
 
   private:
-    std::pair<FlagsHandle, std::string::const_iterator> match_flags(
+    std::pair<std::string::const_iterator, FlagsHandle> match_flags(
         std::string::const_iterator begin, std::string::const_iterator end) const;
-    std::pair<ArgsHandle, std::string::const_iterator> match_args(
+    std::pair<std::string::const_iterator, ArgsHandle> match_args(
         std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:

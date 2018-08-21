@@ -12,13 +12,15 @@
 
 namespace xd::repl::cmd {
 
-  void validate_default_args(const std::vector<Argument> &args);
+  void validate_args(const std::vector<Argument> &args);
+  void validate_new_arg(const std::vector<Argument> &args,
+      const Argument &new_arg);
 
-  std::pair<ArgsHandle, std::string::const_iterator> match_args(
+  std::pair<std::string::const_iterator, ArgsHandle> match_args(
       std::string::const_iterator begin, std::string::const_iterator end,
       const std::vector<Argument> &args);
 
-  std::pair<FlagsHandle, std::string::const_iterator> match_flags(
+  std::pair<std::string::const_iterator, FlagsHandle> match_flags(
       std::string::const_iterator begin, std::string::const_iterator end,
       const std::vector<Flag> &flags);
 }

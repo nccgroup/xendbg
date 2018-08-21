@@ -12,12 +12,12 @@ using xd::repl::cmd::FlagsHandle;
 using xd::util::string::skip_whitespace;
 using xd::util::string::StrConstIt ;
 
-void xd::repl::cmd::validate_default_args(const std::vector<Argument> &args) {
+void xd::repl::cmd::validate_args(const std::vector<Argument> &args) {
   bool prev_arg_has_default = false;
   for (const auto& arg : args) {
     if (arg.get_default_value().empty()) {
       if (prev_arg_has_default) {
-        throw std::runtime_error("Default args must all be at the end of the args list!");
+        throw std::runtime_error("Args with defaults must come at the end of the args list!");
       }
     } else {
       prev_arg_has_default = true;
@@ -25,7 +25,18 @@ void xd::repl::cmd::validate_default_args(const std::vector<Argument> &args) {
   }
 }
 
-std::pair<ArgsHandle, StrConstIt> xd::repl::cmd::match_args(
+void xd::repl::cmd::validate_new_arg(const std::vector<Argument> &args,
+      const Argument &new_arg)
+{
+  if (!args.empty() &&
+      !args.back().get_default_value().empty() &&
+      new_arg.get_default_value().empty())
+  {
+    throw std::runtime_error("Args with defaults come at the end of the args list!");
+  }
+}
+
+std::pair<StrConstIt, ArgsHandle> xd::repl::cmd::match_args(
     StrConstIt begin, StrConstIt end, const std::vector<Argument> &args)
 {
   ArgsHandle args_handle;
@@ -49,10 +60,10 @@ std::pair<ArgsHandle, StrConstIt> xd::repl::cmd::match_args(
     it = arg_end;
   }
 
-  return std::make_pair(args_handle, it);
+  return std::make_pair(it, args_handle);
 }
 
-std::pair<FlagsHandle, StrConstIt> xd::repl::cmd::match_flags(
+std::pair<StrConstIt, FlagsHandle> xd::repl::cmd::match_flags(
     StrConstIt begin, StrConstIt end, const std::vector<Flag> &flags)
 {
   FlagsHandle flags_handle;
@@ -61,7 +72,7 @@ std::pair<FlagsHandle, StrConstIt> xd::repl::cmd::match_flags(
   while (it != end && *it == '-') {
     auto matched_flag = flags.end();
     for (auto flag_it = flags.begin(); flag_it != flags.end(); ++flag_it) {
-      auto [args, args_end] = flag_it->match(it, end);
+      auto [args_end, args] = flag_it->match(it, end);
       if (args_end != it) {
         matched_flag = flag_it;
         flags_handle.put(*matched_flag, args);
@@ -74,5 +85,5 @@ std::pair<FlagsHandle, StrConstIt> xd::repl::cmd::match_flags(
 
   }
 
-  return std::make_pair(flags_handle, it);
+  return std::make_pair(it, flags_handle);
 }

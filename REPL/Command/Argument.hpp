@@ -34,8 +34,8 @@ namespace xd::repl::cmd {
   private:
     const std::string _name;
     const std::string _description;
-    const std::string _default_value;
     const MatcherFn _matcher;
+    const std::string _default_value;
   };
 
 }

@@ -13,7 +13,8 @@ using xd::util::string::skip_whitespace;
 using xd::repl::cmd::ArgsHandle;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::match_args;
-using xd::repl::cmd::validate_default_args;
+using xd::repl::cmd::validate_args;
+using xd::repl::cmd::validate_new_arg;
 
 Flag::Flag(char short_name, std::string long_name, std::string description,
     std::vector<Argument> args)
@@ -24,14 +25,19 @@ Flag::Flag(char short_name, std::string long_name, std::string description,
     throw std::runtime_error("Flag name cannot contain whitespace!");
   if (next_char(_long_name.begin(), _long_name.end(), '-') == _long_name.begin())
     throw std::runtime_error("Flag name cannot start with a '-' character!");
-  validate_default_args(_args);
+  validate_args(_args);
 }
 
-std::pair<ArgsHandle, std::string::const_iterator> Flag::match(std::string::const_iterator begin, std::string::const_iterator end) const {
+void Flag::add_arg(Argument arg) {
+  validate_new_arg(_args, arg);
+  _args.push_back(std::move(arg));
+}
+
+std::pair<std::string::const_iterator, ArgsHandle> Flag::match(std::string::const_iterator begin, std::string::const_iterator end) const {
   auto flag_start = next_not_char(begin, end, '-');
 
   if (flag_start == begin)
-    return std::make_pair(ArgsHandle(), begin);
+    return std::make_pair(begin, ArgsHandle());
 
   const auto next_ws = next_whitespace(flag_start, end);
 
@@ -43,7 +49,7 @@ std::pair<ArgsHandle, std::string::const_iterator> Flag::match(std::string::cons
     else if (*flag_start == _short_name)
       flag_end = flag_start+1;  // Matched short flag
     else
-      return std::make_pair(ArgsHandle(), begin);
+      return std::make_pair(begin, ArgsHandle());
   }
 
   // Long flag: --flag
@@ -54,7 +60,7 @@ std::pair<ArgsHandle, std::string::const_iterator> Flag::match(std::string::cons
         _long_name.begin(), _long_name.end(), flag_start, next_ws))
       flag_end = next_ws;  // Matched long flag
     else
-      return std::make_pair(ArgsHandle(), begin);
+      return std::make_pair(begin, ArgsHandle());
   }
 
   return match_args(flag_end, end, _args);

@@ -14,6 +14,7 @@
 #include "Action.hpp"
 #include "Argument.hpp"
 #include "ArgsHandle.hpp"
+#include "CommandVerb.hpp"
 #include "Flag.hpp"
 #include "FlagsHandle.hpp"
 
@@ -27,9 +28,13 @@ namespace xd::repl::cmd {
     Verb(std::string name, std::string description,
         std::vector<Flag> flags, std::vector<Argument> args, MakeActionFn make_action);
 
+    // Convert implicitly to a Command wrapper
+    operator CommandVerb() const { return CommandVerb(*this); };
+
     void add_arg(Argument arg);
 
     std::string get_name() const { return _name; };
+    std::string get_description() const { return _description; };
 
     std::optional<Action> match(std::string::const_iterator begin,
         std::string::const_iterator end) const;

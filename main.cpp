@@ -2,22 +2,21 @@
 
 using xd::repl::REPL;
 using xd::repl::cmd::Command;
+using xd::repl::cmd::CommandVerb;
 using xd::repl::cmd::Verb;
 
 int main() {
   auto repl = REPL::init();
   bool looping = true;
 
-  auto cmd_quit = Command("quit", "Exit the REPL.", {
-    Verb("q", "q", {}, {},
-      [&looping](auto &flags, auto &args) {
-        return [&looping](){
-          looping = false;
-        };
-      })
+  auto quit = std::make_unique<Verb>("q", "q", {}, {},
+    [&looping](auto &flags, auto &args) {
+      return [&looping](){
+        looping = false;
+      };
   });
 
-  repl.add_command(cmd_quit);
+  repl.add_command(quit);
 
   do {
     auto line = repl.read_line();

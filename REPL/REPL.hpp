@@ -27,7 +27,8 @@ namespace xd::repl {
     static void deinit();
 
   private:
-    REPL(std::string prompt = "> ", std::vector<cmd::Command> commands = {});
+    using CommandVector = std::vector<std::unique_ptr<cmd::CommandBase>>;
+    explicit REPL(std::string prompt = "> ", CommandVector commands = {});
 
     static std::optional<REPL> _s_instance;
     static std::vector<std::string> _s_completion_options;
@@ -45,7 +46,7 @@ namespace xd::repl {
 
   private:
     std::string _prompt;
-    std::vector<cmd::Command> _commands;
+    CommandVector _commands;
 
   };
 

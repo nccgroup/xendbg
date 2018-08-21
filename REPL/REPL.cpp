@@ -35,7 +35,7 @@ char **REPL::attempted_completion_function(const char *text, int begin, int end)
 }
 
 char *REPL::command_generator(const char *text, int state) {
-  static int index, text_len;
+  static size_t index, text_len;
 
   if (!state) {
     index = 0;
@@ -48,11 +48,11 @@ char *REPL::command_generator(const char *text, int state) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
-REPL::REPL(std::string prompt, std::vector<cmd::Command> commands)
-  : _prompt(prompt), _commands(std::move(commands))
+REPL::REPL(std::string prompt, CommandVector commands)
+  : _prompt(std::move(prompt)), _commands(std::move(commands))
 {
 }
 
@@ -62,10 +62,9 @@ std::string REPL::read_line() {
 
 void REPL::interpret_line(const std::string& line) {
   for (const auto &cmd : _commands) {
-    auto action_opt = cmd.match(line);
-    if (action_opt) {
-      auto action = action_opt.value();
-      action();
+    auto action = cmd->match(line);
+    if (action) {
+      (action.value())();
       return;
     }
   }

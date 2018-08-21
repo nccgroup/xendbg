@@ -18,7 +18,7 @@ std::optional<Action> Command::match(const std::string& s) const {
   const auto begin = s.begin();
   const auto end = s.end();
 
-  auto new_begin = expect(_name, skip_whitespace(begin, end), end);
+  auto new_begin = expect(get_name(), skip_whitespace(begin, end), end);
 
   if (new_begin == begin)
     return std::nullopt;

@@ -1,0 +1,4 @@
+Note: edge case in completion: verb flags are all used up so verb returns no
+completion options, which makes Command think that the verb didn't match and
+causes it to list out subcommands again. Change empty vectors to optionals
+to fix.

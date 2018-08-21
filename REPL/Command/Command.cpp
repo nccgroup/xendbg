@@ -33,19 +33,19 @@ std::optional<Action> Command::match(const std::string& s) const {
 }
 
 std::vector<std::string> Command::complete(const std::string& s) const {
-  const auto begin = s.begin();
   const auto end = s.end();
+  const auto first_non_ws = skip_whitespace(s.begin(), end);
 
-  auto next = expect(get_name(), skip_whitespace(begin, end), end);
+  auto verb_start = expect(get_name(), first_non_ws, end);
 
   // If s doesn't have this command as a prefix, neither this command
   // nor its children have any relevant completion options to give
-  if (next == begin)
+  if (verb_start == first_non_ws)
     return {};
 
   // If a verb has more specific completion options, return those instead
   for (const auto& verb : _verbs) {
-    auto options = verb.complete(next, end);
+    auto options = verb.complete(verb_start, end);
     if (!options.empty())
       return options;
   }

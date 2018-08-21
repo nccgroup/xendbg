@@ -50,7 +50,25 @@ std::optional<Action> Verb::match(std::string::const_iterator begin, std::string
 
 std::vector<std::string> Verb::complete(std::string::const_iterator begin,
     std::string::const_iterator end) const {
-  return {};
+  const auto first_non_ws = skip_whitespace(begin, end);
+  const auto flags_start = expect(_name, first_non_ws, end);
+
+  if (flags_start == first_non_ws) {
+    return {};
+  }
+
+  // Parse out flags to figure out which ones are left to autocomplete
+  auto [_, flags] = xd::repl::cmd::match_flags(flags_start, end, _flags, true);
+
+  std::vector<std::string> options;
+  for (const auto &flag : _flags) {
+    if (!flags.has(flag.get_short_name())) {
+      options.push_back(std::string("-") + flag.get_short_name());
+      options.push_back("--" + flag.get_long_name());
+    }
+  }
+
+  return options;
 }
 
 std::pair<std::string::const_iterator, FlagsHandle> Verb::match_flags(

@@ -22,7 +22,7 @@ namespace xd::repl::cmd {
 
   std::pair<std::string::const_iterator, FlagsHandle> match_flags(
       std::string::const_iterator begin, std::string::const_iterator end,
-      const std::vector<Flag> &flags);
+      const std::vector<Flag> &flags, bool ignore_unknown_flags = false);
 }
 
 #endif //XENDBG_MATCH_HPP

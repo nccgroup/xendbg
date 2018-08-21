@@ -9,6 +9,8 @@ using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::ArgsHandle;
 using xd::repl::cmd::FlagsHandle;
+using xd::util::string::next_char;
+using xd::util::string::next_whitespace;
 using xd::util::string::skip_whitespace;
 using xd::util::string::StrConstIt ;
 
@@ -64,7 +66,8 @@ std::pair<StrConstIt, ArgsHandle> xd::repl::cmd::match_args(
 }
 
 std::pair<StrConstIt, FlagsHandle> xd::repl::cmd::match_flags(
-    StrConstIt begin, StrConstIt end, const std::vector<Flag> &flags)
+    StrConstIt begin, StrConstIt end, const std::vector<Flag> &flags,
+    bool ignore_unknown_flags)
 {
   FlagsHandle flags_handle;
 
@@ -80,8 +83,22 @@ std::pair<StrConstIt, FlagsHandle> xd::repl::cmd::match_flags(
         break;
       }
     }
-    if (matched_flag == flags.end())
-      throw std::runtime_error("Unknown flag!");
+    if (matched_flag == flags.end()) {
+      if (!ignore_unknown_flags) {
+        const auto next_ws = next_whitespace(it, end);
+        throw std::runtime_error("Unknown flag '" + std::string(it, next_ws) + "'!");
+      } else {
+        // Find the next potential arg
+        const auto prev_it = it;
+        it = next_char(it, end, '-');
+        // If this is the last potential arg, skip beyond it and bail out
+        if (it == prev_it) {
+          it = next_whitespace(it, end);
+          break;
+        }
+      }
+    }
+
 
   }
 

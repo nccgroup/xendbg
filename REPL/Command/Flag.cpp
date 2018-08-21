@@ -33,7 +33,9 @@ void Flag::add_arg(Argument arg) {
   _args.push_back(std::move(arg));
 }
 
-std::pair<std::string::const_iterator, ArgsHandle> Flag::match(std::string::const_iterator begin, std::string::const_iterator end) const {
+std::pair<std::string::const_iterator, ArgsHandle> Flag::match(
+    std::string::const_iterator begin, std::string::const_iterator end) const
+{
   auto flag_start = next_not_char(begin, end, '-');
 
   if (flag_start == begin)

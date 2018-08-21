@@ -5,6 +5,7 @@
 
 using xd::repl::REPL;
 using xd::repl::cmd::CommandVerb;
+using xd::repl::cmd::Flag;
 using xd::repl::cmd::Verb;
 
 int main() {
@@ -19,7 +20,10 @@ int main() {
   }));
 
   auto cmd = xd::repl::cmd::make("command", "do thing", {
-    Verb("subcmd", "do subthing", {}, {}, [](auto &a, auto &b) {
+      Verb("subcmd", "do subthing", {
+        Flag('f', "flag", "a flag", {}),
+        Flag('g', "glaf", "another flag", {})
+      }, {}, [](auto &a, auto &b) {
       return [](){};
     })
   });

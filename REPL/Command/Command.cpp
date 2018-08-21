@@ -14,7 +14,10 @@ using xd::repl::cmd::Command;
 
 #include <iostream>
 
-std::optional<Action> Command::match(std::string::const_iterator begin, std::string::const_iterator end) const {
+std::optional<Action> Command::match(const std::string& s) const {
+  const auto begin = s.begin();
+  const auto end = s.end();
+
   auto new_begin = expect(_name, skip_whitespace(begin, end), end);
 
   if (new_begin == begin)

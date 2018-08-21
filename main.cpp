@@ -56,26 +56,26 @@ int main() {
 
   std::string s = "";
   std::cout << "s: " << s << std::endl;
-  assert(!brk.match(s.begin(), s.end()));
+  assert(!brk.match(s));
   s = "asdf";
   std::cout << "s: " << s << std::endl;
-  assert(!brk.match(s.begin(), s.end()));
+  assert(!brk.match(s));
   s = "asdf hjkl";
   std::cout << "s: " << s << std::endl;
-  assert(!brk.match(s.begin(), s.end()));
+  assert(!brk.match(s));
   s = "break";
   std::cout << "s: " << s << std::endl;
-  assert(!brk.match(s.begin(), s.end()));
+  assert(!brk.match(s));
   s = "break create";
   std::cout << "s: " << s << std::endl;
-  assert(!!brk.match(s.begin(), s.end()));
+  assert(!!brk.match(s));
   //s = "break delete";
   //std::cout << "s: " << s << std::endl;
   //assert(!brk.match(s.begin(), s.end()));
   s = "break delete  -f -v 34 12";
   std::cout << "s: " << s << std::endl;
-  assert(!!brk.match(s.begin(), s.end()));
-  auto act = brk.match(s.begin(), s.end());
+  assert(!!brk.match(s));
+  auto act = brk.match(s);
   if (act) {
     act.value()();
   }

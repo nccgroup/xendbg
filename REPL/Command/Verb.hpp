@@ -24,15 +24,52 @@ namespace xd::repl::cmd {
       using ArgsList = std::vector<std::pair<std::string, std::string>>;
 
     public:
+      static std::pair<ArgsHandle, std::string::const_iterator> match_args(
+          std::string::const_iterator begin, std::string::const_iterator end,
+          const std::vector<cmd::Argument> &args)
+      {
+        ArgsHandle args_handle;
+
+        auto it = begin;
+        for (const auto& arg : args) {
+          it = skip_whitespace(it, end);
+
+          auto arg_end = arg.match(it, end);
+          if (arg_end == it)
+            throw std::runtime_error("Missing argument '" + arg.get_name() + "'!");
+
+          args_handle.put(arg.get_name(), std::string(it, arg_end));
+          it = arg_end;
+        }
+
+        return std::make_pair(args_handle, it);
+      }
+
       void put(std::string name, std::string value) {
         _args.push_back(std::make_pair(std::move(name), std::move(value)));
       }
 
       // TODO: no OOB error handling
       template <typename T, typename F>
-      T get(size_t index, F f) const {
-        auto s = _args.at(index).first;
-        return f(s);
+      T get(size_t index, F convert) const {
+        if (index >= _args.size())
+          throw std::runtime_error("No such argument!");
+
+        auto value = _args.at(index).second;
+        return convert(value);
+      }
+
+      template <typename T, typename F>
+      T get(const std::string& name, F convert) const {
+        auto found = std::find_if(_args.begin(), _args.end(),
+          [name](const auto& p) {
+            return p.first == name;
+          });
+
+        if (found == _args.end())
+          throw std::runtime_error("No such argument!");
+
+        return convert(found->second);
       }
 
     private:

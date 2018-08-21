@@ -9,7 +9,8 @@ StrConstIt xd::util::string::expect(const std::string& target, StrConstIt begin,
   auto new_end = begin + target.size();
   if ((size_t)(end - begin) >= target.size() &&
     std::equal(target.begin(), target.end(), begin, new_end))
-  return new_end;
+    return new_end;
+  return begin;
 }
 
 StrConstIt xd::util::string::next_char(StrConstIt begin, StrConstIt end, char c) {

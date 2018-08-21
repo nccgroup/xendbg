@@ -16,8 +16,8 @@ namespace xd::repl::cmd {
 
   class Command {
   public:
-    Command(std::string name, std::string description)
-        : _name(std::move(name)), _description(std::move(description)) {};
+    Command(std::string name, std::string description, std::vector<Verb> verbs)
+        : _name(std::move(name)), _description(std::move(description)), _verbs(std::move(verbs)) {};
 
     std::string get_name() const { return _name; };
     std::optional<Action> match(std::string::const_iterator begin, std::string::const_iterator end) const;

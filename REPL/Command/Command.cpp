@@ -2,6 +2,8 @@
 // Created by Spencer Michaels on 8/19/18.
 //
 
+#include <iostream>
+
 #include "Command.hpp"
 #include "../../Util/string.hpp"
 

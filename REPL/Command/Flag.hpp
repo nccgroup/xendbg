@@ -15,9 +15,7 @@ namespace xd::repl::cmd {
   class Flag {
   public:
     Flag(char short_name, std::string long_name, std::string description,
-        std::vector<Argument> args)
-      : _short_name(short_name), _long_name(std::move(long_name)),
-        _description(std::move(description)), _args(std::move(args)) {};
+        std::vector<Argument> args);
 
     char get_short_name() const { return _short_name; };
     const std::string& get_long_name() const { return _long_name; };

@@ -12,6 +12,10 @@ StrConstIt xd::util::string::expect(const std::string& target, StrConstIt begin,
   return new_end;
 }
 
+StrConstIt xd::util::string::next_char(StrConstIt begin, StrConstIt end, char c) {
+  return std::find(begin, end, c);
+};
+
 StrConstIt xd::util::string::next_not_char(StrConstIt begin, StrConstIt end, char c) {
   return std::find_if(begin, end, [c](auto& sc) { return sc != c; });
 };

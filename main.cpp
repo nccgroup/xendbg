@@ -1,60 +1,51 @@
 #include <cassert>
-#include <functional>
-#include <string>
-#include <variant>
-#include <vector>
+#include <cctype>
+#include <iostream>
 
-class Debugger;
+#include "REPL/Command/Command.hpp"
 
-using Action = std::function<void(Debugger&)>;
-
-template <typename T>
-struct Flag {};
-
-template <typename T>
-struct Argument {};
-
-class VerbBase {
-public:
-  virtual Action match(std::string::const_iterator begin, std::string::const_iterator end) = 0;
-};
-
-template <template <typename> class A, typename... Ts>
-struct pack {
-  using Variant = std::variant<A<Ts>...>;
-
-  pack(A<Ts>... is) : items{is...} {};
-  std::vector<Variant> items;
-};
-
-template <typename FlagsPack_t, typename ArgsPack_t>
-class Verb : public VerbBase {
-public:
-  using ActionMaker = std::function<Action(
-      const typename FlagsPack_t::Variant&, const typename ArgsPack_t::Variant&)>;
-
-  Verb(std::string name, std::string description,
-      FlagsPack_t flags, ArgsPack_t args, ActionMaker) {}
-
-  Action match(std::string::const_iterator begin, std::string::const_iterator end) override {
-  };
-};
+using xd::repl::cmd::Command;
+using xd::repl::cmd::Verb;
+using xd::repl::cmd::Flag;
+using xd::repl::cmd::Argument;
 
 int main() {
-  auto verb = Verb("do", "do a thing",
-      pack(
-        Flag<long>(),
-        Flag<bool>()
-      ),
-      pack(
-        Argument<int>()
-      ),
-      [](auto &flags, auto &args) {
-        return [](auto &dbg) { 
-          return;
+  auto brk = Command("break", "Manage breakpoints.");
+  auto cre = Verb("create", "Create a breakpoint.",
+      {}, {},
+      [](auto& flags, auto& args) {
+        return []() {
+          std::cout << "Breakpoint created." << std::endl;
         };
-      });
-}
+  });
+  auto del = Verb("delete", "Delete a breakpoint.",
+      {},
+      {
+        Argument("id", "ID of the breakpoint to delete.", [](auto begin, auto end) {
+          return std::find_if_not(begin, end, [](char c) {
+            return std::isdigit(static_cast<unsigned char>(c));
+          });
+        })
+      },
+      [](auto& flags, auto& args) {
+        return []() {
+          std::cout << "Breakpoint created." << std::endl;
+        };
+  });
+  brk.add_verb(cre);
+  brk.add_verb(del);
+
+  std::string s = "asdf hjkl";
+  assert(!brk.match(s.begin(), s.end()));
+  s = "break";
+  assert(!brk.match(s.begin(), s.end()));
+  s = "break create";
+  assert(!!brk.match(s.begin(), s.end()));
+  s = "break delete";
+  assert(!brk.match(s.begin(), s.end()));
+  s = "break delete 12";
+  assert(!!brk.match(s.begin(), s.end()));
+
 
 /*
 #include "REPL/REPL.hpp"

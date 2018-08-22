@@ -11,12 +11,20 @@
 #include "Argument.hpp"
 #include "ArgsHandle.hpp"
 
+namespace xd::util {
+
+  class IndentHelper;
+
+}
+
 namespace xd::repl::cmd {
 
   class Flag {
   public:
     Flag(char short_name, std::string long_name, std::string description,
         std::vector<Argument> args);
+
+    void print(std::ostream& out, xd::util::IndentHelper& indent) const;
 
     void add_arg(Argument arg);
 

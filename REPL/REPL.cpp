@@ -8,8 +8,12 @@
 #include <readline/readline.h>
 
 #include "REPL.hpp"
+#include "../Util/IndentHelper.hpp"
+#include "../Util/string.hpp"
 
 using xd::repl::REPL;
+using xd::util::IndentHelper;
+using xd::util::string::skip_whitespace;
 
 std::optional<REPL> REPL::_s_instance;
 std::vector<std::string> REPL::_s_completion_options;
@@ -67,10 +71,19 @@ REPL::REPL(std::string prompt)
 }
 
 std::string REPL::read_line() {
-  return readline(_prompt.c_str());
+  auto line = readline(_prompt.c_str());
+  if (line)
+    return std::string(line);
+  return "";
 }
 
 void REPL::interpret_line(const std::string& line) {
+  // Ignore empty lines, but print a newline so the prompt doesn't double up
+  if (skip_whitespace(line.begin(), line.end()) == line.end()) {
+    std::cout << std::endl;
+    return;
+  }
+
   for (const auto &cmd : _commands) {
     auto action = cmd->match(line);
     if (action) {
@@ -85,8 +98,8 @@ void REPL::interpret_line(const std::string& line) {
 std::vector<std::string> REPL::complete(const std::string &s) {
   for (const auto &cmd : _commands) {
     auto options = cmd->complete(s);
-    if (!options.empty())
-      return options;
+    if (options.has_value())
+      return options.value();
   }
 
   std::vector<std::string> options;
@@ -95,4 +108,11 @@ std::vector<std::string> REPL::complete(const std::string &s) {
       return cmd->get_name();
     });
   return options;
+}
+
+void REPL::print_help() {
+  IndentHelper indent;
+  for (const auto& cmd : _commands) {
+    cmd->print(std::cout, indent);
+  }
 }

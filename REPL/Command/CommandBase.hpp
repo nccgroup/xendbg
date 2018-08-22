@@ -11,6 +11,12 @@
 
 #include "Action.hpp"
 
+namespace xd::util {
+
+  class IndentHelper;
+
+}
+
 namespace xd::repl::cmd {
 
   class CommandBase {
@@ -21,8 +27,11 @@ namespace xd::repl::cmd {
     std::string get_name() const { return _name; };
     std::string get_description() const { return _description; };
 
+    virtual void print(std::ostream& out, xd::util::IndentHelper& indent) const = 0;
+
     virtual std::optional<Action> match(const std::string &s) const = 0;
-    virtual std::vector<std::string> complete(const std::string& s) const = 0;
+    virtual std::optional<std::vector<std::string>> complete(
+        const std::string& s) const = 0;
 
   private:
     const std::string _name;

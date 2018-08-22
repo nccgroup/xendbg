@@ -5,21 +5,37 @@
 #include <iostream>
 
 #include "Command.hpp"
+#include "../../Util/IndentHelper.hpp"
 #include "../../Util/string.hpp"
 
+using xd::util::IndentHelper;
 using xd::util::string::expect;
 using xd::util::string::skip_whitespace;
 using xd::repl::cmd::Action;
 using xd::repl::cmd::Command;
 
+void Command::print(std::ostream& out, IndentHelper& indent) const {
+  out << indent
+    << get_name()
+    << ": "
+    << get_description()
+    << std::endl;
+
+  indent.indent();
+  for (const auto& verb : _verbs) {
+    verb.print(out, indent);
+  }
+  indent.unindent();
+}
+
 std::optional<Action> Command::match(const std::string& s) const {
   auto verb_start = match_prefix_skipping_whitespace(s.begin(), s.end());
 
-  if (verb_start == begin)
+  if (verb_start == s.begin())
     return std::nullopt;
 
   for (const auto& verb : _verbs) {
-    auto action = verb.match(verb_start, end);
+    auto action = verb.match(verb_start, s.end());
     if (action)
       return action;
   }
@@ -37,7 +53,7 @@ std::optional<std::vector<std::string>> Command::complete(const std::string& s) 
 
   // If a verb has more specific completion options, return those instead
   for (const auto& verb : _verbs) {
-    auto options = verb.complete(verb_start, end);
+    auto options = verb.complete(verb_start, s.end());
     if (options)
       return options;
   }
@@ -53,7 +69,7 @@ std::optional<std::vector<std::string>> Command::complete(const std::string& s) 
 }
 
 std::string::const_iterator Command::match_prefix_skipping_whitespace(
-        std::string::const_iterator begin, std::string::const_iterator end) 
+        std::string::const_iterator begin, std::string::const_iterator end) const
 {
   const auto first_non_ws = skip_whitespace(begin, end);
   const auto start = expect(get_name(), first_non_ws, end);

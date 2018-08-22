@@ -6,9 +6,14 @@
 #define XENDBG_ARGUMENT_HPP
 
 #include <functional>
+#include <ostream>
 #include <string>
 
-#include "../../Util/string.hpp"
+namespace xd::util {
+
+  class IndentHelper;
+
+}
 
 namespace xd::repl::cmd {
 
@@ -21,6 +26,8 @@ namespace xd::repl::cmd {
              MatcherFn matcher, std::string default_value = "")
         : _name(std::move(name)), _description(std::move(description)),
           _matcher(std::move(matcher)), _default_value(std::move(default_value)) {};
+
+    void print(std::ostream& out, xd::util::IndentHelper& indent) const;
 
     const std::string& get_name() const { return _name; };
     const std::string& get_description() const { return _description; };

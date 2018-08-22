@@ -4,17 +4,19 @@
 
 #include "Flag.hpp"
 #include "Match.hpp"
+#include "../../Util/IndentHelper.hpp"
 #include "../../Util/string.hpp"
 
-using xd::util::string::next_char;
-using xd::util::string::next_not_char;
-using xd::util::string::next_whitespace;
-using xd::util::string::skip_whitespace;
 using xd::repl::cmd::ArgsHandle;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::match_args;
 using xd::repl::cmd::validate_args;
 using xd::repl::cmd::validate_new_arg;
+using xd::util::IndentHelper;
+using xd::util::string::next_char;
+using xd::util::string::next_not_char;
+using xd::util::string::next_whitespace;
+using xd::util::string::skip_whitespace;
 
 Flag::Flag(char short_name, std::string long_name, std::string description,
     std::vector<Argument> args)
@@ -26,6 +28,24 @@ Flag::Flag(char short_name, std::string long_name, std::string description,
   if (next_char(_long_name.begin(), _long_name.end(), '-') == _long_name.begin())
     throw std::runtime_error("Flag name cannot start with a '-' character!");
   validate_args(_args);
+}
+
+void Flag::print(std::ostream& out, IndentHelper& indent) const {
+  out << indent
+    << "-" << _short_name
+    << "/--" << _long_name;
+
+  for (const auto& arg : _args) {
+    out << " ";
+    arg.print(out, indent);
+  }
+
+  out << std::endl;
+  indent.indent();
+  out << indent
+    << _description
+    << std::endl;
+  indent.unindent();
 }
 
 void Flag::add_arg(Argument arg) {

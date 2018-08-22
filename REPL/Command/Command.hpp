@@ -8,6 +8,12 @@
 #include "CommandBase.hpp"
 #include "Verb.hpp"
 
+namespace xd::util {
+
+  class IndentHelper;
+
+}
+
 namespace xd::repl::cmd {
 
   class Command : public CommandBase {
@@ -16,13 +22,16 @@ namespace xd::repl::cmd {
         : CommandBase(std::move(name), std::move(description)),
           _verbs(std::move(verbs)) {};
 
+    void print(std::ostream& out, xd::util::IndentHelper& indent) const override;
+
     std::optional<Action> match(const std::string& s) const override;
     std::optional<std::vector<std::string>> complete(const std::string& s) const override;
 
     void add_verb(const Verb& verb) { _verbs.push_back(verb); }
 
   private:
-    std::string::const_iterator match_prefix_skipping_whitespace(std::string::const_iterator begin, std::string::const_iterator end);
+    std::string::const_iterator match_prefix_skipping_whitespace(
+        std::string::const_iterator begin, std::string::const_iterator end) const;
 
     std::vector<Verb> _verbs;
   };

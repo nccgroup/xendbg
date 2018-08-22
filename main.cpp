@@ -1,9 +1,11 @@
+#include "Util/string.hpp"
 #include "REPL/REPL.hpp"
 #include "REPL/Command/MakeCommand.hpp"
 
 #include <memory>
 
 using xd::repl::REPL;
+using xd::repl::cmd::Argument;
 using xd::repl::cmd::CommandVerb;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::Verb;
@@ -12,24 +14,50 @@ int main() {
   auto& repl = REPL::init("> ");
   bool looping = true;
 
-  auto quit = xd::repl::cmd::make(Verb("quit", "Quit.", {}, {},
+  auto quit = xd::repl::cmd::make(Verb("quit", "Quit.",
+    {}, {},
     [&looping](auto &flags, auto &args) {
       return [&looping](){
         looping = false;
       };
   }));
 
+  auto help = xd::repl::cmd::make(Verb("help", "Print help.",
+    {}, {},
+    [&repl](auto &flags, auto &args) {
+      return [&repl](){
+        repl.print_help();
+      };
+  }));
+
   auto cmd = xd::repl::cmd::make("command", "do thing", {
-      Verb("subcmd", "do subthing", {
-        Flag('f', "flag", "a flag", {}),
-        Flag('g', "glaf", "another flag", {})
-      }, {}, [](auto &a, auto &b) {
-      return [](){};
+    Verb("other-subcmd", "do another thing",
+      {}, {},
+      [](auto &flags, auto &args) {
+        return [](){};
+    }),
+    Verb("subcmd", "do subthing", {
+      Flag('f', "flag", "a flag", {}),
+      Flag('g', "glaf", "another flag", {
+        Argument("arg", "an arg",
+            [](auto begin, auto end){
+              return xd::util::string::next_char(begin, end, ' ');
+            }, "1337")
+      })
+      }, {
+        Argument("arg", "an arg",
+            [](auto begin, auto end){
+              return xd::util::string::next_char(begin, end, ' ');
+            })
+      },
+      [](auto &flags, auto &args) {
+        return [](){};
     })
   });
 
-  repl.add_command(std::move(quit));
   repl.add_command(std::move(cmd));
+  repl.add_command(std::move(help));
+  repl.add_command(std::move(quit));
 
   do {
     auto line = repl.read_line();

@@ -6,6 +6,7 @@
 #define XENDBG_VERB_HPP
 
 #include <optional>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <variant>
@@ -17,6 +18,12 @@
 #include "Flag.hpp"
 #include "FlagsHandle.hpp"
 
+namespace xd::util {
+
+  class IndentHelper;
+
+}
+
 namespace xd::repl::cmd {
 
   class Verb {
@@ -26,6 +33,8 @@ namespace xd::repl::cmd {
   public:
     Verb(std::string name, std::string description,
         std::vector<Flag> flags, std::vector<Argument> args, MakeActionFn make_action);
+
+    void print(std::ostream& out, xd::util::IndentHelper& indent) const;
 
     void add_arg(Argument arg);
 
@@ -38,7 +47,7 @@ namespace xd::repl::cmd {
         std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:
-    std::string::const_iterator match_prefix_skipping_whitespace(std::string::const_iterator begin, std::string::const_iterator end);
+    std::string::const_iterator match_prefix_skipping_whitespace(std::string::const_iterator begin, std::string::const_iterator end) const;
     std::pair<std::string::const_iterator, FlagsHandle> match_flags(
         std::string::const_iterator begin, std::string::const_iterator end) const;
     std::pair<std::string::const_iterator, ArgsHandle> match_args(

@@ -55,6 +55,7 @@ add_executable(xendbg
     REPL/Command/FlagsHandle.cpp REPL/Command/FlagsHandle.hpp
     REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp
     REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
-    REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp)
+    REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
+    Util/IndentHelper.hpp Util/IndentHelper.cpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)

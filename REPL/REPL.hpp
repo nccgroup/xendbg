@@ -43,6 +43,7 @@ namespace xd::repl {
     void interpret_line(const std::string& line);
     void set_prompt(std::string prompt) { _prompt = std::move(prompt); }
     void add_command(CommandPtr cmd) { _commands.push_back(std::move(cmd)); }
+    void print_help();
 
   private:
     std::string _prompt;

@@ -31,11 +31,12 @@ void Verb::add_arg(Argument arg) {
   _args.push_back(arg);
 }
 
-std::optional<Action> Verb::match(std::string::const_iterator begin, std::string::const_iterator end) const {
-  const auto first_non_ws = skip_whitespace(begin, end);
-  const auto flags_start = expect(_name, first_non_ws, end);
+std::optional<Action> Verb::match(std::string::const_iterator begin,
+    std::string::const_iterator end) const
+{
+  const auto flags_start = match_prefix_skipping_whitespace(begin, end);
 
-  if (flags_start == first_non_ws) {
+  if (flags_start == begin) {
     return std::nullopt;
   }
 
@@ -48,13 +49,13 @@ std::optional<Action> Verb::match(std::string::const_iterator begin, std::string
   return _make_action(flags, args);
 }
 
-std::vector<std::string> Verb::complete(std::string::const_iterator begin,
-    std::string::const_iterator end) const {
-  const auto first_non_ws = skip_whitespace(begin, end);
-  const auto flags_start = expect(_name, first_non_ws, end);
+std::optional<std::vector<std::string>> Verb::complete(
+    std::string::const_iterator begin, std::string::const_iterator end) const
+{
+  const auto flags_start = match_prefix_skipping_whitespace(begin, end);
 
-  if (flags_start == first_non_ws) {
-    return {};
+  if (flags_start == begin) {
+    return std::nullopt;
   }
 
   // Parse out flags to figure out which ones are left to autocomplete
@@ -69,6 +70,18 @@ std::vector<std::string> Verb::complete(std::string::const_iterator begin,
   }
 
   return options;
+}
+
+std::string::const_iterator Verb::match_prefix_skipping_whitespace(
+        std::string::const_iterator begin, std::string::const_iterator end) 
+{
+  const auto first_non_ws = skip_whitespace(begin, end);
+  const auto start = expect(_name, first_non_ws, end);
+
+  if (start == first_non_ws)
+    return begin;
+
+  return start;
 }
 
 std::pair<std::string::const_iterator, FlagsHandle> Verb::match_flags(

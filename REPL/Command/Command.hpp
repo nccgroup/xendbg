@@ -17,11 +17,13 @@ namespace xd::repl::cmd {
           _verbs(std::move(verbs)) {};
 
     std::optional<Action> match(const std::string& s) const override;
-    std::vector<std::string> complete(const std::string& s) const override;
+    std::optional<std::vector<std::string>> complete(const std::string& s) const override;
 
     void add_verb(const Verb& verb) { _verbs.push_back(verb); }
 
   private:
+    std::string::const_iterator match_prefix_skipping_whitespace(std::string::const_iterator begin, std::string::const_iterator end);
+
     std::vector<Verb> _verbs;
   };
 

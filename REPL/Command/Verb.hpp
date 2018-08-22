@@ -34,10 +34,11 @@ namespace xd::repl::cmd {
 
     std::optional<Action> match(std::string::const_iterator begin,
         std::string::const_iterator end) const;
-    std::vector<std::string> complete(std::string::const_iterator begin,
-        std::string::const_iterator end) const;
+    std::optional<std::vector<std::string>> complete(
+        std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:
+    std::string::const_iterator match_prefix_skipping_whitespace(std::string::const_iterator begin, std::string::const_iterator end);
     std::pair<std::string::const_iterator, FlagsHandle> match_flags(
         std::string::const_iterator begin, std::string::const_iterator end) const;
     std::pair<std::string::const_iterator, ArgsHandle> match_args(

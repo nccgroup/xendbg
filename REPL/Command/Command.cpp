@@ -12,19 +12,14 @@ using xd::util::string::skip_whitespace;
 using xd::repl::cmd::Action;
 using xd::repl::cmd::Command;
 
-#include <iostream>
-
 std::optional<Action> Command::match(const std::string& s) const {
-  const auto begin = s.begin();
-  const auto end = s.end();
+  auto verb_start = match_prefix_skipping_whitespace(s.begin(), s.end());
 
-  auto next = expect(get_name(), skip_whitespace(begin, end), end);
-
-  if (next == begin)
+  if (verb_start == begin)
     return std::nullopt;
 
   for (const auto& verb : _verbs) {
-    auto action = verb.match(next, end);
+    auto action = verb.match(verb_start, end);
     if (action)
       return action;
   }
@@ -32,21 +27,18 @@ std::optional<Action> Command::match(const std::string& s) const {
   return std::nullopt;
 }
 
-std::vector<std::string> Command::complete(const std::string& s) const {
-  const auto end = s.end();
-  const auto first_non_ws = skip_whitespace(s.begin(), end);
-
-  auto verb_start = expect(get_name(), first_non_ws, end);
+std::optional<std::vector<std::string>> Command::complete(const std::string& s) const {
+  auto verb_start = match_prefix_skipping_whitespace(s.begin(), s.end());
 
   // If s doesn't have this command as a prefix, neither this command
   // nor its children have any relevant completion options to give
-  if (verb_start == first_non_ws)
-    return {};
+  if (verb_start == s.begin())
+    return std::nullopt;
 
   // If a verb has more specific completion options, return those instead
   for (const auto& verb : _verbs) {
     auto options = verb.complete(verb_start, end);
-    if (!options.empty())
+    if (options)
       return options;
   }
 
@@ -58,4 +50,16 @@ std::vector<std::string> Command::complete(const std::string& s) const {
     });
 
   return options;
+}
+
+std::string::const_iterator Command::match_prefix_skipping_whitespace(
+        std::string::const_iterator begin, std::string::const_iterator end) 
+{
+  const auto first_non_ws = skip_whitespace(begin, end);
+  const auto start = expect(get_name(), first_non_ws, end);
+
+  if (start == first_non_ws)
+    return begin;
+
+  return start;
 }

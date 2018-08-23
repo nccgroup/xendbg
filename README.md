@@ -15,9 +15,10 @@
         - [ ] Set/unset
         - [ ] Check if hit
 - [ ] Interface (REPL)
-  - [ ] Command tree
-    - [ ] Basic commands
-    - [ ] Flags/arguments
+  - [x] Autocomplete
+  - [x] Command tree
+    - [x] Basic commands
+    - [x] Flags/arguments
   - [ ] Variables
     - [ ] User-defined vars
     - [ ] Registers as auto-generated vars

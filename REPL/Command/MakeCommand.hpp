@@ -14,8 +14,8 @@
 
 namespace xd::repl::cmd {
 
-  std::unique_ptr<CommandBase> make(Verb verb);
-  std::unique_ptr<CommandBase> make(
+  std::unique_ptr<CommandBase> make_command(Verb verb);
+  std::unique_ptr<CommandBase> make_command(
       std::string name, std::string description, std::vector<Verb> verbs);
 
 }

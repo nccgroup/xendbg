@@ -8,10 +8,16 @@
 #include <readline/readline.h>
 
 #include "REPL.hpp"
+#include "REPL/Command/MakeCommand.hpp"
 #include "../Util/IndentHelper.hpp"
 #include "../Util/string.hpp"
 
 using xd::repl::REPL;
+using xd::repl::cmd::Argument;
+using xd::repl::cmd::CommandVerb;
+using xd::repl::cmd::Flag;
+using xd::repl::cmd::Verb;
+using xd::repl::cmd::make_command;
 using xd::util::IndentHelper;
 using xd::util::string::skip_whitespace;
 
@@ -66,8 +72,46 @@ char *REPL::command_generator(const char *text, int state) {
 }
 
 REPL::REPL(std::string prompt)
-  : _prompt(std::move(prompt))
+  : _running(false), _prompt(std::move(prompt)), _commands{}
 {
+  add_command(make_command(
+    Verb("quit", "Quit.",
+      {}, {},
+      [](auto &flags, auto &args) {
+        return [](REPL& repl){
+          repl._running = false;
+        };
+      }));
+
+  add_command(make_command(
+    Verb("help", "Print help.",
+      {}, {},
+      [](auto &flags, auto &args) {
+        return [](REPL& repl){
+          repl.print_help();
+        };
+      }));
+}
+
+void REPL::add_command(REPL::CommandPtr cmd) {
+  _commands.push_back(std::move(cmd));
+
+  // Sorting every time a command is added is inefficient, but this is
+  // irrelevant given that there will be only tens of commands at most.
+  std::sort(_commands.begin(), _commands.end(),
+    [](const auto& cmd1, const auto& cmd2) {
+      return cmd1->get_name() > cmd2->get_name();
+    });
+}
+
+void REPL::run() {
+  _running = true;
+  while (_running) {
+    if (_prompt_configurator)
+      _prompt = _prompt_configurator();
+    auto line = read_line();
+    interpret_line(line);
+  };
 }
 
 std::string REPL::read_line() {
@@ -87,7 +131,7 @@ void REPL::interpret_line(const std::string& line) {
   for (const auto &cmd : _commands) {
     auto action = cmd->match(line);
     if (action) {
-      (action.value())();
+      (action.value())(*this);
       return;
     }
   }

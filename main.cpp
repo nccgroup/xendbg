@@ -1,34 +1,18 @@
 #include "Util/string.hpp"
 #include "REPL/REPL.hpp"
-#include "REPL/Command/MakeCommand.hpp"
+
 
 #include <memory>
 
 using xd::repl::REPL;
-using xd::repl::cmd::Argument;
-using xd::repl::cmd::CommandVerb;
-using xd::repl::cmd::Flag;
-using xd::repl::cmd::Verb;
 
 int main() {
   auto& repl = REPL::init("> ");
-  bool looping = true;
 
-  auto quit = xd::repl::cmd::make(Verb("quit", "Quit.",
-    {}, {},
-    [&looping](auto &flags, auto &args) {
-      return [&looping](){
-        looping = false;
-      };
-  }));
-
-  auto help = xd::repl::cmd::make(Verb("help", "Print help.",
-    {}, {},
-    [&repl](auto &flags, auto &args) {
-      return [&repl](){
-        repl.print_help();
-      };
-  }));
+  size_t line_count = 0;
+  repl.set_prompt_configurator([&line_count]() {
+    return std::to_string(line_count++) + "> ";
+  });
 
   auto cmd = xd::repl::cmd::make("command", "do thing", {
     Verb("other-subcmd", "do another thing",
@@ -56,13 +40,7 @@ int main() {
   });
 
   repl.add_command(std::move(cmd));
-  repl.add_command(std::move(help));
-  repl.add_command(std::move(quit));
-
-  do {
-    auto line = repl.read_line();
-    repl.interpret_line(line);
-  } while (looping);
+  repl.run();
 
   REPL::deinit();
 }

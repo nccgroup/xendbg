@@ -7,9 +7,15 @@
 
 #include <functional>
 
-namespace xd::repl::cmd {
+namespace xd::repl {
 
-  using Action = std::function<void()>;
+  class REPL;
+
+  namespace cmd {
+
+    using Action = std::function<void()>;
+
+  }
 
 }
 

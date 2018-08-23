@@ -28,6 +28,8 @@ namespace xd::repl {
 
   private:
     using CommandPtr = std::unique_ptr<cmd::CommandBase>;
+    using PromptConfiguratorFn = std::function<std::string()>;
+
     explicit REPL(std::string prompt = "> ");
 
     static std::optional<REPL> _s_instance;
@@ -39,15 +41,23 @@ namespace xd::repl {
     static char *command_generator(const char *text, int state);
 
   public:
-    std::string read_line();
-    void interpret_line(const std::string& line);
-    void set_prompt(std::string prompt) { _prompt = std::move(prompt); }
-    void add_command(CommandPtr cmd) { _commands.push_back(std::move(cmd)); }
-    void print_help();
+
+    void add_command(CommandPtr cmd);
+    void set_prompt_configurator(PromptConfiguratorFn f) {
+      _prompt_configurator = f;
+    }
+    void run();
 
   private:
+    bool _running;
     std::string _prompt;
     std::vector<CommandPtr> _commands;
+    PromptConfiguratorFn _prompt_configurator;
+
+  private:
+    std::string read_line();
+    void interpret_line(const std::string& line);
+    void print_help();
 
     std::vector<std::string> complete(const std::string &s);
   };

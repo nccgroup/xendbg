@@ -23,6 +23,7 @@ namespace xd::repl::cmd {
   public:
     CommandBase(std::string name, std::string description)
         : _name(std::move(name)), _description(std::move(description)) {};
+    virtual ~CommandBase() {};
 
     std::string get_name() const { return _name; };
     std::string get_description() const { return _description; };

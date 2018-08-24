@@ -14,6 +14,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <errno.h>
+
 #include "Common.hpp"
 #include "XenException.hpp"
 

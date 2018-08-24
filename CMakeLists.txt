@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 project(xendbg)
 
 set(CMAKE_CXX_STANDARD 17)
+#set(CLANG_DEFAULT_CXX_STDLIB "libc++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
 # Apple clang doesn't actually support all C++17 features...
 # Assume xen has been cloned into /opt

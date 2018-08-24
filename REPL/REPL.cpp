@@ -26,7 +26,7 @@ std::vector<std::string> REPL::_s_completion_options;
 
 REPL& REPL::init() {
   assert(!REPL::_s_instance.has_value());
-  REPL::_s_instance.emplace<REPL>();
+  REPL::_s_instance.emplace();
   init_readline();
   return REPL::_s_instance.value();
 }

@@ -13,7 +13,7 @@ namespace xd::repl {
 
   namespace cmd {
 
-    using Action = std::function<void()>;
+    using Action = std::function<void(REPL&)>;
 
   }
 

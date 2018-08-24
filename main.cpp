@@ -7,13 +7,14 @@
 using xd::repl::REPL;
 
 int main() {
-  auto& repl = REPL::init("> ");
+  auto& repl = REPL::init();
 
   size_t line_count = 0;
   repl.set_prompt_configurator([&line_count]() {
     return std::to_string(line_count++) + "> ";
   });
 
+  /*
   auto cmd = xd::repl::cmd::make("command", "do thing", {
     Verb("other-subcmd", "do another thing",
       {}, {},
@@ -40,6 +41,8 @@ int main() {
   });
 
   repl.add_command(std::move(cmd));
+  */
+
   repl.run();
 
   REPL::deinit();

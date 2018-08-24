@@ -17,20 +17,16 @@ namespace xd::repl {
 
   class REPL {
   public:
-    static REPL& init(std::string prompt) {
-      assert(!_s_instance.has_value());
-      _s_instance.emplace(REPL{prompt});
-      init_readline();
-      return _s_instance.value();
-    }
-
+    static REPL& init();
     static void deinit();
 
   private:
     using CommandPtr = std::unique_ptr<cmd::CommandBase>;
     using PromptConfiguratorFn = std::function<std::string()>;
 
-    explicit REPL(std::string prompt = "> ");
+    REPL();
+    REPL(const REPL& other) = delete;
+    REPL& operator=(REPL& other) = delete;
 
     static std::optional<REPL> _s_instance;
     static std::vector<std::string> _s_completion_options;
@@ -43,10 +39,11 @@ namespace xd::repl {
   public:
 
     void add_command(CommandPtr cmd);
+    void exit();
+    void run();
     void set_prompt_configurator(PromptConfiguratorFn f) {
       _prompt_configurator = f;
     }
-    void run();
 
   private:
     bool _running;
@@ -55,11 +52,12 @@ namespace xd::repl {
     PromptConfiguratorFn _prompt_configurator;
 
   private:
-    std::string read_line();
+    void add_default_commands();
+    std::vector<std::string> complete(const std::string &s);
     void interpret_line(const std::string& line);
     void print_help();
+    std::string read_line();
 
-    std::vector<std::string> complete(const std::string &s);
   };
 
 }

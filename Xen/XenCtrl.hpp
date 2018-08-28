@@ -18,6 +18,8 @@
 
 namespace xd::xen {
 
+  class Domain;
+
   class XenCtrl {
   private:
     struct XenVersion {

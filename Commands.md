@@ -47,24 +47,4 @@ set <<expr1> Equals <expr>>
   where <expr1> is Dereference or Variable
 ```
 
-# Completion implementation
 
-```
-
-class Command {
-public:
-  StrVec complete(StrConstIt begin, StrConstIt end) {
-    auto next = expect(_name, begin, end);
-
-    if (next == begin)
-      return {};
-
-    for (const auto& verb : _verbs) {
-      auto vc = verb.complete;
-      if (!vc.empty()) {
-        return vc;
-      }
-    }
-  };
-}
-```

@@ -25,17 +25,14 @@
 namespace xd::xen {
 
   class PrivCmd {
-  private:
-    static xen_domctl __dummy_domctl;
-
   public:
     PrivCmd();
     ~PrivCmd();
 
-    template<typename InitFn_t, typename CleanupFn_t>
-    void hypercall_domctl(DomID domid, uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
+    template<typename Domain_t, typename InitFn_t, typename CleanupFn_t>
+    void hypercall_domctl(Domain_t domain, uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
       xen_domctl domctl;
-      domctl.domain = domid;
+      domctl.domain = domain.get_domid();
       domctl.interface_version = XEN_DOMCTL_INTERFACE_VERSION;
       domctl.cmd = command;
 

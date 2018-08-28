@@ -40,7 +40,7 @@ MappedMemory Domain::map_memory(Address address, size_t size, int prot) {
 }
 
 Registers xd::xen::Domain::get_cpu_context(VCPU_ID vcpu_id) {
-  _xen->get_xenctrl().get_domain_cpu_context(*this, vcpu_id);
+  return _xen->get_xenctrl().get_domain_cpu_context(*this, vcpu_id);
 }
 
 void xd::xen::Domain::set_debugging(bool enabled, VCPU_ID vcpu_id) {

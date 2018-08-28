@@ -44,7 +44,7 @@ namespace xd::repl {
     void exit();
     void run();
     void set_prompt_configurator(PromptConfiguratorFn f) {
-      _prompt_configurator = f;
+      _prompt_configurator = std::move(f);
     }
 
   private:

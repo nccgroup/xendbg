@@ -6,7 +6,13 @@
 
 using xd::repl::REPL;
 
-int main() {
+void parse_commandline(int argc, char **argv) {
+  std::vector<std::string> arg_list(argv, argv + argc);
+}
+
+int main(int argc, char **argv) {
+  parse_commandline(argc, argv);
+
   auto& repl = REPL::init();
 
   size_t line_count = 0;

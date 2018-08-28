@@ -1,13 +1,17 @@
-# Miscellaneous design notes
-
 ```
-Action function signature should probably be
+class Debugger {
+public:
+    Domain& attach(DomID domid);
+    void detach();
 
-  void(REPL&, Debugger&)
+private:
+    XenCtrl _xenctrl; // etc
+    std::optional<Domain> _domain;
+}
 
-Actions can modify either the debugger state (to attach to and modify guests)
-or the REPL state itself (to quit, print help, or change the prompt)
+class Domain() {
 
-Alternately, it would be nice if the REPL wasn't tied to the debugger at all.
+    // Roughly as it exists currently: a wrapper around the Xen interfaces
 
+}
 ```

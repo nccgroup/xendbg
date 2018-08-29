@@ -2,8 +2,6 @@
 Commands auto-complete on tab (via readline).
 
 ```
-guest attach -n test
-
 guest
  list
    List Xen guests.
@@ -20,9 +18,13 @@ break
  delete <id>
    Delete a breakpoint.
 
-registers
- Prints entire register state
- Note: setting registers can be done through variables
+info
+  domain
+    Prints detailed info for the current domain
+  registers
+    Prints entire register state
+  xen
+    Prints Xen version and capabilities.
 
 pin
  <expr>
@@ -45,7 +47,7 @@ inspect <expr>
    Word size (8/16/32/64)
    Default 64 or 32, depending on guest word size.
 
-set <<expr1> Equals <expr>>
+set <<Dereference OR Variable> Equals <expr>>
   where <expr1> is Dereference or Variable
 ```
 
@@ -57,9 +59,19 @@ public:
     void attach(DomID domid);
     void detach();
 
+    void set_variable(std::string name, Value value) {
+      if (is_register32_name(name)) {
+        _domain.set_register(/*name -> enum*/, value);
+      } else if (is_register64_name(name)) {
+        _domain.set_register(/*name -> enum*/, value);
+      }
+
+      if (_variables.count(name) < 1)
+        _variables[name] = Variable(name, value);
+    }
+
 private:
     std::shared_ptr<XenHandle> _xen;
     std::optional<Domain> _domain;
-    // std::map<Address, 2Bytes> _breakpoints;
 }
 ```

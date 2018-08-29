@@ -24,7 +24,7 @@ XenForeignMemory::XenForeignMemory()
     throw XenException("Failed to open Xen foreign memory handle!");
 }
 
-MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) {
+MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) const {
   if (address < XC_PAGE_SIZE) {
     throw XenException("Addresses below 0x1000 cannot be mapped!");
   }
@@ -63,7 +63,7 @@ MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size,
 }
 
 // See xen/tools/libxc/xc_offline_page.c:389
-xen_pfn_t XenForeignMemory::pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *p2m_table, WordSize word_size) {
+xen_pfn_t XenForeignMemory::pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *p2m_table, WordSize word_size) const {
   if (word_size == sizeof(uint64_t)) {
     return ((uint64_t*)p2m_table)[pfn];
   } else {

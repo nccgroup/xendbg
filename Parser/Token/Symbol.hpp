@@ -63,7 +63,7 @@ namespace xd::parser::token {
           type = Type::Equals;
           break;
         default:
-          return std::make_pair(std::optional<Symbol>(), begin);
+          return std::make_pair(std::nullopt, begin);
       }
 
       return std::make_pair(Symbol(type), begin + 1);

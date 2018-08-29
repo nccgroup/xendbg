@@ -28,3 +28,21 @@ StrConstIt xd::util::string::next_whitespace(StrConstIt begin, StrConstIt end) {
 StrConstIt xd::util::string::skip_whitespace(StrConstIt begin, StrConstIt end) {
     return std::find_if_not(begin, end, std::iswspace);
 };
+
+StrConstIt xd::util::string::match_optionally_quoted_string(StrConstIt begin, StrConstIt end) {
+  if (begin == end)
+    return begin;
+
+  const char delimiter = *begin;
+  if (delimiter == '"' || delimiter == '\'') {
+    const auto new_end = std::find(begin, end, delimiter);
+    if (new_end == end)
+      return begin;
+
+    return new_end+1;
+  }
+
+  // Bash-like behavior: if no quotes, just go up to the next whitespace
+  auto new_end = util::string::next_whitespace(begin, end);
+  return new_end;
+}

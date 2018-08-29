@@ -17,23 +17,23 @@ namespace xd::xen {
   public:
     Domain(XenHandle& xen, DomID domid);
 
-    DomID get_domid() { return _domid; };
-    std::string get_name();
-    DomInfo get_info();
-    int get_word_size();
+    DomID get_domid() const { return _domid; };
+    std::string get_name() const;
+    DomInfo get_info() const;
+    int get_word_size() const;
 
     template<typename InitFn_t, typename CleanupFn_t>
-    void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
+    void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) const {
       _xen.get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
     }
 
-    MemInfo map_meminfo();
-    MappedMemory map_memory(Address address, size_t size, int prot);
-    Registers get_cpu_context(VCPU_ID vcpu_id = 0);
-    void set_debugging(bool enabled, VCPU_ID vcpu_id = 0);
-    void set_single_step(bool enabled, VCPU_ID vcpu_id = 0);
-    void pause();
-    void unpause();
+    MemInfo map_meminfo() const;
+    MappedMemory map_memory(Address address, size_t size, int prot) const;
+    Registers get_cpu_context(VCPU_ID vcpu_id = 0) const;
+    void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
+    void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;
+    void pause() const;
+    void unpause() const;
 
   private:
     XenHandle& _xen;

@@ -30,7 +30,7 @@ namespace xd::parser::token {
       std::smatch m;
 
       if (!std::regex_search(begin, end, m, r))
-        return std::make_pair(std::optional<Variable>(), begin);
+        return std::make_pair(std::nullopt, begin);
 
       auto new_begin = begin + m.position() + m.length();
       auto name = m.str().substr(1);

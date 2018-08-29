@@ -60,6 +60,7 @@ std::optional<std::vector<std::string>> Command::complete(const std::string& s) 
 
   // Otherwise return the list of verbs
   std::vector<std::string> options;
+  options.reserve(_verbs.size());
   std::transform(_verbs.begin(), _verbs.end(), std::back_inserter(options),
     [](auto& verb) {
       return verb.get_name();

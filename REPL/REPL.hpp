@@ -8,6 +8,7 @@
 #include <cassert>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -43,6 +44,7 @@ namespace xd::repl {
     void add_command(CommandPtr cmd);
     void exit();
     void run();
+    void print_help(std::ostream &out);
     void set_prompt_configurator(PromptConfiguratorFn f) {
       _prompt_configurator = std::move(f);
     }
@@ -54,10 +56,8 @@ namespace xd::repl {
     PromptConfiguratorFn _prompt_configurator;
 
   private:
-    void add_default_commands();
     std::vector<std::string> complete(const std::string &s);
     void interpret_line(const std::string& line);
-    void print_help();
     std::string read_line();
 
   };

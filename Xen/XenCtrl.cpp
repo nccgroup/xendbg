@@ -25,7 +25,7 @@ xd::xen::XenCtrl::XenCtrl()
     throw XenException("Failed to open Xenctrl handle!");
 }
 
-XenCtrl::XenVersion XenCtrl::get_xen_version() {
+XenCtrl::XenVersion XenCtrl::get_xen_version() const {
   int version = xc_version(_xenctrl.get(), XENVER_version, NULL);
   return XenVersion {
     version >> 16,
@@ -33,7 +33,7 @@ XenCtrl::XenVersion XenCtrl::get_xen_version() {
   };
 }
 
-DomInfo XenCtrl::get_domain_info(Domain &domain) {
+DomInfo XenCtrl::get_domain_info(const Domain &domain) const {
   xc_dominfo_t dominfo;
   int ret = xc_domain_getinfo(_xenctrl.get(), domain.get_domid(), 1, &dominfo);
 
@@ -41,7 +41,7 @@ DomInfo XenCtrl::get_domain_info(Domain &domain) {
     throw std::runtime_error("Failed to get domain info!");
 }
 
-Registers XenCtrl::get_domain_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
+Registers XenCtrl::get_domain_cpu_context(const Domain &domain, VCPU_ID vcpu_id) const {
   bool is_hvm = (domain.get_info().hvm == 1);
 
   if (is_hvm) {
@@ -63,7 +63,7 @@ Registers XenCtrl::get_domain_cpu_context(Domain &domain, VCPU_ID vcpu_id) {
 
 }
 
-WordSize xd::xen::XenCtrl::get_domain_word_size(Domain &domain) {
+WordSize xd::xen::XenCtrl::get_domain_word_size(const Domain &domain) const {
   int err;
   unsigned int word_size;
   if (err = xc_domain_get_guest_width(_xenctrl.get(), domain.get_domid(), &word_size)) {
@@ -73,7 +73,7 @@ WordSize xd::xen::XenCtrl::get_domain_word_size(Domain &domain) {
   return word_size;
 }
 
-MemInfo XenCtrl::map_domain_meminfo(Domain &domain) {
+MemInfo XenCtrl::map_domain_meminfo(const Domain &domain) const {
   auto xenctrl = _xenctrl;
   auto deleter = [xenctrl](xc_domain_meminfo *p) {
     xc_unmap_domain_meminfo(xenctrl.get(), p);
@@ -90,7 +90,7 @@ MemInfo XenCtrl::map_domain_meminfo(Domain &domain) {
   return meminfo;
 }
 
-void XenCtrl::set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id) {
+void XenCtrl::set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const {
   if (vcpu_id > domain.get_info().max_vcpu_id)
     throw XenException(
         "Tried to " + std::string(enable ? "enable" : "disable") + " debugging for nonexistent VCPU " +
@@ -103,7 +103,7 @@ void XenCtrl::set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id)
   }
 }
 
-void XenCtrl::set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_id) {
+void XenCtrl::set_domain_single_step(const Domain &domain, bool enable, VCPU_ID vcpu_id) const {
   uint32_t op = enable
       ? XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_ON
       : XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_OFF;
@@ -121,21 +121,21 @@ void XenCtrl::set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_i
   }
 }
 
-void XenCtrl::pause_domain(Domain &domain) {
+void XenCtrl::pause_domain(const Domain &domain) const {
   int err;
   if (err = xc_domain_pause(_xenctrl.get(), domain.get_domid()))
     throw XenException(
         "Failed to pause domain " + std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
 }
 
-void XenCtrl::unpause_domain(Domain &domain) {
+void XenCtrl::unpause_domain(const Domain &domain) const {
   int err;
   if (err = xc_domain_unpause(_xenctrl.get(), domain.get_domid()))
     throw XenException(
         "Failed to unpause domain " + std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
 }
 
-struct hvm_hw_cpu XenCtrl::get_domain_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id) {
+struct hvm_hw_cpu XenCtrl::get_domain_cpu_context_hvm(const Domain &domain, VCPU_ID vcpu_id) const {
   int err;
   struct hvm_hw_cpu cpu_context;
   if (err = xc_domain_hvm_getcontext_partial(_xenctrl.get(), domain.get_domid(), HVM_SAVE_CODE(CPU),
@@ -147,7 +147,7 @@ struct hvm_hw_cpu XenCtrl::get_domain_cpu_context_hvm(Domain &domain, VCPU_ID vc
   return cpu_context;
 }
 
-vcpu_guest_context_any_t XenCtrl::get_domain_cpu_context_pv(Domain &domain, VCPU_ID vcpu_id) {
+vcpu_guest_context_any_t XenCtrl::get_domain_cpu_context_pv(const Domain &domain, VCPU_ID vcpu_id) const {
   int err;
   vcpu_guest_context_any_t context_any;
   if (err = xc_vcpu_getcontext(_xenctrl.get(), domain.get_domid(), (uint16_t)vcpu_id, &context_any)) {

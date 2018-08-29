@@ -29,21 +29,21 @@ namespace xd::xen {
   public:
     XenCtrl();
 
-    XenVersion get_xen_version();
+    XenVersion get_xen_version() const;
 
-    DomInfo get_domain_info(Domain &domain);
-    Registers get_domain_cpu_context(Domain &domain, VCPU_ID vcpu_id = 0);
-    WordSize get_domain_word_size(Domain &domain);
-    MemInfo map_domain_meminfo(Domain &domain);
+    DomInfo get_domain_info(const Domain &domain) const;
+    Registers get_domain_cpu_context(const Domain &domain, VCPU_ID vcpu_id = 0) const;
+    WordSize get_domain_word_size(const Domain &domain) const;
+    MemInfo map_domain_meminfo(const Domain &domain) const;
 
-    void set_domain_debugging(Domain &domain, bool enable, VCPU_ID vcpu_id);
-    void set_domain_single_step(Domain &domain, bool enable, VCPU_ID vcpu_id);
-    void pause_domain(Domain &domain);
-    void unpause_domain(Domain &domain);
+    void set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const;
+    void set_domain_single_step(const Domain &domain, bool enable, VCPU_ID vcpu_id) const;
+    void pause_domain(const Domain &domain) const;
+    void unpause_domain(const Domain &domain) const;
 
   private:
-    struct hvm_hw_cpu get_domain_cpu_context_hvm(Domain &domain, VCPU_ID vcpu_id);
-    vcpu_guest_context_any_t get_domain_cpu_context_pv(Domain &domain, VCPU_ID vcpu_id);
+    struct hvm_hw_cpu get_domain_cpu_context_hvm(const Domain &domain, VCPU_ID vcpu_id) const;
+    vcpu_guest_context_any_t get_domain_cpu_context_pv(const Domain &domain, VCPU_ID vcpu_id) const;
 
   private:
     std::shared_ptr<xc_interface> _xenctrl;

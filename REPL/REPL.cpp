@@ -79,10 +79,8 @@ char *REPL::command_generator(const char *text, int state) {
 }
 
 REPL::REPL()
-  : _running(false), _prompt("> "), _commands{}
-{
-  add_default_commands();
-}
+  : _running(false), _prompt("> ")
+{}
 
 void REPL::add_command(REPL::CommandPtr cmd) {
   _commands.push_back(std::move(cmd));
@@ -109,26 +107,6 @@ void REPL::run() {
   };
 }
 
-void REPL::add_default_commands() {
-  add_command(make_command(
-    Verb("quit", "Quit.",
-      {}, {},
-      [](auto &/*flags*/, auto &/*args*/) {
-        return [](REPL &repl){
-          repl.exit();
-        };
-      })));
-
-  add_command(make_command(
-    Verb("help", "Print help.",
-      {}, {},
-      [](auto &/*flags*/, auto &/*args*/) {
-        return [](REPL &repl){
-          repl.print_help();
-        };
-      })));
-}
-
 std::vector<std::string> REPL::complete(const std::string &s) {
   for (const auto &cmd : _commands) {
     auto options = cmd->complete(s);
@@ -137,6 +115,7 @@ std::vector<std::string> REPL::complete(const std::string &s) {
   }
 
   std::vector<std::string> options;
+  options.reserve(_commands.size());
   std::transform(_commands.begin(), _commands.end(), std::back_inserter(options),
     [](const auto& cmd) {
       return cmd->get_name();
@@ -154,7 +133,7 @@ void REPL::interpret_line(const std::string& line) {
   for (const auto &cmd : _commands) {
     auto action = cmd->match(line);
     if (action) {
-      (action.value())(*this);
+      (action.value())();
       return;
     }
   }
@@ -162,10 +141,10 @@ void REPL::interpret_line(const std::string& line) {
   std::cerr << "Invalid input." << std::endl;
 }
 
-void REPL::print_help() {
+void REPL::print_help(std::ostream &out) {
   IndentHelper indent;
   for (const auto& cmd : _commands) {
-    cmd->print(std::cout, indent);
+    cmd->print(out, indent);
   }
 }
 

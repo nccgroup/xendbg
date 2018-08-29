@@ -22,6 +22,7 @@ namespace xd::xen {
     std::string read(const std::string& file);
     std::vector<std::string> read_directory(const std::string& dir);
     DomID get_domid_from_name(const std::string& name);
+    std::vector<DomID> get_all_domids();
 
   private:
     std::unique_ptr<struct xs_handle, decltype(&xs_close)> _xenstore;

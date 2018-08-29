@@ -16,6 +16,7 @@ namespace xd::util::string {
   StrConstIt next_not_char(StrConstIt begin, StrConstIt end, char c);
   StrConstIt next_whitespace(StrConstIt begin, StrConstIt end);
   StrConstIt skip_whitespace(StrConstIt begin, StrConstIt end);
+  StrConstIt match_optionally_quoted_string(StrConstIt begin, StrConstIt end);
 
 }
 

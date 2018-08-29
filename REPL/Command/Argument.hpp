@@ -23,15 +23,22 @@ namespace xd::repl::cmd {
         std::string::const_iterator, std::string::const_iterator)>;
 
     Argument(std::string name, std::string description,
-             MatcherFn matcher, std::string default_value = "")
+             MatcherFn matcher)
         : _name(std::move(name)), _description(std::move(description)),
-          _matcher(std::move(matcher)), _default_value(std::move(default_value)) {};
+          _matcher(std::move(matcher)), _is_optional(false) {};
+
+    Argument(std::string name, std::string description,
+             MatcherFn matcher, std::string default_value)
+        : _name(std::move(name)), _description(std::move(description)),
+          _matcher(std::move(matcher)), _default_value(std::move(default_value)),
+          _is_optional(true) {};
 
     void print(std::ostream& out, xd::util::IndentHelper& indent) const;
 
     const std::string& get_name() const { return _name; };
     const std::string& get_description() const { return _description; };
     const std::string& get_default_value() const { return _default_value; };
+    bool is_optional() const { return _is_optional; };
 
     virtual std::string::const_iterator match(
         std::string::const_iterator begin, std::string::const_iterator end) const {
@@ -43,6 +50,7 @@ namespace xd::repl::cmd {
     const std::string _description;
     const MatcherFn _matcher;
     const std::string _default_value;
+    const bool _is_optional;
   };
 
 }

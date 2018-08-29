@@ -150,6 +150,7 @@ namespace xd::xen {
   Result_t convert_gp_registers_64(const Source_t &source, Result_t regs_init) {
     return _convert_gp_registers_64_impl<Source_t, Result_t>::convert(source, regs_init);
   }
+
 }
 
 #endif //XENDBG_REGISTERS_HPP

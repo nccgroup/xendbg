@@ -33,6 +33,7 @@ namespace xd::xen {
 
     DomInfo get_domain_info(const Domain &domain) const;
     Registers get_domain_cpu_context(const Domain &domain, VCPU_ID vcpu_id = 0) const;
+    void set_domain_cpu_context(const Domain &domain, Registers regs, VCPU_ID vcpu_id = 0) const;
     WordSize get_domain_word_size(const Domain &domain) const;
     MemInfo map_domain_meminfo(const Domain &domain) const;
 
@@ -44,6 +45,10 @@ namespace xd::xen {
   private:
     struct hvm_hw_cpu get_domain_cpu_context_hvm(const Domain &domain, VCPU_ID vcpu_id) const;
     vcpu_guest_context_any_t get_domain_cpu_context_pv(const Domain &domain, VCPU_ID vcpu_id) const;
+    void set_domain_cpu_context_hvm(const Domain &domain, struct hvm_hw_cpu context,
+        VCPU_ID vcpu_id) const;
+    void set_domain_cpu_context_pv(const Domain &domain, vcpu_guest_context_any_t context,
+        VCPU_ID vcpu_id) const;
 
   private:
     std::shared_ptr<xc_interface> _xenctrl;

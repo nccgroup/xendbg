@@ -44,9 +44,7 @@ DomInfo XenCtrl::get_domain_info(const Domain &domain) const {
 }
 
 Registers XenCtrl::get_domain_cpu_context(const Domain &domain, VCPU_ID vcpu_id) const {
-  bool is_hvm = (domain.get_info().hvm == 1);
-
-  if (is_hvm) {
+  if (domain.get_info().hvm == 1) {
     auto context = get_domain_cpu_context_hvm(domain, vcpu_id);
     return convert_gp_registers_64(context, Registers64{});
   } else {
@@ -62,7 +60,33 @@ Registers XenCtrl::get_domain_cpu_context(const Domain &domain, VCPU_ID vcpu_id)
           std::to_string(domain.get_domid()) + "!");
     }
   }
+}
 
+void XenCtrl::set_domain_cpu_context(const Domain &domain, Registers regs, VCPU_ID vcpu_id) const {
+  if (domain.get_info().hvm == 1) {
+    const auto regs64 = std::get<Registers64>(regs);
+    const auto context = get_domain_cpu_context_hvm(domain, vcpu_id);
+    const auto new_context = convert_gp_registers_64(regs64, context);
+    set_domain_cpu_context_hvm(domain, new_context, vcpu_id);
+  } else {
+    const auto context_any = get_domain_cpu_context_pv(domain, vcpu_id);
+    auto new_context = context_any;
+
+    const int word_size = get_domain_word_size(domain);
+    if (word_size == sizeof(uint64_t)) {
+      const auto regs64 = std::get<Registers64>(regs);
+      new_context.x64.user_regs = convert_gp_registers_64(regs64, context_any.x64.user_regs);
+      set_domain_cpu_context_pv(domain, new_context, vcpu_id);
+    } else if (word_size == sizeof(uint32_t)) {
+      const auto regs32 = std::get<Registers32>(regs);
+      new_context.x32.user_regs = convert_gp_registers_32(regs32, context_any.x32.user_regs);
+      set_domain_cpu_context_pv(domain, new_context, vcpu_id);
+    } else {
+      throw XenException(
+          "Unsupported word size " + std::to_string(word_size) + " for domain " +
+          std::to_string(domain.get_domid()) + "!");
+    }
+  }
 }
 
 WordSize xd::xen::XenCtrl::get_domain_word_size(const Domain &domain) const {
@@ -149,13 +173,43 @@ struct hvm_hw_cpu XenCtrl::get_domain_cpu_context_hvm(const Domain &domain, VCPU
   return cpu_context;
 }
 
+void XenCtrl::set_domain_cpu_context_hvm(const Domain &domain, struct hvm_hw_cpu context,
+    VCPU_ID vcpu_id) const
+{
+  int err;
+  struct hvm_hw_cpu cpu_context;
+  if (err = xc_domain_hvm_getcontext_partial(_xenctrl.get(), domain.get_domid(),
+        HVM_SAVE_CODE(CPU), (uint16_t)vcpu_id, &context, sizeof(context)))
+  {
+    throw XenException(
+      "Failed get HVM CPU context for VCPU " + std::to_string(vcpu_id) + " of domain " +
+      std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
+  }
+}
+
 vcpu_guest_context_any_t XenCtrl::get_domain_cpu_context_pv(const Domain &domain, VCPU_ID vcpu_id) const {
   int err;
   vcpu_guest_context_any_t context_any;
-  if (err = xc_vcpu_getcontext(_xenctrl.get(), domain.get_domid(), (uint16_t)vcpu_id, &context_any)) {
+  if (err = xc_vcpu_getcontext(_xenctrl.get(), domain.get_domid(), (uint16_t)vcpu_id,
+        &context_any))
+  {
     throw XenException(
-        "Failed get x32 PV CPU context for VCPU " + std::to_string(vcpu_id) + " of domain " +
+        "Failed get PV CPU context for VCPU " + std::to_string(vcpu_id) + " of domain " +
         std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
   }
   return context_any;
+}
+
+void XenCtrl::set_domain_cpu_context_pv(const Domain &domain,
+    vcpu_guest_context_any_t context,VCPU_ID vcpu_id) const
+{
+  int err;
+  vcpu_guest_context_any_t context_any;
+  if (err = xc_vcpu_setcontext(_xenctrl.get(), domain.get_domid(), (uint16_t)vcpu_id, 
+        &context))
+  {
+    throw XenException(
+        "Failed get PV CPU context for VCPU " + std::to_string(vcpu_id) + " of domain " +
+        std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
+  }
 }

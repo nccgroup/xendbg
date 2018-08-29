@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "Xen/Domain.hpp"
@@ -20,12 +21,16 @@ namespace xd {
 
     xen::XenHandle &get_xen_handle() { return _xen; };
     std::optional<xen::Domain>& get_current_domain() { return _domain; };
-    std::vector<xen::Domain> get_all_domains();
+    std::vector<xen::Domain> get_guest_domains();
+
+    uint64_t get_var(const std::string &name);
+    void set_var(const std::string &name, uint64_t value);
 
   private:
+    size_t _current_cpu;
     xen::XenHandle _xen;
     std::optional<xen::Domain> _domain;
-    // TODO: variables, including special registers
+    std::unordered_map<std::string, uint64_t> _variables;
     // TODO: breakpoints
   };
 

@@ -5,20 +5,13 @@
 #ifndef XENDBG_REGISTERS_HPP
 #define XENDBG_REGISTERS_HPP
 
+#include "BridgeHeaders/xenctrl.h"
+
 #include <cstdint>
-#include <map>
 #include <string>
 #include <variant>
 
 namespace xd::xen {
-
-  template <typename Regs_t>
-  using GetByNameMap = std::map<std::string,
-    std::function<typename Regs_t::ValueType(const Regs_t &)>>;
-
-  template <typename Regs_t>
-  using SetByNameMap = std::map<std::string,
-    std::function<void(Regs_t &, typename Regs_t::ValueType)>>;
 
   struct Registers32 {
     using ValueType = uint32_t;
@@ -40,11 +33,11 @@ namespace xd::xen {
     uint16_t fs;
     uint16_t gs;
 
-    ValueType get_by_name(const std::string &name);
+    ValueType get_by_name(const std::string &name) const;
     void set_by_name(const std::string &name, ValueType value);
 
     template <typename F>
-    void for_each(F) {
+    void for_each(F f) const {
       static constexpr auto names = {
         "eax",
         "ebx",
@@ -65,7 +58,7 @@ namespace xd::xen {
       };
 
       for (const auto &name : names) {
-        F(name, get_by_name(name));
+        f(name, get_by_name(name));
       }
     };
   };
@@ -97,11 +90,11 @@ namespace xd::xen {
     uint64_t ds;
     uint64_t ss;
 
-    ValueType get_by_name(const std::string &name);
+    ValueType get_by_name(const std::string &name) const;
     void set_by_name(const std::string &name, ValueType value);
 
     template <typename F>
-    void for_each(F) {
+    void for_each(F f) const {
       static constexpr auto names = {
           "rax",
           "rbx",
@@ -129,7 +122,7 @@ namespace xd::xen {
       };
 
       for (const auto &name : names) {
-        F(name, get_by_name(name));
+        f(name, get_by_name(name));
       }
     };
   };

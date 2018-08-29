@@ -85,12 +85,12 @@ void DebuggerREPL::setup_repl() {
    *    detach
    *    list
    */
-  _repl.add_command(make_command("domain", "Manage domains.", {
+  _repl.add_command(make_command("guest", "Manage guest domains.", {
     Verb("list", "List all guests and their respective states.",
       {}, {},
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
-          const auto domains = _debugger.get_all_domains();
+          const auto domains = _debugger.get_guest_domains();
           for (const auto &domain : domains) {
             // TODO: formatting
             std::cout << domain.get_domid() << "\t" << domain.get_name() << std::endl;
@@ -101,7 +101,7 @@ void DebuggerREPL::setup_repl() {
     Verb("attach", "Attach to a domain.",
       {},
       {
-        Argument("domid/name", "Either the numeric domID or the name of a domain to attach to.",
+        Argument("domid/name", "Either the numeric domID or the name of a guest to attach to.",
             match_optionally_quoted_string)
       },
       [this](auto &/*flags*/, auto &args) {
@@ -119,7 +119,7 @@ void DebuggerREPL::setup_repl() {
           _debugger.attach(domid);
 
           const auto domain = _debugger.get_current_domain().value();
-          std::cout << "Attached to domain " << domain.get_domid() << " (" << domain.get_name() << ")." << std::endl;
+          std::cout << "Attached to guest " << domain.get_domid() << " (" << domain.get_name() << ")." << std::endl;
         };
       }),
 
@@ -137,7 +137,7 @@ void DebuggerREPL::setup_repl() {
    *
    */
   _repl.add_command(make_command("info", "Query the state of Xen, the attached guest and its registers.", {
-      Verb("domain", "Query the state of the current domain.",
+      Verb("guest", "Query the state of the current guest.",
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
@@ -178,20 +178,20 @@ void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
 
   std::cout
     << "Domain " << domain.get_domid() << " (" << domain.get_name() << "):" << std::endl
-    << domain.get_word_size() * 8 << " bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl;
+    << domain.get_word_size() * 8 << "-bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl;
 }
 
 void DebuggerREPL::print_registers(const xen::Registers& regs) {
   std::visit(util::overloaded {
     [](const xen::Registers32 regs) {
       regs.for_each([](const auto &name, auto val) {
-        std::cout << name << "\t" << std::hex << val << std::endl;
-      })
+        std::cout << name << "\t0x" << std::hex << val << std::endl;
+      });
     },
     [](const xen::Registers64 regs) {
       regs.for_each([](const auto &name, auto val) {
-        std::cout << name << "\t" << std::hex << val << std::endl;
-      })
+        std::cout << name << "\t0x" << std::hex << val << std::endl;
+      });
     }
   }, regs);
 }

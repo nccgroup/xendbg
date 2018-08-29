@@ -2,13 +2,22 @@
 // Created by Spencer Michaels on 8/29/18.
 //
 
+#include <unordered_map>
+
 #include "Registers.hpp"
 
-using xd::xen::GetByNameMap;
 using xd::xen::Registers32;
 using xd::xen::Registers64;
 
-Registers32::ValueType Registers32::get_by_name(const std::string &name) {
+template <typename Regs_t>
+using GetByNameMap = std::unordered_map<std::string,
+  std::function<typename Regs_t::ValueType(const Regs_t &)>>;
+
+template <typename Regs_t>
+using SetByNameMap = std::unordered_map<std::string,
+  std::function<void(Regs_t &, typename Regs_t::ValueType)>>;
+
+Registers32::ValueType Registers32::get_by_name(const std::string &name) const {
   static const GetByNameMap<Registers32> get_by_name_map = {
     { "eax",    [](auto &regs) { return regs.eax; } },
     { "ebx",    [](auto &regs) { return regs.ebx; } },
@@ -54,7 +63,7 @@ void Registers32::set_by_name(const std::string &name, ValueType value) {
   return set_by_name_map.at(name)(*this, value);
 }
 
-Registers64::ValueType Registers64::get_by_name(const std::string &name) {
+Registers64::ValueType Registers64::get_by_name(const std::string &name) const {
   static const GetByNameMap<Registers64> get_by_name_map = {
       { "rax",    [](auto &regs) { return regs.rax; } },
       { "rbx",    [](auto &regs) { return regs.rbx; } },

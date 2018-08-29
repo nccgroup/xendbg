@@ -19,10 +19,10 @@ namespace xd::xen {
   public:
     XenStore();
 
-    std::string read(const std::string& file);
-    std::vector<std::string> read_directory(const std::string& dir);
-    DomID get_domid_from_name(const std::string& name);
-    std::vector<DomID> get_all_domids();
+    std::string read(const std::string& file) const;
+    std::vector<std::string> read_directory(const std::string& dir) const;
+    DomID get_domid_from_name(const std::string& name) const;
+    std::vector<DomID> get_guest_domids() const;
 
   private:
     std::unique_ptr<struct xs_handle, decltype(&xs_close)> _xenstore;

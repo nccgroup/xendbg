@@ -22,14 +22,14 @@ using xd::util::IndentHelper;
 using xd::util::string::skip_whitespace;
 
 
-REPL *_s_instance;
+REPL *REPL::_s_instance;
 std::vector<std::string> REPL::_s_completion_options;
 
 void REPL::run(REPL &repl) {
   init_readline();
-  _s_instance = &repl;
-  _s_instance->run(); // TODO: exception handling
-  _s_instance = nullptr;
+  REPL::_s_instance = &repl;
+  REPL::_s_instance->run(); // TODO: exception handling
+  REPL::_s_instance = nullptr;
   deinit_readline();
 }
 
@@ -51,7 +51,7 @@ char **REPL::attempted_completion_function(const char *text, int begin, int end)
    * Because there are subcommands to complete, completion options depend on
    * the *entire* line (rl_line_buffer) rather than just the last word (text).
    */
-  _s_completion_options = _s_instance->complete(rl_line_buffer);
+  _s_completion_options = REPL::_s_instance->complete(rl_line_buffer);
 
   return rl_completion_matches(text, REPL::command_generator);
 }
@@ -99,7 +99,9 @@ void REPL::run() {
     if (_prompt_configurator)
       _prompt = _prompt_configurator();
     auto line = read_line();
+    std::cout << std::endl; // TODO
     interpret_line(line);
+    std::cout << std::endl; // TODO
   };
 }
 

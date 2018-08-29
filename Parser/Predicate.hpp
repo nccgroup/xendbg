@@ -53,7 +53,8 @@ namespace xd::parser::pred {
     return is_symbol_of_type(token, token::Symbol::Type::Plus) ||
            is_symbol_of_type(token, token::Symbol::Type::Minus) ||
            is_symbol_of_type(token, token::Symbol::Type::Star) ||
-           is_symbol_of_type(token, token::Symbol::Type::Slash);
+           is_symbol_of_type(token, token::Symbol::Type::Slash) ||
+           is_symbol_of_type(token, token::Symbol::Type::Equals);
   };
 
   template <typename Token_t>

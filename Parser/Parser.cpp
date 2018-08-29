@@ -57,6 +57,8 @@ Parser::Operator Parser::symbol_to_binop(const Symbol& symbol) {
       return op::Multiply();
     case Type::Slash:
       return op::Divide();
+    case Type::Equals:
+      return op::Equals();
     default:
       throw std::runtime_error("Symbol does not represent a binary operator!");
   }

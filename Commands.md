@@ -2,7 +2,7 @@
 Commands auto-complete on tab (via readline).
 
 ```
-domain
+guest
  list
    List Xen domains.
  attach <domid/name>
@@ -26,8 +26,8 @@ info
   xen
     Prints Xen version and capabilities.
 
-pin
- <expr>
+display
+ add <expr>
    Pin an expression to print at each line.
  registers
    Pin the whole register list (shortcut).
@@ -35,11 +35,11 @@ pin
    List expressions set to print at each REPL loop.
  delete <id>
    Remove expression.
-?inspect <expr>
+?examine <expr>
    Print the result of inspecting the memory address <expr>.
    Otherwise, prints the value of <expr>.
 
-inspect <expr>
+examine <expr>
  -n/--num-words <expr>
    Number of words to read.
    Default 1.
@@ -49,4 +49,7 @@ inspect <expr>
 
 set <<Dereference OR Variable> Equals <expr>>
   where <expr1> is Dereference or Variable
+
+print <expr>
+
 ```

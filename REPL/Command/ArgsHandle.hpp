@@ -24,23 +24,20 @@ namespace xd::repl::cmd {
       _args.push_back(std::make_pair(arg.get_name(), std::move(value)));
     }
 
-    template <typename T, typename F>
-    T get(size_t index, F convert) const {
+    std::string get(size_t index) const {
       if (index >= _args.size())
         throw std::runtime_error("No such argument!");
 
-      auto value = _args.at(index).second;
-      return convert(value);
+      return _args.at(index).second;
     }
 
-    template <typename T, typename F>
-    T get(const std::string &name, F convert) const {
+    std::string get(const std::string &name) const {
       auto found = std::find_if(_args.begin(), _args.end(),
           [name](const auto& arg) {
             return arg.first == name;
           });
 
-      return convert(found->second);
+      return found->second;
     }
 
   private:

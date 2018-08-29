@@ -2,10 +2,12 @@
 Commands auto-complete on tab (via readline).
 
 ```
+guest attach -n test
+
 guest
- list <id>/<name>
+ list
    List Xen guests.
- attach <id>/<name> [filename]
+ attach <domid/name>
    Attach to a guest.
  detach
    Detach from the current guest.
@@ -47,4 +49,17 @@ set <<expr1> Equals <expr>>
   where <expr1> is Dereference or Variable
 ```
 
+# Debugger (top-level application) implementation
 
+```
+class Debugger {
+public:
+    void attach(DomID domid);
+    void detach();
+
+private:
+    std::shared_ptr<XenHandle> _xen;
+    std::optional<Domain> _domain;
+    // std::map<Address, 2Bytes> _breakpoints;
+}
+```

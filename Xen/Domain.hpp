@@ -15,7 +15,7 @@ namespace xd::xen {
 
   class Domain {
   public:
-    Domain(std::shared_ptr<XenHandle> xen, DomID domid);
+    Domain(XenHandle& xen, DomID domid);
 
     DomID get_domid() { return _domid; };
     std::string get_name();
@@ -24,7 +24,7 @@ namespace xd::xen {
 
     template<typename InitFn_t, typename CleanupFn_t>
     void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
-      _xen->get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
+      _xen.get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
     }
 
     MemInfo map_meminfo();
@@ -36,7 +36,7 @@ namespace xd::xen {
     void unpause();
 
   private:
-    std::shared_ptr<XenHandle> _xen;
+    XenHandle& _xen;
     const DomID _domid;
   };
 

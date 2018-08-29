@@ -1,57 +1,21 @@
-#include "Util/string.hpp"
-#include "REPL/REPL.hpp"
-
-
 #include <memory>
+#include <string>
+#include <vector>
 
-using xd::repl::REPL;
+#include "DebuggerREPL.hpp"
+
+using xd::DebuggerREPL;
 
 void parse_commandline(int argc, char **argv) {
   std::vector<std::string> arg_list(argv, argv + argc);
+  // TODO
 }
 
 int main(int argc, char **argv) {
   parse_commandline(argc, argv);
 
-  auto& repl = REPL::init();
-
-  size_t line_count = 0;
-  repl.set_prompt_configurator([&line_count]() {
-    return std::to_string(line_count++) + "> ";
-  });
-
-  /*
-  auto cmd = xd::repl::cmd::make("command", "do thing", {
-    Verb("other-subcmd", "do another thing",
-      {}, {},
-      [](auto &flags, auto &args) {
-        return [](){};
-    }),
-    Verb("subcmd", "do subthing", {
-      Flag('f', "flag", "a flag", {}),
-      Flag('g', "glaf", "another flag", {
-        Argument("arg", "an arg",
-            [](auto begin, auto end){
-              return xd::util::string::next_char(begin, end, ' ');
-            }, "1337")
-      })
-      }, {
-        Argument("arg", "an arg",
-            [](auto begin, auto end){
-              return xd::util::string::next_char(begin, end, ' ');
-            })
-      },
-      [](auto &flags, auto &args) {
-        return [](){};
-    })
-  });
-
-  repl.add_command(std::move(cmd));
-  */
-
-  repl.run();
-
-  REPL::deinit();
+  DebuggerREPL dbg_repl;
+  dbg_repl.run();
 }
 
 /*

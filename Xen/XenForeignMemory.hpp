@@ -22,7 +22,7 @@ namespace xd::xen {
   public:
     XenForeignMemory();
 
-    MappedMemory map(Domain& domain, Address address, size_t size, int prot) const;
+    MappedMemory map(const Domain& domain, Address address, size_t size, int prot) const;
     
   private:
     xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *p2m_table, WordSize word_size) const;

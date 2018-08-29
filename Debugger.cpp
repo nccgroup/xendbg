@@ -26,8 +26,8 @@ std::vector<Domain> Debugger::get_all_domains() {
   std::vector<Domain> domains;
   domains.reserve(domids.size());
   std::transform(domids.begin(), domids.end(), std::back_inserter(domains),
-    [](const auto& domid) {
-      return Domain(domid);
+    [this](const auto& domid) {
+      return Domain(_xen, domid);
     });
   return domains;
 }

@@ -39,6 +39,8 @@ DomInfo XenCtrl::get_domain_info(const Domain &domain) const {
 
   if (ret != 1 || dominfo.domid != domain.get_domid())
     throw std::runtime_error("Failed to get domain info!");
+
+  return dominfo;
 }
 
 Registers XenCtrl::get_domain_cpu_context(const Domain &domain, VCPU_ID vcpu_id) const {

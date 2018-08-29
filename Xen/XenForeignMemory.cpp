@@ -24,7 +24,7 @@ XenForeignMemory::XenForeignMemory()
     throw XenException("Failed to open Xen foreign memory handle!");
 }
 
-MappedMemory XenForeignMemory::map(Domain &domain, Address address, size_t size, int prot) const {
+MappedMemory XenForeignMemory::map(const Domain &domain, Address address, size_t size, int prot) const {
   if (address < XC_PAGE_SIZE) {
     throw XenException("Addresses below 0x1000 cannot be mapped!");
   }

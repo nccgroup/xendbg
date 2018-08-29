@@ -6,11 +6,23 @@
 #define XENDBG_REGISTERS_HPP
 
 #include <cstdint>
+#include <map>
+#include <string>
 #include <variant>
 
 namespace xd::xen {
 
+  template <typename Regs_t>
+  using GetByNameMap = std::map<std::string,
+    std::function<typename Regs_t::ValueType(const Regs_t &)>>;
+
+  template <typename Regs_t>
+  using SetByNameMap = std::map<std::string,
+    std::function<void(Regs_t &, typename Regs_t::ValueType)>>;
+
   struct Registers32 {
+    using ValueType = uint32_t;
+
     uint32_t eax;
     uint32_t ebx;
     uint32_t ecx;
@@ -27,13 +39,44 @@ namespace xd::xen {
     uint16_t es;
     uint16_t fs;
     uint16_t gs;
+
+    ValueType get_by_name(const std::string &name);
+    void set_by_name(const std::string &name, ValueType value);
+
+    template <typename F>
+    void for_each(F) {
+      static constexpr auto names = {
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "edi",
+        "esi",
+        "ebp",
+        "esp",
+        "ss",
+        "eflags",
+        "eip",
+        "cs",
+        "ds",
+        "es",
+        "fs",
+        "gs"
+      };
+
+      for (const auto &name : names) {
+        F(name, get_by_name(name));
+      }
+    };
   };
 
   struct Registers64 {
+    using ValueType = uint64_t;
+
     uint64_t rax;
+    uint64_t rbx;
     uint64_t rcx;
     uint64_t rdx;
-    uint64_t rbx;
     uint64_t rsp;
     uint64_t rbp;
     uint64_t rsi;
@@ -53,6 +96,42 @@ namespace xd::xen {
     uint64_t cs;
     uint64_t ds;
     uint64_t ss;
+
+    ValueType get_by_name(const std::string &name);
+    void set_by_name(const std::string &name, ValueType value);
+
+    template <typename F>
+    void for_each(F) {
+      static constexpr auto names = {
+          "rax",
+          "rbx",
+          "rcx",
+          "rdx",
+          "rsp",
+          "rbp",
+          "rsi",
+          "rdi",
+          "r8",
+          "r9",
+          "r10",
+          "r11",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rflags",
+          "rip",
+          "fs",
+          "gs",
+          "cs",
+          "ds",
+          "ss"
+      };
+
+      for (const auto &name : names) {
+        F(name, get_by_name(name));
+      }
+    };
   };
 
   using Registers = std::variant<Registers32, Registers64>;

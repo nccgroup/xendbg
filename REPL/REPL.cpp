@@ -21,19 +21,15 @@ using xd::repl::cmd::make_command;
 using xd::util::IndentHelper;
 using xd::util::string::skip_whitespace;
 
-std::optional<REPL> REPL::_s_instance;
+
+REPL *_s_instance;
 std::vector<std::string> REPL::_s_completion_options;
 
-REPL& REPL::init() {
-  assert(!REPL::_s_instance.has_value());
-  REPL::_s_instance.emplace();
+void REPL::run(REPL &repl) {
   init_readline();
-  return REPL::_s_instance.value();
-}
-
-void REPL::deinit() {
-  assert(_s_instance.has_value());
-  _s_instance = std::nullopt;
+  _s_instance = &repl;
+  _s_instance->run(); // TODO: exception handling
+  _s_instance = nullptr;
   deinit_readline();
 }
 
@@ -48,14 +44,14 @@ void REPL::deinit_readline() {
 char **REPL::attempted_completion_function(const char *text, int begin, int end) {
   rl_attempted_completion_over = 1;
 
+  if (!_s_instance)
+    return nullptr;
+
   /*
-   * This function is only callable through a REPL instance, so we can safely
-   * assume that _s_instance contains a value.
-   *
    * Because there are subcommands to complete, completion options depend on
    * the *entire* line (rl_line_buffer) rather than just the last word (text).
    */
-  _s_completion_options = _s_instance.value().complete(rl_line_buffer);
+  _s_completion_options = _s_instance->complete(rl_line_buffer);
 
   return rl_completion_matches(text, REPL::command_generator);
 }
@@ -136,6 +132,11 @@ void REPL::interpret_line(const std::string& line) {
       (action.value())();
       return;
     }
+  }
+
+  if (_no_match_handler) {
+    _no_match_handler(line);
+    return;
   }
 
   std::cerr << "Invalid input." << std::endl;

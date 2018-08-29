@@ -5,13 +5,16 @@
 #include <iostream>
 
 #include "DebuggerREPL.hpp"
+#include "Parser/Parser.hpp"
 #include "REPL/Command/Argument.hpp"
 #include "REPL/Command/Flag.hpp"
 #include "REPL/Command/MakeCommand.hpp"
 #include "REPL/Command/Verb.hpp"
 #include "Util/string.hpp"
+#include "ExpressionEvaluator.hpp"
 
 using xd::Debugger;
+using xd::parser::Parser;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::make_command;
@@ -25,8 +28,14 @@ DebuggerREPL::DebuggerREPL() {
   setup_repl();
 }
 
+void DebuggerREPL::parse_and_eval_expression(const std::string &s) {
+  Parser parser;
+  auto ex = parser.parse(s);
+  // TODO: evaluate expression
+}
+
 void DebuggerREPL::run() {
-  _repl.run();
+  repl::REPL::run(_repl);
 }
 
 void DebuggerREPL::setup_repl() {
@@ -40,6 +49,14 @@ void DebuggerREPL::setup_repl() {
     if (domain)
       prompt = "xen:" + std::to_string(domain.value().get_domid()) + " " + prompt;
     return prompt;
+  });
+
+  /**
+   * If what is entered isn't a command, interpret it as an expression and evaluate it
+   */
+   // TODO: Also need an equivalent for completion, e.g. $<tab> completes variables
+  _repl.set_no_match_handler([this](const std::string &line) {
+    parse_and_eval_expression(line);
   });
 
   /**
@@ -94,7 +111,6 @@ void DebuggerREPL::setup_repl() {
         try {
           domid = (xen::DomID)std::stoul(domid_or_name);
         } catch (std::invalid_argument& e) {
-          // TODO: this can throw an exception too
           domid = _debugger.get_xen_handle().get_xenstore()
               .get_domid_from_name(domid_or_name);
         }
@@ -111,7 +127,7 @@ void DebuggerREPL::setup_repl() {
       {}, {},
       [this](auto &flags, auto &args) {
         return [this]() {
-          // TODO: handle not being attached yet
+          get_domain_or_fail();
           _debugger.detach();
         };
       }),
@@ -126,23 +142,61 @@ void DebuggerREPL::setup_repl() {
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
             // TODO: handle not being attached yet
-            const auto domain = _debugger.get_current_domain();
-            // TODO: actually print things
+            auto domain = get_domain_or_fail();
+            print_domain_info(domain);
           };
         }),
       Verb("registers", "Query the register state of the current domain.",
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
-            // TODO
+            auto domain = get_domain_or_fail();
+            auto regs = domain.get_cpu_context(0);
+
+            print_registers(regs);
           };
         }),
       Verb("xen", "Query Xen version and capabilities.",
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
-            // TODO
+            print_xen_info(_debugger.get_xen_handle());
           };
         }),
   }));
+}
+
+xd::xen::Domain &DebuggerREPL::get_domain_or_fail() {
+  auto domain = _debugger.get_current_domain();
+  if (!domain)
+    throw std::runtime_error("No domain!");
+  return domain.value();
+}
+
+void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
+  const auto dominfo = domain.get_info();
+
+  std::cout
+    << "Domain " << domain.get_domid() << " (" << domain.get_name() << "):" << std::endl
+    << domain.get_word_size() * 8 << " bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl;
+}
+
+void DebuggerREPL::print_registers(const xen::Registers& regs) {
+  std::visit(util::overloaded {
+    [](const xen::Registers32 regs) {
+      regs.for_each([](const auto &name, auto val) {
+        std::cout << name << "\t" << std::hex << val << std::endl;
+      })
+    },
+    [](const xen::Registers64 regs) {
+      regs.for_each([](const auto &name, auto val) {
+        std::cout << name << "\t" << std::hex << val << std::endl;
+      })
+    }
+  }, regs);
+}
+
+void DebuggerREPL::print_xen_info(const xen::XenHandle &xen) {
+  auto version = xen.get_xenctrl().get_xen_version();
+  std::cout << "Xen " << version.major << "." << version.minor << std::endl;
 }

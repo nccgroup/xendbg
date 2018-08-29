@@ -2,13 +2,13 @@
 Commands auto-complete on tab (via readline).
 
 ```
-guest
+domain
  list
-   List Xen guests.
+   List Xen domains.
  attach <domid/name>
-   Attach to a guest.
+   Attach to a domain.
  detach
-   Detach from the current guest.
+   Detach from the current domain.
 
 break
  <expr>
@@ -45,33 +45,8 @@ inspect <expr>
    Default 1.
  -s/--word-size <b/h/w/g>
    Word size (8/16/32/64)
-   Default 64 or 32, depending on guest word size.
+   Default 64 or 32, depending on domain word size.
 
 set <<Dereference OR Variable> Equals <expr>>
   where <expr1> is Dereference or Variable
-```
-
-# Debugger (top-level application) implementation
-
-```
-class Debugger {
-public:
-    void attach(DomID domid);
-    void detach();
-
-    void set_variable(std::string name, Value value) {
-      if (is_register32_name(name)) {
-        _domain.set_register(/*name -> enum*/, value);
-      } else if (is_register64_name(name)) {
-        _domain.set_register(/*name -> enum*/, value);
-      }
-
-      if (_variables.count(name) < 1)
-        _variables[name] = Variable(name, value);
-    }
-
-private:
-    std::shared_ptr<XenHandle> _xen;
-    std::optional<Domain> _domain;
-}
 ```

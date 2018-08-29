@@ -18,14 +18,14 @@ namespace xd::repl {
 
   class REPL {
   public:
-    static REPL& init();
-    static void deinit();
+    static void run(REPL& repl);
 
   private:
     using CommandPtr = std::unique_ptr<cmd::CommandBase>;
     using PromptConfiguratorFn = std::function<std::string()>;
+    using NoMatchHandlerFn = std::function<void(const std::string &)>;
 
-    static std::optional<REPL> _s_instance;
+    static REPL *_s_instance;
     static std::vector<std::string> _s_completion_options;
 
     static void init_readline();
@@ -43,10 +43,12 @@ namespace xd::repl {
 
     void add_command(CommandPtr cmd);
     void exit();
-    void run();
     void print_help(std::ostream &out);
     void set_prompt_configurator(PromptConfiguratorFn f) {
       _prompt_configurator = std::move(f);
+    }
+    void set_no_match_handler(NoMatchHandlerFn f) {
+      _no_match_handler = std::move(f);
     }
 
   private:
@@ -54,11 +56,13 @@ namespace xd::repl {
     std::string _prompt;
     std::vector<CommandPtr> _commands;
     PromptConfiguratorFn _prompt_configurator;
+    NoMatchHandlerFn _no_match_handler;
 
   private:
     std::vector<std::string> complete(const std::string &s);
     void interpret_line(const std::string& line);
     std::string read_line();
+    void run();
 
   };
 

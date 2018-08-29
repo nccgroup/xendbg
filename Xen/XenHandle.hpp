@@ -17,10 +17,10 @@ namespace xd::xen {
    */
   class XenHandle {
   public:
-    PrivCmd& get_privcmd() { return _privcmd; };
-    XenCtrl& get_xenctrl() { return _xenctrl; };
-    XenForeignMemory& get_xen_foreign_memory() { return _xen_foreign_memory; };
-    XenStore& get_xenstore() { return _xenstore; };
+    const PrivCmd& get_privcmd() const { return _privcmd; };
+    const XenCtrl& get_xenctrl() const { return _xenctrl; };
+    const XenForeignMemory& get_xen_foreign_memory() const { return _xen_foreign_memory; };
+    const XenStore& get_xenstore() const { return _xenstore; };
 
   private:
     PrivCmd _privcmd;

@@ -20,7 +20,7 @@ namespace xd::parser::expr {
     ExpressionPtr y() const { return _y; }
 
     void evaluate(ExpressionEvaluator& evaluator) const override {
-      evaluator.evaluate(*this);
+      evaluator(*this);
     };
 
   private:

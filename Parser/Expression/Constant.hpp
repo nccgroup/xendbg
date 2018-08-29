@@ -21,7 +21,7 @@ namespace xd::parser::expr {
     Value value() const { return _value; };
 
     void evaluate(ExpressionEvaluator& evaluator) const override {
-      evaluator.evaluate(*this);
+      evaluator(*this);
     };
 
   private:

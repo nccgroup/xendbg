@@ -5,7 +5,7 @@
 #ifndef XENDBG_EXPRESSIONEVALUATOR_HPP
 #define XENDBG_EXPRESSIONEVALUATOR_HPP
 
-namespace xd {
+namespace xd::parser::expr {
 
   class BinaryExpression;
   class Constant;
@@ -15,11 +15,11 @@ namespace xd {
 
   class ExpressionEvaluator {
   public:
-    virtual void evaluate(const BinaryExpression& ex) = 0;
-    virtual void evaluate(const Constant& ex) = 0;
-    virtual void evaluate(const Label& ex) = 0;
-    virtual void evaluate(const UnaryExpression& ex) = 0;
-    virtual void evaluate(const Variable& ex) = 0;
+    virtual void operator()(const BinaryExpression& ex) = 0;
+    virtual void operator()(const Constant& ex) = 0;
+    virtual void operator()(const Label& ex) = 0;
+    virtual void operator()(const UnaryExpression& ex) = 0;
+    virtual void operator()(const Variable& ex) = 0;
   };
 
 }

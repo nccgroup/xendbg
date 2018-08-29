@@ -19,7 +19,7 @@ namespace xd::parser::expr {
     op::UnaryOperator op() const { return _op; }
 
     void evaluate(ExpressionEvaluator& evaluator) const override {
-      evaluator.evaluate(*this);
+      evaluator(*this);
     };
 
   private:

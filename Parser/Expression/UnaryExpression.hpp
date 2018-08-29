@@ -18,6 +18,10 @@ namespace xd::parser::expr {
     ExpressionPtr x() const { return _x; }
     op::UnaryOperator op() const { return _op; }
 
+    void evaluate(ExpressionEvaluator& evaluator) const override {
+      evaluator.evaluate(*this);
+    };
+
   private:
     op::UnaryOperator _op;
     ExpressionPtr _x;

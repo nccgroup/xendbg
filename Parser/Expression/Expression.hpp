@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include "ExpressionEvaluator.hpp"
+
 namespace xd::parser::expr {
 
   class Expression;
@@ -14,7 +16,7 @@ namespace xd::parser::expr {
 
   class Expression {
   public:
-    using Value = int;
+    virtual void evaluate(ExpressionEvaluator& evaluator) const = 0;
   };
 
 }

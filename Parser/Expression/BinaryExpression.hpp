@@ -19,6 +19,10 @@ namespace xd::parser::expr {
     ExpressionPtr x() const { return _x; }
     ExpressionPtr y() const { return _y; }
 
+    void evaluate(ExpressionEvaluator& evaluator) const override {
+      evaluator.evaluate(*this);
+    };
+
   private:
     op::BinaryOperator _op;
     ExpressionPtr _x, _y;

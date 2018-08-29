@@ -18,6 +18,10 @@ namespace xd::parser::expr {
 
     const std::string& name() const { return _name; };
 
+    void evaluate(ExpressionEvaluator& evaluator) const override {
+      evaluator.evaluate(*this);
+    };
+
   private:
     std::string _name;
   };

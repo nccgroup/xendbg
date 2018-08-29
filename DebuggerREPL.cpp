@@ -9,6 +9,7 @@
 #include "REPL/Command/Argument.hpp"
 #include "REPL/Command/Flag.hpp"
 #include "REPL/Command/MakeCommand.hpp"
+#include "REPL/Command/MatchHelper.hpp"
 #include "REPL/Command/Verb.hpp"
 #include "Util/string.hpp"
 #include "ExpressionEvaluator.hpp"
@@ -19,6 +20,7 @@ using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::make_command;
 using xd::repl::cmd::Verb;
+using xd::repl::cmd::match::match_everything;
 using xd::util::string::next_whitespace;
 using xd::util::string::match_optionally_quoted_string;
 
@@ -26,12 +28,6 @@ using xd::DebuggerREPL;
 
 DebuggerREPL::DebuggerREPL() {
   setup_repl();
-}
-
-void DebuggerREPL::parse_and_eval_expression(const std::string &s) {
-  Parser parser;
-  auto ex = parser.parse(s);
-  // TODO: evaluate expression
 }
 
 void DebuggerREPL::run() {
@@ -164,6 +160,23 @@ void DebuggerREPL::setup_repl() {
           };
         }),
   }));
+
+  /**
+   * print <expr>
+   */
+  _repl.add_command(make_command(
+      Verb("print", "Display the value of an expression.",
+        {},
+        {
+          Argument("expr", "The expression to display.", match_everything),
+        },
+        [this](auto &/*flags*/, auto &args) {
+          const auto expr_str = args.get("expr");
+          return [this, &expr_str]() {
+            auto expr = parse_expression(expr_str);
+            evaluate_expression(expr);
+          };
+        })));
 }
 
 xd::xen::Domain &DebuggerREPL::get_domain_or_fail() {
@@ -199,4 +212,13 @@ void DebuggerREPL::print_registers(const xen::Registers& regs) {
 void DebuggerREPL::print_xen_info(const xen::XenHandle &xen) {
   auto version = xen.get_xenctrl().get_xen_version();
   std::cout << "Xen " << version.major << "." << version.minor << std::endl;
+}
+
+xd::parser::expr::ExpressionPtr DebuggerREPL::parse_expression(const std::string &s) {
+  Parser parser;
+  return parser.parse(s);
+}
+
+void DebuggerREPL::evaluate_expression(xd::parser::expr::ExpressionPtr expr) {
+  // TODO
 }

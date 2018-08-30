@@ -9,8 +9,10 @@
 
 namespace xd::parser::expr::op {
 
-  struct Dereference {};
-  struct Negate {};
+  struct UnaryOperatorBase {};
+
+  struct Dereference : public UnaryOperatorBase {};
+  struct Negate : public UnaryOperatorBase {};
 
   using UnaryOperator = std::variant<Dereference, Negate>;
 

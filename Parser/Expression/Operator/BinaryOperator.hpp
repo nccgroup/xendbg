@@ -7,13 +7,15 @@
 
 #include <variant>
 
-namespace xd::parser::op {
+namespace xd::parser::expr::op {
 
-  class Add {};
-  class Equals {};
-  class Divide {};
-  class Multiply {};
-  class Subtract {};
+  struct BinaryOperatorBase {};
+
+  struct Add : public BinaryOperatorBase {};
+  struct Equals : public BinaryOperatorBase {};
+  struct Divide : public BinaryOperatorBase {};
+  struct Multiply : public BinaryOperatorBase {};
+  struct Subtract : public BinaryOperatorBase {};
 
 
   using BinaryOperator = std::variant<Add, Equals, Divide, Multiply, Subtract>;

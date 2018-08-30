@@ -20,9 +20,9 @@
 using xd::parser::Parser;
 using xd::parser::expr::Expression;
 using xd::parser::expr::op::precedence_of;
-using xd::parser::expr::op::BinaryOperator;
+using xd::parser::expr::op::BinaryOperatorBase;
 using xd::parser::expr::op::Sentinel;
-using xd::parser::expr::op::UnaryOperator;
+using xd::parser::expr::op::UnaryOperatorBase;
 using xd::parser::pred::is_binary_operator_symbol;
 using xd::parser::pred::is_constant;
 using xd::parser::pred::is_label;
@@ -160,12 +160,13 @@ void xd::parser::Parser::pop_operator_and_merge() {
     [](const op::Sentinel& op) {
       throw except::SentinelMergeException();
     },
-    [this](const BinaryOperator& op) {
+    [this](const BinaryOperatorBase& op) {
       auto x = pop_ret(_operands);
       auto y = pop_ret(_operands);
+
       _operands.push(Expression::make(op, x, y));
     },
-    [this](const UnaryOperator& op) {
+    [this](const UnaryOperatorBase& op) {
       auto x = pop_ret(_operands);
       _operands.push(Expression::make(op, x));
     }

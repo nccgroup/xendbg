@@ -7,12 +7,16 @@
 
 #include <variant>
 
+#include "Operator.hpp"
+
 namespace xd::parser::expr::op {
 
-  struct UnaryOperatorBase {};
+  namespace {
+    using UnOp = Operator<Arity::Unary>;
+  }
 
-  struct Dereference : public UnaryOperatorBase {};
-  struct Negate : public UnaryOperatorBase {};
+  struct Dereference : public UnOp {};
+  struct Negate : public UnOp {};
 
   using UnaryOperator = std::variant<Dereference, Negate>;
 

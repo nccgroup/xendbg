@@ -7,10 +7,12 @@
 
 #include <cstddef>
 
+#include "Expression/Operator/Operator.hpp"
 #include "Expression/Operator/Precedence.hpp"
 
 namespace xd::parser::expr::op {
-  class Sentinel {};
+  struct Sentinel : public Operator<Arity::Nullary>;
+
   template <>
   struct _precedence_impl<Sentinel> {
     static const op::Precedence p = std::numeric_limits<op::Precedence>::min();

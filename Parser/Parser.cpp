@@ -160,13 +160,13 @@ void xd::parser::Parser::pop_operator_and_merge() {
     [](const op::Sentinel& op) {
       throw except::SentinelMergeException();
     },
-    [this](const BinaryOperatorBase& op) {
+    [this](const auto& op) {
       auto x = pop_ret(_operands);
       auto y = pop_ret(_operands);
 
       _operands.push(Expression::make(op, x, y));
     },
-    [this](const UnaryOperatorBase& op) {
+    [this](const auto& op) {
       auto x = pop_ret(_operands);
       _operands.push(Expression::make(op, x));
     }

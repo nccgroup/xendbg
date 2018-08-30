@@ -51,21 +51,6 @@ namespace xd::parser::expr {
       return ExpressionGeneric<Units_t...>{std::make_shared<BinaryExpression>(op, x, y)};
     }
 
-    enum class Arity {
-      Binary,
-      Unary,
-      Nullary
-    };
-
-    Arity arity() const {
-      if (std::holds_alternative<BinaryExpressionPtr>(value))
-        return Arity::Binary;
-      else if (std::holds_alternative<BinaryExpressionPtr>(value))
-        return Arity::Unary;
-      else
-        return Arity::Nullary;
-    };
-
     std::variant<Units_t..., UnaryExpressionPtr, BinaryExpressionPtr> value;
   };
 

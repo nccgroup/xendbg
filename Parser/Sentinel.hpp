@@ -7,11 +7,10 @@
 
 #include <cstddef>
 
-#include "Expression/Operator/Operator.hpp"
 #include "Expression/Operator/Precedence.hpp"
 
 namespace xd::parser::expr::op {
-  struct Sentinel : public Operator<Arity::Nullary> {};
+  struct Sentinel {};
 
   template <>
   struct _precedence<Sentinel> {

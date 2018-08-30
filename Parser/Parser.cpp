@@ -166,8 +166,8 @@ void xd::parser::Parser::pop_operator_and_merge() {
       _operands.emplace(op, std::move(x));
     },
     [this](const BinaryOperator& op) {
-      auto x = pop_ret(_operands);
       auto y = pop_ret(_operands);
+      auto x = pop_ret(_operands);
 
       _operands.emplace(op, std::move(x), std::move(y));
     }

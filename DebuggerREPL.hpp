@@ -24,12 +24,10 @@ namespace xd {
   private:
     xen::Domain& get_domain_or_fail();
     void setup_repl();
-    void print_domain_info(const xen::Domain& domain);
-    void print_registers(const xen::Registers& regs);
-    void print_xen_info(const xen::XenHandle& xen);
-
-    parser::expr::Expression parse_expression(const std::string &s);
-    uint64_t evaluate_expression(const parser::expr::Expression& expr);
+    static void print_domain_info(const xen::Domain& domain);
+    static void print_registers(const xen::Registers& regs);
+    static void print_xen_info(const xen::XenHandle& xen);
+    uint64_t evaluate_expression(const parser::expr::Expression& expr, bool allow_write);
 
   private:
     Debugger _debugger;

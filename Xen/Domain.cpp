@@ -43,6 +43,10 @@ Registers xd::xen::Domain::get_cpu_context(VCPU_ID vcpu_id) const {
   return _xen.get_xenctrl().get_domain_cpu_context(*this, vcpu_id);
 }
 
+void xd::xen::Domain::set_cpu_context(Registers regs, VCPU_ID vcpu_id) const {
+  _xen.get_xenctrl().set_domain_cpu_context(*this, regs, vcpu_id);
+}
+
 void xd::xen::Domain::set_debugging(bool enabled, VCPU_ID vcpu_id) const {
   _xen.get_xenctrl().set_domain_debugging(*this, enabled, vcpu_id);
 }

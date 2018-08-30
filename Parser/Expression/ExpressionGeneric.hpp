@@ -26,24 +26,55 @@ namespace xd::parser::expr {
 
   template <typename... Units_t>
   struct ExpressionGeneric {
-  private:
+  public:
     using UnaryExpression = UnaryExpressionGeneric<Units_t...>;
     using BinaryExpression = BinaryExpressionGeneric<Units_t...>;
-
-  public:
     using UnaryExpressionPtr = std::unique_ptr<UnaryExpression>;
     using BinaryExpressionPtr = std::unique_ptr<BinaryExpression>;
 
     template <typename T>
-    ExpressionGeneric(T v) : value(v) {}
+    ExpressionGeneric(T v) : _value(v) {}
 
     ExpressionGeneric(op::UnaryOperator op, ExpressionGeneric x)
-      : value(std::make_unique<UnaryExpression>(op, std::move(x))) {};
+      : _value(std::make_unique<UnaryExpression>(op, std::move(x))) {};
 
     ExpressionGeneric(op::BinaryOperator op, ExpressionGeneric x, ExpressionGeneric y)
-      : value(std::make_unique<BinaryExpression>(op, std::move(x), std::move(y))) {};
+      : _value(std::make_unique<BinaryExpression>(op, std::move(x), std::move(y))) {};
 
-    std::variant<Units_t..., UnaryExpressionPtr, BinaryExpressionPtr> value;
+    template <typename T>
+    bool is_of_type() const {
+      return std::holds_alternative<T>(_value);
+    }
+    bool is_unex() const {
+      return is_of_type<UnaryExpressionPtr>();
+    }
+    bool is_binex() const {
+      return is_of_type<BinaryExpressionPtr>();
+    }
+
+    template <typename T>
+    const T& as() const {
+      return std::get<T>(_value);
+    }
+    const UnaryExpression& as_unex() const {
+      return *std::get<UnaryExpressionPtr>(_value);
+    }
+    const BinaryExpression& as_binex() const {
+      return *std::get<BinaryExpressionPtr>(_value);
+    }
+
+    template <typename F>
+    void visit(F f) const {
+      std::visit(f, _value);
+    }
+
+    template <typename R, typename F>
+    R visit(F f) const {
+      return std::visit(f, _value);
+    }
+
+  private:
+    std::variant<Units_t..., UnaryExpressionPtr, BinaryExpressionPtr> _value;
   };
 
   template <typename... Units_t>

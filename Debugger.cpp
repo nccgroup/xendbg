@@ -2,6 +2,7 @@
 // Created by Spencer Michaels on 8/28/18.
 //
 
+#include <iostream>
 #include <stdexcept>
 
 #include "Debugger.hpp"
@@ -35,41 +36,45 @@ std::vector<Domain> Debugger::get_guest_domains() {
 }
 
 uint64_t Debugger::get_var(const std::string &name) {
-  auto regs = _domain.value().get_cpu_context(_current_cpu);
+  if (_variables.count(name) > 0)
+    return _variables.at(name);
 
-  std::visit(util::overloaded {
+  const auto regs = _domain.value().get_cpu_context(_current_cpu);
+
+  return std::visit(util::overloaded {
     [&name](const xen::Registers32 regs) {
-      regs.for_each([&name](const auto &reg_name, auto val) {
-        if (reg_name == name)
-          return val;
-      });
+      return (uint64_t)regs.get_by_name(name);
     },
     [&name](const xen::Registers64 regs) {
-      regs.for_each([&name](const auto &reg_name, auto val) {
-        if (reg_name == name)
-          return val;
-      });
+      return (uint64_t)regs.get_by_name(name);
     }
   }, regs);
-
-  return _variables.at(name);
 }
 
 void Debugger::set_var(const std::string &name, uint64_t value) {
-  if (_variables.count(name) == 1) {
-    _variables.at(name) = value;
-    return;
+  auto regs = _domain.value().get_cpu_context(_current_cpu);
+
+  try {
+    std::visit(util::overloaded {
+      [this, &name, value](xen::Registers32& regs) {
+        regs.set_by_name(name, value);
+        _domain.value().set_cpu_context(regs);
+      },
+      [this, &name, value](xen::Registers64& regs) {
+        regs.set_by_name(name, value);
+        _domain.value().set_cpu_context(regs);
+      }
+    }, regs);
+  } catch (const std::exception& e) {
+    std::cout << e.what() << std::endl;
   }
 
-  auto regs = _domain.value().get_cpu_context(_current_cpu);
-  std::visit(util::overloaded {
-    [&name, value](xen::Registers32& regs) {
-      regs.set_by_name(name, value);
-      // TODO: set CPU context
-    },
-    [&name, value](xen::Registers64& regs) {
-      regs.set_by_name(name, value);
-      // TODO: set CPU context
-    }
-  }, regs);
+  _variables[name] = value;
+}
+
+void Debugger::delete_var(const std::string &name) {
+  if (!_variables.count(name))
+    // TODO
+    throw std::runtime_error("No such variable!");
+  _variables.erase(name);
 }

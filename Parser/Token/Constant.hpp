@@ -29,7 +29,7 @@ namespace xd::parser::token {
 
   public:
     static TokenMatchResult<Constant> match(std::string::const_iterator begin, std::string::const_iterator end) {
-      std::regex r("^(0[xb])?[0-9]+");
+      std::regex r("^([0-9]+)|(0x[0-9a-fA-F]+)|(0b[0-1]+)");
       std::smatch m;
 
       if (!std::regex_search(begin, end, m, r))

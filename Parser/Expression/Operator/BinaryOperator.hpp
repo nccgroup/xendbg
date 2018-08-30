@@ -7,19 +7,13 @@
 
 #include <variant>
 
-#include "Operator.hpp"
-
 namespace xd::parser::expr::op {
 
-  namespace {
-    using BinOp = Operator<Arity::Binary>;
-  }
-
-  struct Add : public BinOp {};
-  struct Equals : public BinOp {};
-  struct Divide : public BinOp {};
-  struct Multiply : public BinOp {};
-  struct Subtract : public BinOp {};
+  struct Add {};
+  struct Equals {};
+  struct Divide {};
+  struct Multiply {};
+  struct Subtract {};
 
 
   using BinaryOperator = std::variant<Add, Equals, Divide, Multiply, Subtract>;

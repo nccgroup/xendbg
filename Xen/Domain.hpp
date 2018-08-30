@@ -30,6 +30,7 @@ namespace xd::xen {
     MemInfo map_meminfo() const;
     MappedMemory map_memory(Address address, size_t size, int prot) const;
     Registers get_cpu_context(VCPU_ID vcpu_id = 0) const;
+    void set_cpu_context(Registers regs, VCPU_ID vcpu_id = 0) const;
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
     void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;
     void pause() const;

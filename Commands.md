@@ -50,52 +50,10 @@ examine <expr>
 set <<Dereference OR Variable> Equals <expr>>
   where <expr1> is Dereference or Variable
 
-print <expr>
 
-```
+set $var = expr
+unset $var
 
-# Reimplementing expressions with std::variant
-
-```
-
-template <typename T>
-struct Unit { T value; }
-
-using Constant = Unit<uint64_t>;
-using Label    = Unit<std::string>;
-using Variable = Unit<std::string>;
-
-
-template <typename... Units_t>
-class BinaryExpression;
-
-template <typename... Units_t>
-class UnaryExpression;
-
-class BinaryOperator;
-class UnaryOperator;
-
-template <typename... Units_t>
-class UnaryExpression {
-    using Expression = std::variant<
-        Units_t...
-        std::unique_ptr<UnaryExpression<Units_t...>>,
-        std::unique_ptr<BinaryExpression<Units_t...>>>
-
-    UnaryOperator op;
-    Expression x;
-}
-
-template <typename... Units_t>
-class BinaryExpression {
-    using Expression = std::variant<
-        Units_t...
-        std::unique_ptr<UnaryExpression<Units_t...>>,
-        std::unique_ptr<BinaryExpression<Units_t...>>>
-
-    UnaryOperator op;
-    Expression x;
-    Expression y;
-}
+info variables
 
 ```

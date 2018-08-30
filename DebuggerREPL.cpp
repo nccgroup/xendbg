@@ -15,6 +15,7 @@
 
 using xd::Debugger;
 using xd::parser::Parser;
+using xd::parser::expr::Expression;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::make_command;
@@ -213,11 +214,11 @@ void DebuggerREPL::print_xen_info(const xen::XenHandle &xen) {
   std::cout << "Xen " << version.major << "." << version.minor << std::endl;
 }
 
-xd::parser::expr::ExpressionPtr DebuggerREPL::parse_expression(const std::string &s) {
+Expression DebuggerREPL::parse_expression(const std::string &s) {
   Parser parser;
   return parser.parse(s);
 }
 
-void DebuggerREPL::evaluate_expression(xd::parser::expr::ExpressionPtr expr) {
+void DebuggerREPL::evaluate_expression(Expression expr) {
   // TODO
 }

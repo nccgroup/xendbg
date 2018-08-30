@@ -7,7 +7,7 @@
 
 #include <cstddef>
 
-#include "Operator/Precedence.hpp"
+#include "Expression/Operator/Precedence.hpp"
 
 namespace xd::parser::op {
   class Sentinel {};

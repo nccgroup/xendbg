@@ -19,19 +19,13 @@ endif()
 add_executable(xendbg
     main.cpp
     Parser/Parser.cpp
-    Parser/Expression/Constant.hpp
         Parser/Expression/ExpressionGeneric.hpp
-    Parser/Expression/Label.hpp
-    Parser/Expression/Variable.hpp
-    Parser/Expression/UnaryExpression.hpp
-    Parser/Expression/BinaryExpression.hpp
         Parser/Expression/Operator/BinaryOperator.hpp
         Parser/Expression/Operator/Precedence.hpp
         Parser/Expression/Operator/UnaryOperator.hpp
     Parser/ParserException.hpp
     Parser/Sentinel.hpp
     Parser/Tokenizer.hpp
-    Parser/Token/Constant.hpp
     Parser/Token/Variable.hpp
     Parser/Token/Label.hpp
     Parser/Token/Symbol.hpp
@@ -58,6 +52,6 @@ add_executable(xendbg
     REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp
     REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
     REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
-    Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp Debugger.cpp Debugger.hpp DebuggerREPL.cpp DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp DebuggerEvaluator.cpp DebuggerEvaluator.hpp Parser/Expression/Units.hpp Parser/Expression/Expression.hpp)
+    Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp Debugger.cpp Debugger.hpp DebuggerREPL.cpp DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp DebuggerEvaluator.cpp DebuggerEvaluator.hpp Parser/Expression/Expression.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)

@@ -16,7 +16,7 @@ namespace xd::parser::token {
 
   class Constant {
   public:
-    using Value = int;
+    using Value = uint64_t;
 
   public:
     explicit Constant(Value value)

@@ -8,7 +8,7 @@
 #include <string>
 
 #include "Debugger.hpp"
-#include "Parser/Expression/ExpressionGeneric.hpp"
+#include "Parser/Expression/Expression.hpp"
 #include "REPL/REPL.hpp"
 
 namespace xd {
@@ -28,8 +28,8 @@ namespace xd {
     void print_registers(const xen::Registers& regs);
     void print_xen_info(const xen::XenHandle& xen);
 
-    parser::expr::ExpressionPtr parse_expression(const std::string &s);
-    void evaluate_expression(parser::expr::ExpressionPtr expr);
+    parser::expr::Expression parse_expression(const std::string &s);
+    void evaluate_expression(parser::expr::Expression expr);
 
   private:
     Debugger _debugger;

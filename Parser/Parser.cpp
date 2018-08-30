@@ -69,7 +69,7 @@ Parser::Operator Parser::symbol_to_unop(const Symbol& symbol) {
   }
 };
 
-ExpressionPtr Parser::parse(std::string input) {
+Expression Parser::parse(std::string input) {
   _input = input;
   clear(_operands);
   clear(_operators);
@@ -122,11 +122,11 @@ void Parser::parse_unit() {
     _operands.push(Expression::make(expr::Constant{value}));
     consume();
   } else if (is_label(next)) {
-    const auto name = std::get<token::Label>(next).name()
+    const auto name = std::get<token::Label>(next).name();
     _operands.push(Expression::make(expr::Label{name}));
     consume();
   } else if (is_variable(next)) {
-    const auto name = std::get<token::Variable>(next).name()
+    const auto name = std::get<token::Variable>(next).name();
     _operands.push(Expression::make(expr::Variable{name}));
     consume();
   } else if (is_symbol_of_type(next, Symbol::Type::ParenLeft)) {

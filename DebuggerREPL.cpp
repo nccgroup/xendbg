@@ -12,7 +12,6 @@
 #include "REPL/Command/MatchHelper.hpp"
 #include "REPL/Command/Verb.hpp"
 #include "Util/string.hpp"
-#include "Parser/Expression/ExpressionEvaluator.hpp"
 
 using xd::Debugger;
 using xd::parser::Parser;

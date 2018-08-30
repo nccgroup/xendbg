@@ -7,7 +7,6 @@
 #include <functional>
 
 #include "Predicate.hpp"
-#include "Operator/Precedence.hpp"
 #include "Parser.hpp"
 #include "Tokenizer.hpp"
 #include "Token/Constant.hpp"
@@ -15,18 +14,11 @@
 #include "Predicate.hpp"
 #include "Token/Symbol.hpp"
 #include "Token/Variable.hpp"
-#include "Expression/Constant.hpp"
-#include "Expression/BinaryExpression.hpp"
-#include "Expression/Label.hpp"
-#include "Expression/Variable.hpp"
-#include "Expression/UnaryExpression.hpp"
 #include "../Util/clear.hpp"
 #include "../Util/pop_ret.hpp"
 
 using xd::parser::Parser;
-using xd::parser::expr::BinaryExpression;
-using xd::parser::expr::ExpressionPtr;
-using xd::parser::expr::UnaryExpression;
+using xd::parser::expr::Expression;
 using xd::parser::op::precedence_of;
 using xd::parser::op::BinaryOperator;
 using xd::parser::op::Sentinel;
@@ -126,19 +118,16 @@ void Parser::parse_unit() {
   const auto& next = next_token();
 
   if (is_constant(next)) {
-    _operands.push(
-        std::make_shared<expr::Constant>(
-            std::get<token::Constant>(next).value()));
-    consume();
-  } else if (is_variable(next)) {
-    _operands.push(
-        std::make_shared<expr::Variable>(
-            std::get<token::Variable>(next).name()));
+    const auto value = std::get<token::Constant>(next).value();
+    _operands.push(Expression::make(expr::Constant{value}));
     consume();
   } else if (is_label(next)) {
-    _operands.push(
-        std::make_shared<expr::Label>(
-            std::get<token::Label>(next).name()));
+    const auto name = std::get<token::Label>(next).name()
+    _operands.push(Expression::make(expr::Label{name}));
+    consume();
+  } else if (is_variable(next)) {
+    const auto name = std::get<token::Variable>(next).name()
+    _operands.push(Expression::make(expr::Variable{name}));
     consume();
   } else if (is_symbol_of_type(next, Symbol::Type::ParenLeft)) {
     consume();
@@ -174,12 +163,11 @@ void xd::parser::Parser::pop_operator_and_merge() {
     [this](const BinaryOperator& op) {
       auto x = pop_ret(_operands);
       auto y = pop_ret(_operands);
-      _operands.push(std::make_shared<BinaryExpression>(op, x, y));
+      _operands.push(Expression::make(op, x, y));
     },
     [this](const UnaryOperator& op) {
       auto x = pop_ret(_operands);
-      _operands.push(
-          std::make_shared<UnaryExpression>(op, x));
+      _operands.push(Expression::make(op, x));
     }
   }, pop_ret(_operators));
 }

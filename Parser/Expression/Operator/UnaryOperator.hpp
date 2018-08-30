@@ -5,12 +5,14 @@
 #ifndef XENDBG_UNARYOPERATOR_HPP
 #define XENDBG_UNARYOPERATOR_HPP
 
+#include <variant>
+
 namespace xd::parser::op {
 
-  class UnaryOperator {};
+  struct Dereference {};
+  struct Negate {};
 
-  class Negate : public UnaryOperator {};
-  class Dereference : public UnaryOperator {};
+  using UnaryOperator = std::variant<Dereference, Negate>;
 
 }
 

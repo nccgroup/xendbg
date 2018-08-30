@@ -13,21 +13,22 @@
 
 #include "ParserException.hpp"
 #include "Sentinel.hpp"
-#include "Expression/Expression.hpp"
+#include "Expression/ExpressionGeneric.hpp"
 #include "Token/Constant.hpp"
 #include "Token/Label.hpp"
 #include "Token/Symbol.hpp"
 #include "Token/Variable.hpp"
-#include "Operator/Precedence.hpp"
-#include "Operator/BinaryOperator.hpp"
-#include "Operator/UnaryOperator.hpp"
+#include "Expression/Expression.hpp"
+#include "Expression/Operator/Precedence.hpp"
+#include "Expression/Operator/BinaryOperator.hpp"
+#include "Expression/Operator/UnaryOperator.hpp"
 #include "../Util/overloaded.hpp"
 
 namespace xd::parser {
 
   class Parser {
   public:
-    expr::ExpressionPtr parse(std::string input);
+    expr::Expression parse(std::string input);
 
   private:
     using Token = std::variant<
@@ -71,7 +72,7 @@ namespace xd::parser {
     std::queue<Token> _tokens;
     std::queue<size_t> _tokens_pos;
     std::stack<Operator> _operators;
-    std::stack<expr::ExpressionPtr> _operands;
+    std::stack<expr::Expression> _operands;
   };
 
 }

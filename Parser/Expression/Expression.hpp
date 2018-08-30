@@ -1,23 +1,21 @@
 //
-// Created by Spencer Michaels on 8/11/18.
+// Created by Spencer Michaels on 8/30/18.
 //
 
 #ifndef XENDBG_EXPRESSION_HPP
 #define XENDBG_EXPRESSION_HPP
 
-#include <memory>
+#include <string>
 
-#include "ExpressionEvaluator.hpp"
+#include "ExpressionGeneric.hpp"
 
 namespace xd::parser::expr {
 
-  class Expression;
-  using ExpressionPtr = std::shared_ptr<Expression>;
+  using Constant = Unit<uint64_t>;
+  using Label = Unit<std::string>;
+  using Variable = Unit<std::string>;
 
-  class Expression {
-  public:
-    virtual void evaluate(ExpressionEvaluator& evaluator) const = 0;
-  };
+  using Expression = ExpressionGeneric<Constant, Label, Variable>;
 
 }
 

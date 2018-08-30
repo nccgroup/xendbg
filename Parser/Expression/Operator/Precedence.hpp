@@ -14,26 +14,25 @@ namespace xd::parser::expr::op {
   using Precedence = int;
 
   template <typename T>
-  struct _precedence_impl {};
+  struct _precedence{};
 
-  template <> struct _precedence_impl<Equals>       { static const Precedence p = 1; };
-  template <> struct _precedence_impl<Negate>       { static const Precedence p = 10; };
-  template <> struct _precedence_impl<Dereference>  { static const Precedence p = 10; };
-  template <> struct _precedence_impl<Add>          { static const Precedence p = 20; };
-  template <> struct _precedence_impl<Subtract>     { static const Precedence p = 20; };
-  template <> struct _precedence_impl<Multiply>     { static const Precedence p = 30; };
-  template <> struct _precedence_impl<Divide>       { static const Precedence p = 30; };
+  template <> struct _precedence<Equals>      { static const Precedence p = 1; };
+  template <> struct _precedence<Negate>      { static const Precedence p = 10; };
+  template <> struct _precedence<Dereference> { static const Precedence p = 10; };
+  template <> struct _precedence<Add>         { static const Precedence p = 20; };
+  template <> struct _precedence<Subtract>    { static const Precedence p = 20; };
+  template <> struct _precedence<Multiply>    { static const Precedence p = 30; };
+  template <> struct _precedence<Divide>      { static const Precedence p = 30; };
 
   template <typename T>
-  Precedence precedence_of() {
-    return _precedence_impl<T>::p;
+  Precedence precedence_of(const T&) {
+    return _precedence<T>::p;
   }
 
   template <typename... Operators_t>
-  Precedence precedence_of(std::variant<Operators_t...> op) {
+  Precedence precedence_of(const std::variant<Operators_t...>& op) {
     return std::visit([](auto&& op) {
-      using Operator_t = std::decay_t<decltype(op)>;
-      return precedence_of<Operator_t>();
+      return precedence_of(op);
     }, op);
   }
 }

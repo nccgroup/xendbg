@@ -15,7 +15,10 @@
 
 using xd::Debugger;
 using xd::parser::Parser;
+using xd::parser::expr::Constant;
 using xd::parser::expr::Expression;
+using xd::parser::expr::Label;
+using xd::parser::expr::Variable;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::make_command;
@@ -51,9 +54,11 @@ void DebuggerREPL::setup_repl() {
    * If what is entered isn't a command, interpret it as an expression and evaluate it
    */
    // TODO: Also need an equivalent for completion, e.g. $<tab> completes variables
+  /*
   _repl.set_no_match_handler([this](const std::string &line) {
     parse_and_eval_expression(line);
   });
+  */
 
   /**
    * Standard commands: help and quit
@@ -172,9 +177,10 @@ void DebuggerREPL::setup_repl() {
         },
         [this](auto &/*flags*/, auto &args) {
           const auto expr_str = args.get("expr");
-          return [this, &expr_str]() {
+          return [this, expr_str]() {
             auto expr = parse_expression(expr_str);
-            evaluate_expression(expr);
+            auto result = evaluate_expression(expr);
+            std::cout << result << std::endl;
           };
         })));
 }
@@ -219,6 +225,30 @@ Expression DebuggerREPL::parse_expression(const std::string &s) {
   return parser.parse(s);
 }
 
-void DebuggerREPL::evaluate_expression(Expression expr) {
-  // TODO
+uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
+  return std::visit(util::overloaded {
+    [](const Constant& ex) {
+      return ex.value;
+    },
+    [](const Label& ex) {
+      //throw std::runtime_error("Not yet implemented!");
+      return 0UL;
+    },
+    [this](const Variable& ex) {
+      return _debugger.get_var(ex.value);
+    },
+    [](const Expression::UnaryExpressionPtr& ex) {
+      const auto& op = ex->op;
+      const auto& x = ex->x;
+
+      std::visit(util::overloaded {
+      });
+
+      return 0UL;
+    },
+    [](const Expression::BinaryExpressionPtr& ex) {
+      //throw std::runtime_error("Not yet implemented!");
+      return 0UL;
+    },
+  }, expr.value);
 }

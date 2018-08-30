@@ -29,7 +29,7 @@ namespace xd {
     void print_xen_info(const xen::XenHandle& xen);
 
     parser::expr::Expression parse_expression(const std::string &s);
-    void evaluate_expression(parser::expr::Expression expr);
+    uint64_t evaluate_expression(const parser::expr::Expression& expr);
 
   private:
     Debugger _debugger;

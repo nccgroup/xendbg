@@ -11,9 +11,9 @@
 
 namespace xd::parser::expr {
 
-  using Constant = Unit<uint64_t>;
-  using Label = Unit<std::string>;
-  using Variable = Unit<std::string>;
+  struct Constant : public Unit<uint64_t> {};
+  struct Label : public Unit<std::string> {};
+  struct Variable : public Unit<std::string> {};
 
   using Expression = ExpressionGeneric<Constant, Label, Variable>;
 

@@ -12,7 +12,7 @@
 #include "Token/Symbol.hpp"
 #include "Token/Variable.hpp"
 
-namespace xd::parser::op {
+namespace xd::parser::expr::op {
   class Sentinel;
 }
 
@@ -20,7 +20,7 @@ namespace xd::parser::pred {
 
   template<typename Token_t>
   bool is_sentinel(Token_t token) {
-    return std::holds_alternative<op::Sentinel>(token);
+    return std::holds_alternative<expr::op::Sentinel>(token);
   }
 
   template <typename Token_t>

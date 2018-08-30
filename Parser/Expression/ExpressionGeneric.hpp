@@ -19,10 +19,10 @@ namespace xd::parser::expr {
   };
 
   template <typename... Units_t>
-  class BinaryExpressionGeneric;
+  struct BinaryExpressionGeneric;
 
   template <typename... Units_t>
-  class UnaryExpressionGeneric;
+  struct UnaryExpressionGeneric;
 
   template <typename... Units_t>
   struct ExpressionGeneric {
@@ -35,21 +35,13 @@ namespace xd::parser::expr {
     using BinaryExpressionPtr = std::unique_ptr<BinaryExpression>;
 
     template <typename T>
-    static ExpressionGeneric<Units_t...> make(T value) {
-      return ExpressionGeneric<Units_t...>{value};
-    }
+    ExpressionGeneric(T v) : value(v) {}
 
-    static ExpressionGeneric<Units_t...> make(
-        op::UnaryOperator op, const ExpressionGeneric<Units_t...> &x)
-    {
-      return ExpressionGeneric<Units_t...>{std::make_shared<UnaryExpression>(op, x)};
-    }
+    ExpressionGeneric(op::UnaryOperator op, ExpressionGeneric x)
+      : value(std::make_unique<UnaryExpression>(op, std::move(x))) {};
 
-    static ExpressionGeneric<Units_t...> make(
-        op::BinaryOperator op, const ExpressionGeneric<Units_t...> &x, const ExpressionGeneric<Units_t...> &y)
-    {
-      return ExpressionGeneric<Units_t...>{std::make_shared<BinaryExpression>(op, x, y)};
-    }
+    ExpressionGeneric(op::BinaryOperator op, ExpressionGeneric x, ExpressionGeneric y)
+      : value(std::make_unique<BinaryExpression>(op, std::move(x), std::move(y))) {};
 
     std::variant<Units_t..., UnaryExpressionPtr, BinaryExpressionPtr> value;
   };
@@ -61,7 +53,7 @@ namespace xd::parser::expr {
 
   public:
     UnaryExpressionGeneric(op::UnaryOperator op, Expression x)
-      : op(op), x(x) {};
+      : op(op), x(std::move(x)) {};
 
     op::UnaryOperator op;
     Expression x;
@@ -73,8 +65,8 @@ namespace xd::parser::expr {
     using Expression = ExpressionGeneric<Units_t...>;
 
   public:
-    BinaryExpressionGeneric(op::BinaryOperator op, Expression x)
-        : op(op), x(x), y(y) {};
+    BinaryExpressionGeneric(op::BinaryOperator op, Expression x, Expression y)
+        : op(op), x(std::move(x)), y(std::move(y)) {};
 
     op::BinaryOperator op;
     Expression x, y;

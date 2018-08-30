@@ -19,10 +19,10 @@
 
 using xd::parser::Parser;
 using xd::parser::expr::Expression;
+using xd::parser::expr::op::BinaryOperator;
 using xd::parser::expr::op::precedence_of;
-using xd::parser::expr::op::BinaryOperatorBase;
 using xd::parser::expr::op::Sentinel;
-using xd::parser::expr::op::UnaryOperatorBase;
+using xd::parser::expr::op::UnaryOperator;
 using xd::parser::pred::is_binary_operator_symbol;
 using xd::parser::pred::is_constant;
 using xd::parser::pred::is_label;
@@ -83,7 +83,7 @@ Expression Parser::parse(std::string input) {
     throw except::ExtraTokenException(_input, _tokens_pos.front());
   }
 
-  return _operands.top();
+  return std::move(_operands.top());
 }
 
 void Parser::consume() {
@@ -119,15 +119,15 @@ void Parser::parse_unit() {
 
   if (is_constant(next)) {
     const auto value = std::get<token::Constant>(next).value();
-    _operands.push(Expression::make(expr::Constant{value}));
+    _operands.emplace(expr::Constant{value});
     consume();
   } else if (is_label(next)) {
     const auto name = std::get<token::Label>(next).name();
-    _operands.push(Expression::make(expr::Label{name}));
+    _operands.emplace(expr::Label{name});
     consume();
   } else if (is_variable(next)) {
     const auto name = std::get<token::Variable>(next).name();
-    _operands.push(Expression::make(expr::Variable{name}));
+    _operands.emplace(expr::Variable{name});
     consume();
   } else if (is_symbol_of_type(next, Symbol::Type::ParenLeft)) {
     consume();
@@ -156,19 +156,20 @@ void xd::parser::Parser::push_operator_and_merge(Parser::Operator op) {
 }
 
 void xd::parser::Parser::pop_operator_and_merge() {
+  const auto& op = _operators.top();
   std::visit(util::overloaded {
-    [](const op::Sentinel& op) {
+    [](const Sentinel& op) {
       throw except::SentinelMergeException();
     },
-    [this](const auto& op) {
+    [this](const UnaryOperator& op) {
+      auto x = pop_ret(_operands);
+      _operands.emplace(op, std::move(x));
+    },
+    [this](const BinaryOperator& op) {
       auto x = pop_ret(_operands);
       auto y = pop_ret(_operands);
 
-      _operands.push(Expression::make(op, x, y));
-    },
-    [this](const auto& op) {
-      auto x = pop_ret(_operands);
-      _operands.push(Expression::make(op, x));
+      _operands.emplace(op, std::move(x), std::move(y));
     }
   }, pop_ret(_operators));
 }

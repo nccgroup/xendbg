@@ -9,9 +9,10 @@
 
 #include "Expression/Operator/Precedence.hpp"
 
-namespace xd::parser::op {
+namespace xd::parser::expr::op {
   class Sentinel {};
-  template <> struct _precedence_impl<Sentinel> {
+  template <>
+  struct _precedence_impl<Sentinel> {
     static const op::Precedence p = std::numeric_limits<op::Precedence>::min();
   };
 }

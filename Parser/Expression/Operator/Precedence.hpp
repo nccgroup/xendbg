@@ -10,7 +10,7 @@
 #include "BinaryOperator.hpp"
 #include "UnaryOperator.hpp"
 
-namespace xd::parser::op {
+namespace xd::parser::expr::op {
   using Precedence = int;
 
   template <typename T>

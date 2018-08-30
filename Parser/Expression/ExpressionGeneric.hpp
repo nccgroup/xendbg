@@ -14,7 +14,9 @@
 namespace xd::parser::expr {
 
   template <typename T>
-  struct Unit { T value; };
+  struct Unit {
+    T value;
+  };
 
   template <typename... Units_t>
   class BinaryExpressionGeneric;
@@ -68,15 +70,29 @@ namespace xd::parser::expr {
   };
 
   template <typename... Units_t>
-  class UnaryExpressionGeneric {
+  struct UnaryExpressionGeneric {
+  private:
+    using Expression = ExpressionGeneric<Units_t...>;
+
+  public:
+    UnaryExpressionGeneric(op::UnaryOperator op, Expression x)
+      : op(op), x(x) {};
+
     op::UnaryOperator op;
-    ExpressionGeneric<Units_t...> x;
+    Expression x;
   };
 
   template <typename... Units_t>
-  class BinaryExpressionGeneric {
+  struct BinaryExpressionGeneric {
+  private:
+    using Expression = ExpressionGeneric<Units_t...>;
+
+  public:
+    BinaryExpressionGeneric(op::BinaryOperator op, Expression x)
+        : op(op), x(x), y(y) {};
+
     op::BinaryOperator op;
-    ExpressionGeneric<Units_t...> x, y;
+    Expression x, y;
   };
 
 }

@@ -19,10 +19,10 @@
 
 using xd::parser::Parser;
 using xd::parser::expr::Expression;
-using xd::parser::op::precedence_of;
-using xd::parser::op::BinaryOperator;
-using xd::parser::op::Sentinel;
-using xd::parser::op::UnaryOperator;
+using xd::parser::expr::op::precedence_of;
+using xd::parser::expr::op::BinaryOperator;
+using xd::parser::expr::op::Sentinel;
+using xd::parser::expr::op::UnaryOperator;
 using xd::parser::pred::is_binary_operator_symbol;
 using xd::parser::pred::is_constant;
 using xd::parser::pred::is_label;
@@ -42,15 +42,15 @@ Parser::Operator Parser::symbol_to_binop(const Symbol& symbol) {
 
   switch (symbol.type()) {
     case Type::Plus:
-      return op::Add();
+      return expr::op::Add();
     case Type::Minus:
-      return op::Subtract();
+      return expr::op::Subtract();
     case Type::Star:
-      return op::Multiply();
+      return expr::op::Multiply();
     case Type::Slash:
-      return op::Divide();
+      return expr::op::Divide();
     case Type::Equals:
-      return op::Equals();
+      return expr::op::Equals();
     default:
       throw std::runtime_error("Symbol does not represent a binary operator!");
   }
@@ -61,9 +61,9 @@ Parser::Operator Parser::symbol_to_unop(const Symbol& symbol) {
 
   switch (symbol.type()) {
     case Type::Minus:
-      return op::Negate();
+      return expr::op::Negate();
     case Type::Star:
-      return op::Dereference();
+      return expr::op::Dereference();
     default:
       throw std::runtime_error("Symbol does not represent a unary operator!");
   }

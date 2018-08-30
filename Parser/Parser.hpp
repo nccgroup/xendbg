@@ -37,10 +37,10 @@ namespace xd::parser {
         token::Symbol,
         token::Variable>;
     using Operator = std::variant<
-        op::Sentinel,
-        op::Negate, op::Dereference,
-        op::Add, op::Subtract, op::Multiply, op::Divide,
-        op::Equals>;
+        expr::op::Sentinel,
+        expr::op::Negate, expr::op::Dereference,
+        expr::op::Add, expr::op::Subtract, expr::op::Multiply, expr::op::Divide,
+        expr::op::Equals>;
 
   private:
     static Operator symbol_to_binop(const token::Symbol& symbol);

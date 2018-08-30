@@ -7,7 +7,7 @@
 
 #include <variant>
 
-namespace xd::parser::op {
+namespace xd::parser::expr::op {
 
   struct Dereference {};
   struct Negate {};

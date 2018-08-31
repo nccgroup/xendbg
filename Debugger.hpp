@@ -18,6 +18,11 @@ namespace xd {
   private:
     using VarMap = std::unordered_map<std::string, uint64_t>;
 
+    // TODO: Move these elsewhere
+    struct Symbol {
+      uint64_t address;
+    };
+
   public:
     xen::Domain& attach(xen::DomID domid);
     void detach();
@@ -27,6 +32,7 @@ namespace xd {
     xen::XenHandle &get_xen_handle() { return _xen; };
     std::optional<xen::Domain>& get_current_domain() { return _domain; };
     std::vector<xen::Domain> get_guest_domains();
+    const Symbol &lookup_symbol(const std::string &name);
 
     const VarMap& get_vars() { return _variables; };
     uint64_t get_var(const std::string &name);
@@ -34,13 +40,7 @@ namespace xd {
     void delete_var(const std::string &name);
 
   private:
-    // TODO: Move these elsewhere
-    struct Symbol {
-      std::string name;
-      uint64_t address;
-    };
-    struct Function : public Symbol {};
-    std::vector<Symbol> _symbols;
+    std::unordered_map<std::string, Symbol> _symbols;
 
     size_t _current_vcpu;
     xen::XenHandle _xen;

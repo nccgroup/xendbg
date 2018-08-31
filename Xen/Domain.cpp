@@ -20,9 +20,16 @@ Domain::Domain(XenHandle& xen, DomID domid)
   get_info(); // Make sure the domain is behaving properly
 }
 
-std::string xd::xen::Domain::get_name() const {
+std::string Domain::get_name() const {
   const auto path = "/local/domain/" + std::to_string(_domid) + "/name";
   return _xen.get_xenstore().read(path);
+}
+
+std::string Domain::get_kernel_path() const {
+  const auto vm_path = "/local/domain/" + std::to_string(_domid) + "/vm";
+  const auto vm = _xen.get_xenstore().read(vm_path);
+  const auto kernel_path = vm + "/image/kernel";
+  return _xen.get_xenstore().read(kernel_path);
 }
 
 DomInfo Domain::get_info() const {

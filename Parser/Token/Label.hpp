@@ -32,9 +32,10 @@ namespace xd::parser::token {
       if (!std::regex_search(begin, end, m, r))
         return std::make_pair(std::nullopt, begin);
 
-      auto new_begin = begin + m.position() + m.length();
+      const auto label_end = begin + m.position() + m.length();
+      const auto label_name = std::string(begin+1, label_end);
 
-      return std::make_pair(Label(m.str()), new_begin);
+      return std::make_pair(Label(label_name), label_end);
     }
   };
 }

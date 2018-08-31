@@ -49,11 +49,38 @@ examine <expr>
 
 set <<Dereference OR Variable> Equals <expr>>
   where <expr1> is Dereference or Variable
+```
+
+# Minor improvements to autocomplete
+
+- Label completion: If you hit tab and first char of the last word is '&',
+complete from the list of labels. Same with '$' and variables.
+- Allow args to have autocompletion functions
+  - This way, I can specify a custom completer for domain names in "guest
+  attach <name>"
+  - In order to do this, I need to figure out what arg is next.  I can do a
+   partial match of the command string and see what arg is missing, if any.
+
+Create Flag::match(begin, end), which matches against flag args. In Verb::match,
+if none can be matched for any flags, just match flag names.
 
 
-set $var = expr
-unset $var
+```
 
-info variables
+std::optional<Argument> xd::repl::cmd::get_next_arg(
+    StrConstIt begin, StrConstIt end, const std::vector<Argument> &args)
+{
+  auto it = begin;
+  for (const auto& arg : args) {
+    it = skip_whitespace(it, end);
 
+    auto arg_end = arg.match(it, end);
+    if (arg_end == it)
+      return arg;
+
+    it = arg_end;
+  }
+
+  return std::nullopt;
+}
 ```

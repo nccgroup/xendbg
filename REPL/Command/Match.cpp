@@ -49,11 +49,10 @@ std::pair<StrConstIt, ArgsHandle> xd::repl::cmd::match_args(
 
     auto arg_end = arg.match(it, end);
     if (arg_end == it) {
-      auto default_value = arg.get_default_value();
-      if (default_value.empty()) {
+      if (!arg.is_optional()) {
         throw std::runtime_error("Failed to match arg!");
       } else {
-        args_handle.put(arg, default_value);
+        args_handle.put(arg, arg.get_default_value());
       }
     } else {
       args_handle.put(arg, std::string(it, arg_end));

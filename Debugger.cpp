@@ -18,10 +18,13 @@ using xd::xen::XenHandle;
 Domain& Debugger::attach(DomID domid) {
   _current_vcpu = 0;
   _domain.emplace(_xen, domid);
+
   return _domain.value();
 }
 
 void Debugger::detach() {
+  _symbols.clear();
+  _variables.clear();
   _domain.reset();
 }
 
@@ -39,18 +42,18 @@ void Debugger::load_symbols_from_file(const std::string &name) {
       const size_t num_symbols = symbols.get_symbols_num();
       for (size_t i = 0; i < num_symbols; ++i) {
         std::string       name;
-        ELFIO::Elf64_Addr value;
+        ELFIO::Elf64_Addr address;
         ELFIO::Elf_Xword  size;
         unsigned char     bind;
         unsigned char     type;
         ELFIO::Elf_Half   section_index;
         unsigned char     other;
 
-        symbols.get_symbol(i, name, value, size, bind, type, section_index, other);
+        symbols.get_symbol(i, name, address, size, bind, type, section_index, other);
 
         // TODO: very basic for now
-        if (type == STT_FUNC && value > 0)
-          _symbols.push_back(Function{{name, value}});
+        if (type == STT_FUNC && address > 0)
+          _symbols[name] = Symbol{address};
       }
     }
   }
@@ -66,6 +69,10 @@ std::vector<Domain> Debugger::get_guest_domains() {
       return Domain(_xen, domid);
     });
   return domains;
+}
+
+const Debugger::Symbol &Debugger::lookup_symbol(const std::string &name) {
+  return _symbols.at(name);
 }
 
 uint64_t Debugger::get_var(const std::string &name) {

@@ -3,6 +3,7 @@
 //
 
 #include <cstring>
+#include <iostream>
 
 #include "Domain.hpp"
 #include "XenCtrl.hpp"
@@ -104,16 +105,17 @@ MemInfo XenCtrl::map_domain_meminfo(const Domain &domain) const {
   auto deleter = [xenctrl](xc_domain_meminfo *p) {
     xc_unmap_domain_meminfo(xenctrl.get(), p);
   };
-  auto meminfo = std::unique_ptr<xc_domain_meminfo, decltype(deleter)>(
-    new struct xc_domain_meminfo(), deleter);
+
+  const auto meminfo = new struct xc_domain_meminfo;
 
   int err;
-  if (err = xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo.get())) {
+  if (err = xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo)) {
     throw XenException(
       "Failed to map meminfo for domain " + std::to_string(domain.get_domid()) + ": " + std::strerror(-err));
   }
 
-  return meminfo;
+  return std::unique_ptr<xc_domain_meminfo, decltype(deleter)>(
+    meminfo, deleter);
 }
 
 void XenCtrl::set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const {

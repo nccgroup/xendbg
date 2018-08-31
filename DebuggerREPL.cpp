@@ -110,8 +110,7 @@ void DebuggerREPL::setup_repl() {
     Verb("attach", "Attach to a domain.",
       {},
       {
-        Argument("domid/name", "Either the numeric domID or the name of a guest to attach to.",
-            match_optionally_quoted_string)
+        Argument("domid/name", "Either the numeric domID or the name of a guest to attach to.", match_optionally_quoted_string)
       },
       [this](auto &/*flags*/, auto &args) {
         const auto domid_or_name = args.get("domid/name");
@@ -129,6 +128,10 @@ void DebuggerREPL::setup_repl() {
 
           const auto domain = _debugger.get_current_domain().value();
           std::cout << "Attached to guest " << domain.get_domid() << " (" << domain.get_name() << ")." << std::endl;
+
+          const auto kernel_path = domain.get_kernel_path();
+          _debugger.load_symbols_from_file(kernel_path);
+          std::cout << "Loaded symbols from '" << kernel_path << "'." << std::endl;
         };
       }),
 
@@ -189,17 +192,47 @@ void DebuggerREPL::setup_repl() {
    */
   _repl.add_command(make_command(
       Verb("print", "Display the value of an expression.",
-        {},
+        {
+          Flag('f', "format", "Format.", {
+            Argument("fmt", "The format to use (b/x/d)", next_whitespace),
+          })
+        },
         {
           Argument("expr", "The expression to display.", match_everything),
         },
-        [this](auto &/*flags*/, auto &args) {
+        [this](auto &flags, auto &args) {
+          const auto print_as_dec = [](std::ostream &out, uint64_t result) {
+            out << std::dec << result;
+          };
+          const auto print_as_hex = [](std::ostream &out, uint64_t result) {
+            out << std::showbase << std::hex << result;
+          };
+          const auto print_as_bin = [](std::ostream &out, uint64_t result) {
+            // TODO: don't print leading zeroes?
+            out << "0b" << std::bitset<CHAR_BIT * sizeof(uint64_t)>(result);
+          };
+
+          std::function<void(std::ostream&, uint64_t)> printer = print_as_dec;
+          if (flags.has('f')) {
+            const auto format = flags.get('f').value().get(0);
+            assert(format.size() == 1);
+            switch (format[0]) {
+              case 'x':
+                printer = print_as_hex;
+                break;
+              case 'b':
+                printer = print_as_bin;
+                break;
+            }
+          }
+
           const auto expr_str = args.get("expr");
-          return [this, expr_str]() {
+          return [this, expr_str, printer]() {
             Parser parser;
             const auto expr = parser.parse(expr_str);
             const auto result = evaluate_expression(expr, false);
-            std::cout << result << std::endl;
+            printer(std::cout, result);
+            std::cout << std::endl;
           };
         })));
 
@@ -207,20 +240,24 @@ void DebuggerREPL::setup_repl() {
       Verb("set", "Write to a variable, register, or memory region.",
         {},
         {
-          Argument("$var = expr...", "", match_everything),
+          Argument("{$var, *expr} = expr", "", match_everything),
         },
         [this](auto &/*flags*/, auto &args) {
-          const auto expr_str = args.get("$var = expr...");
+          const auto expr_str = args.get(0);
           return [this, expr_str]() {
             Parser parser;
             const auto expr = parser.parse(expr_str);
 
-            // Make sure the expr is of the form $var = expr
-            const bool is_var_equals_expr =
+            // $var = expr
+            const bool lhs_is_var =
               expr.is_binex() && expr.as_binex().x.template is_of_type<Variable>();
 
-            if (!is_var_equals_expr)
-              throw std::runtime_error("Input must be of the form $var = expr...");
+            // *expr = expr
+            const bool lhs_is_deref =
+              expr.is_binex() && expr.as_binex().x.is_unex();
+
+            if (!lhs_is_var && !lhs_is_deref)
+              throw std::runtime_error("Input must be of the form {$var, *expr} = expr");
 
             const auto result = evaluate_expression(expr, true);
             std::cout << result << std::endl;
@@ -251,7 +288,7 @@ void DebuggerREPL::setup_repl() {
 }
 
 xd::xen::Domain &DebuggerREPL::get_domain_or_fail() {
-  auto domain = _debugger.get_current_domain();
+  auto& domain = _debugger.get_current_domain();
   if (!domain)
     throw std::runtime_error("No domain!");
   return domain.value();
@@ -293,8 +330,10 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
     [](const Constant& ex) {
       return ex.value;
     },
-    [](const Label& ex) {
-      return 0UL;
+    [this](const Label& ex) {
+      const auto label = ex.value;
+      // TODO: handle symbol not existing
+      return _debugger.lookup_symbol(label).address;
     },
     [this](const Variable& ex) {
       const std::string &var_name = ex.value;
@@ -310,8 +349,7 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
 
       return std::visit(util::overloaded {
           [this, x_value](Dereference) {
-            const auto mem = get_domain_or_fail().map_memory(
-                x_value, sizeof(uint64_t), PROT_READ);
+            const auto mem = get_domain_or_fail().map_memory(x_value, XC_PAGE_SIZE, PROT_READ);
             return *((uint64_t*)mem.get());
           },
           [x_value](Negate) {
@@ -353,8 +391,7 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
             const auto address = evaluate_expression(ex->x.as_unex().x, false);
             const auto value = evaluate_expression(ex->y, false);
 
-            const auto mem = get_domain_or_fail().map_memory(
-                address, sizeof(uint64_t), PROT_WRITE);
+            const auto mem = get_domain_or_fail().map_memory(address, XC_PAGE_SIZE, PROT_WRITE);
             *((uint64_t*)mem.get()) = value;
           }
 

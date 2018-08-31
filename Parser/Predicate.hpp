@@ -19,32 +19,32 @@ namespace xd::parser::expr::op {
 namespace xd::parser::pred {
 
   template<typename Token_t>
-  bool is_sentinel(Token_t token) {
+  bool is_sentinel(const Token_t& token) {
     return std::holds_alternative<expr::op::Sentinel>(token);
   }
 
   template <typename Token_t>
-  bool is_constant(Token_t token) {
+  bool is_constant(const Token_t& token) {
     return std::holds_alternative<token::Constant>(token);
   }
 
   template <typename Token_t>
-  bool is_label(Token_t token) {
+  bool is_label(const Token_t& token) {
     return std::holds_alternative<token::Label>(token);
   }
 
   template <typename Token_t>
-  bool is_symbol(Token_t token) {
+  bool is_symbol(const Token_t& token) {
     return std::holds_alternative<token::Symbol>(token);
   }
 
   template <typename Token_t>
-  bool is_symbol_of_type(Token_t token, const token::Symbol::Type& sym) {
+  bool is_symbol_of_type(const Token_t& token, const token::Symbol::Type& sym) {
     return std::holds_alternative<token::Symbol>(token) && std::get<token::Symbol>(token).type() == sym;
   }
 
   template <typename Token_t>
-  bool is_variable(Token_t token) {
+  bool is_variable(const Token_t& token) {
     return std::holds_alternative<token::Variable>(token);
   }
 

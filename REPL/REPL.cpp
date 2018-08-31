@@ -99,9 +99,7 @@ void REPL::run() {
     if (_prompt_configurator)
       _prompt = _prompt_configurator();
     auto line = read_line();
-    std::cout << std::endl; // TODO
     interpret_line(line);
-    std::cout << std::endl; // TODO
   };
 }
 

@@ -19,6 +19,7 @@ namespace xd::xen {
 
     DomID get_domid() const { return _domid; };
     std::string get_name() const;
+    std::string get_kernel_path() const;
     DomInfo get_info() const;
     int get_word_size() const;
 

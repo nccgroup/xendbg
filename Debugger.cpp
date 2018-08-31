@@ -5,6 +5,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <elfio/elfio.hpp>
+
 #include "Debugger.hpp"
 #include "Util/overloaded.hpp"
 
@@ -21,6 +23,37 @@ Domain& Debugger::attach(DomID domid) {
 
 void Debugger::detach() {
   _domain.reset();
+}
+
+void Debugger::load_symbols_from_file(const std::string &name) {
+  ELFIO::elfio reader;
+
+  if (!reader.load(name))
+    throw std::runtime_error("Failed to read file!");
+
+  _symbols.clear();
+
+  for (const auto section : reader.sections) {
+    if (section->get_type() == SHT_SYMTAB) {
+      const ELFIO::symbol_section_accessor symbols(reader, section);
+      const size_t num_symbols = symbols.get_symbols_num();
+      for (size_t i = 0; i < num_symbols; ++i) {
+        std::string       name;
+        ELFIO::Elf64_Addr value;
+        ELFIO::Elf_Xword  size;
+        unsigned char     bind;
+        unsigned char     type;
+        ELFIO::Elf_Half   section_index;
+        unsigned char     other;
+
+        symbols.get_symbol(i, name, value, size, bind, type, section_index, other);
+
+        // TODO: very basic for now
+        if (type == STT_FUNC && value > 0)
+          _symbols.push_back(Function{{name, value}});
+      }
+    }
+  }
 }
 
 std::vector<Domain> Debugger::get_guest_domains() {

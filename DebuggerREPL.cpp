@@ -247,6 +247,7 @@ void DebuggerREPL::setup_repl() {
             _debugger.delete_var(name);
           };
         })));
+
 }
 
 xd::xen::Domain &DebuggerREPL::get_domain_or_fail() {
@@ -261,7 +262,8 @@ void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
 
   std::cout
     << "Domain " << domain.get_domid() << " (" << domain.get_name() << "):" << std::endl
-    << domain.get_word_size() * 8 << "-bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl;
+    << domain.get_word_size() * 8 << "-bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl
+    << (dominfo.max_vcpu_id+1) << "VCPUs" << std::endl;
 }
 
 void DebuggerREPL::print_registers(const xen::Registers& regs) {

@@ -22,6 +22,8 @@ namespace xd {
     xen::Domain& attach(xen::DomID domid);
     void detach();
 
+    void load_symbols_from_file(const std::string &name);
+
     xen::XenHandle &get_xen_handle() { return _xen; };
     std::optional<xen::Domain>& get_current_domain() { return _domain; };
     std::vector<xen::Domain> get_guest_domains();
@@ -32,6 +34,14 @@ namespace xd {
     void delete_var(const std::string &name);
 
   private:
+    // TODO: Move these elsewhere
+    struct Symbol {
+      std::string name;
+      uint64_t address;
+    };
+    struct Function : public Symbol {};
+    std::vector<Symbol> _symbols;
+
     size_t _current_vcpu;
     xen::XenHandle _xen;
     std::optional<xen::Domain> _domain;

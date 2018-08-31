@@ -11,6 +11,8 @@ using xd::xen::MappedMemory;
 using xd::xen::MemInfo;
 using xd::xen::XenCtrl;
 using xd::xen::XenHandle;
+using xd::xen::get_register_by_name;
+using xd::xen::set_register_by_name;
 
 Domain::Domain(XenHandle& xen, DomID domid)
     : _xen(xen), _domid(domid)
@@ -37,6 +39,17 @@ MemInfo Domain::map_meminfo() const {
 
 MappedMemory Domain::map_memory(Address address, size_t size, int prot) const {
   return _xen.get_xen_foreign_memory().map(*this, address, size, prot);
+}
+
+uint64_t Domain::read_register(const std::string &name, VCPU_ID vcpu_id) {
+  const auto regs = get_cpu_context(vcpu_id);
+  return get_register_by_name(regs, name);
+}
+
+void Domain::write_register(const std::string &name, uint64_t value, VCPU_ID vcpu_id) {
+  auto regs = get_cpu_context(vcpu_id);
+  set_register_by_name(regs, name, value);
+  set_cpu_context(regs, vcpu_id);
 }
 
 Registers xd::xen::Domain::get_cpu_context(VCPU_ID vcpu_id) const {

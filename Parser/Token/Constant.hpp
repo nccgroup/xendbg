@@ -5,6 +5,7 @@
 #ifndef XENDBG_TOKEN_CONSTANT_HPP
 #define XENDBG_TOKEN_CONSTANT_HPP
 
+#include <iostream>
 #include <optional>
 #include <regex>
 #include <string>
@@ -29,19 +30,41 @@ namespace xd::parser::token {
 
   public:
     static TokenMatchResult<Constant> match(std::string::const_iterator begin, std::string::const_iterator end) {
-      std::regex r("^([0-9]+)|(0x[0-9a-fA-F]+)|(0b[0-1]+)");
-      std::smatch m;
-
-      if (!std::regex_search(begin, end, m, r))
+      if (begin == end)
         return std::make_pair(std::nullopt, begin);
 
-      auto value = std::stoi(m.str(), 0, 0);
-      auto new_begin = begin + m.position() + m.length();
+      // stoi doesn't handle the 0b prefix, so we have to do this manually
+      size_t base = 10;
 
-      return std::make_pair(Constant(value), new_begin);
-    };
+      if ((end-begin) > 1 && *begin == '0') {
+        const char base_ch = *(begin+1);
+        switch (base_ch) {
+          case 'b':
+            base = 2;
+            break;
+          case 'x':
+            base = 16;
+            break;
+          default:
+            break;
+        }
+      }
+
+      // Skip base the 0x/0b if found
+      const size_t skip = (base != 10 ? 2 : 0);
+
+      try {
+        size_t pos;
+        const auto s = std::string(begin + skip, end);
+        const auto value = std::stoul(s, &pos, base);
+        const auto new_begin = begin + skip + pos;
+
+        return std::make_pair(Constant(value), new_begin);
+      } catch (const std::invalid_argument &e) {
+        return std::make_pair(std::nullopt, begin);
+      }
+    }
   };
-
 }
 
 #endif //XENDBG_CONSTANT_HPP

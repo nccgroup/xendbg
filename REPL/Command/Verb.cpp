@@ -78,7 +78,7 @@ std::optional<Action> Verb::match(std::string::const_iterator begin,
   auto [args_end, args] = match_args(flags_end, end);
 
   if (args_end != end)
-    throw std::runtime_error("Found extra args!"); // TODO
+    throw std::runtime_error("Unknown arg(s): " + std::string(args_end, end)); // TODO
 
   return _make_action(flags, args);
 }

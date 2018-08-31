@@ -14,7 +14,7 @@ using xd::xen::DomID;
 using xd::xen::XenHandle;
 
 Domain& Debugger::attach(DomID domid) {
-  _current_cpu = 0;
+  _current_vcpu = 0;
   _domain.emplace(_xen, domid);
   return _domain.value();
 }
@@ -36,39 +36,10 @@ std::vector<Domain> Debugger::get_guest_domains() {
 }
 
 uint64_t Debugger::get_var(const std::string &name) {
-  if (_variables.count(name) > 0)
-    return _variables.at(name);
-
-  const auto regs = _domain.value().get_cpu_context(_current_cpu);
-
-  return std::visit(util::overloaded {
-    [&name](const xen::Registers32 regs) {
-      return (uint64_t)regs.get_by_name(name);
-    },
-    [&name](const xen::Registers64 regs) {
-      return (uint64_t)regs.get_by_name(name);
-    }
-  }, regs);
+  return _variables.at(name);
 }
 
 void Debugger::set_var(const std::string &name, uint64_t value) {
-  auto regs = _domain.value().get_cpu_context(_current_cpu);
-
-  try {
-    std::visit(util::overloaded {
-      [this, &name, value](xen::Registers32& regs) {
-        regs.set_by_name(name, value);
-        _domain.value().set_cpu_context(regs);
-      },
-      [this, &name, value](xen::Registers64& regs) {
-        regs.set_by_name(name, value);
-        _domain.value().set_cpu_context(regs);
-      }
-    }, regs);
-  } catch (const std::exception& e) {
-    std::cout << e.what() << std::endl;
-  }
-
   _variables[name] = value;
 }
 

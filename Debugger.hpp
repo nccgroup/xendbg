@@ -26,14 +26,13 @@ namespace xd {
     std::optional<xen::Domain>& get_current_domain() { return _domain; };
     std::vector<xen::Domain> get_guest_domains();
 
-
     const VarMap& get_vars() { return _variables; };
     uint64_t get_var(const std::string &name);
     void set_var(const std::string &name, uint64_t value);
     void delete_var(const std::string &name);
 
   private:
-    size_t _current_cpu;
+    size_t _current_vcpu;
     xen::XenHandle _xen;
     std::optional<xen::Domain> _domain;
     VarMap _variables;

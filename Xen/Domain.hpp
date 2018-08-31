@@ -27,12 +27,19 @@ namespace xd::xen {
       _xen.get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
     }
 
+
     MemInfo map_meminfo() const;
     MappedMemory map_memory(Address address, size_t size, int prot) const;
+
+    uint64_t read_register(const std::string &name, VCPU_ID vcpu_id = 0);
+    void write_register(const std::string &name, uint64_t value, VCPU_ID vcpu_id = 0);
+
     Registers get_cpu_context(VCPU_ID vcpu_id = 0) const;
     void set_cpu_context(Registers regs, VCPU_ID vcpu_id = 0) const;
+
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
     void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;
+
     void pause() const;
     void unpause() const;
 

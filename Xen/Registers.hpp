@@ -129,6 +129,10 @@ namespace xd::xen {
 
   using Registers = std::variant<Registers32, Registers64>;
 
+  uint64_t get_register_by_name(const Registers &regs, const std::string &name);
+  void set_register_by_name(Registers &regs, const std::string &name, uint64_t value);
+  bool is_register_name(const std::string &name);
+
   template <typename Source_t, typename Result_t>
   Result_t convert_gp_registers_32(const Source_t& source, Result_t regs_init) {
     regs_init.eax = source.eax;

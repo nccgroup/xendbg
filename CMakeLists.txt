@@ -52,6 +52,6 @@ add_executable(xendbg
     REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp
     REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
     REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
-    Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp Debugger.cpp Debugger.hpp DebuggerREPL.cpp DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp  Parser/Expression/Expression.hpp Parser/Expression/Operator/Operator.hpp)
+    Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp Debugger.cpp Debugger.hpp DebuggerREPL.cpp DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp  Parser/Expression/Expression.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)

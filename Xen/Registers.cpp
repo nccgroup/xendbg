@@ -2,8 +2,10 @@
 // Created by Spencer Michaels on 8/29/18.
 //
 
+#include <set>
 #include <unordered_map>
 
+#include "../Util/overloaded.hpp"
 #include "Registers.hpp"
 
 using xd::xen::Registers32;
@@ -121,4 +123,79 @@ void Registers64::set_by_name(const std::string &name, ValueType value) {
   };
 
   return set_by_name_map.at(name)(*this, value);
+}
+
+uint64_t xd::xen::get_register_by_name(const Registers &regs,
+        const std::string &name)
+{
+  return std::visit(util::overloaded {
+    [&name](const xen::Registers32& regs) {
+      return (uint64_t)regs.get_by_name(name);
+    },
+    [&name](const xen::Registers64& regs) {
+      return (uint64_t)regs.get_by_name(name);
+    }
+  }, regs);
+}
+
+void xd::xen::set_register_by_name(Registers &regs, const std::string &name,
+        uint64_t value)
+{
+  std::visit(util::overloaded {
+    [&name, value](xen::Registers32& regs) {
+      regs.set_by_name(name, value);
+    },
+    [&name, value](xen::Registers64& regs) {
+      regs.set_by_name(name, value);
+    }
+  }, regs);
+}
+
+bool xd::xen::is_register_name(const std::string &name) {
+  static const std::set<std::string> registers32_name_map = {
+    { "eax" },
+    { "ebx" },
+    { "ecx" },
+    { "edx" },
+    { "edi" },
+    { "esi" },
+    { "ebp" },
+    { "esp" },
+    { "ss" },
+    { "eflags" },
+    { "eip" },
+    { "cs" },
+    { "ds" },
+    { "es" },
+    { "fs" },
+    { "gs" },
+  };
+
+  static const std::set<std::string> registers64_name_map = {
+    { "rax" },
+    { "rbx" },
+    { "rcx" },
+    { "rdx" },
+    { "rsp" },
+    { "rbp" },
+    { "rsi" },
+    { "rdi" },
+    { "r8" },
+    { "r9" },
+    { "r10" },
+    { "r11" },
+    { "r12" },
+    { "r13" },
+    { "r14" },
+    { "r15" },
+    { "rflags" },
+    { "rip" },
+    { "fs" },
+    { "gs" },
+    { "cs" },
+    { "ds" },
+    { "ss" },
+  };
+
+  return registers32_name_map.count(name) || registers64_name_map.count(name);
 }

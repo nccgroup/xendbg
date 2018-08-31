@@ -295,15 +295,22 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
       return 0UL;
     },
     [this](const Variable& ex) {
-      return _debugger.get_var(ex.value);
+      const std::string &var_name = ex.value;
+
+      if (xd::xen::is_register_name(var_name))
+        return get_domain_or_fail().read_register(var_name);
+      else
+        return _debugger.get_var(var_name); 
     },
     [this, allow_write](const Expression::UnaryExpressionPtr& ex) {
       const auto& op = ex->op;
       const auto& x_value = evaluate_expression(ex->x, allow_write);
 
       return std::visit(util::overloaded {
-          [](Dereference) {
-            return 0UL;
+          [this, x_value](Dereference) {
+            const auto mem = get_domain_or_fail().map_memory(
+                x_value, sizeof(uint64_t), PROT_READ);
+            return *((uint64_t*)mem.get());
           },
           [x_value](Negate) {
             return -x_value;
@@ -327,11 +334,28 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
             throw std::runtime_error("Use 'set' to modify variables.");
 
           if (ex->x.is_of_type<Variable>()) {
-            const auto &var = ex->x.as<Variable>().value;
-            const auto val = evaluate_expression(ex->y, allow_write);
-            _debugger.set_var(var, val); 
-            return val;
+            const auto &var_name = ex->x.as<Variable>().value;
+            const auto value = evaluate_expression(ex->y, allow_write);
+
+            // TODO: VCPU ID
+            if (xd::xen::is_register_name(var_name))
+              get_domain_or_fail().write_register(var_name, value);
+            else
+              _debugger.set_var(var_name, value); 
+
+            return value;
+
+          } else if (ex->x.is_unex() &&
+              std::holds_alternative<Dereference>(ex->x.as_unex().op))
+          {
+            const auto address = evaluate_expression(ex->x.as_unex().x, false);
+            const auto value = evaluate_expression(ex->y, false);
+
+            const auto mem = get_domain_or_fail().map_memory(
+                address, sizeof(uint64_t), PROT_WRITE);
+            *((uint64_t*)mem.get()) = value;
           }
+
           return 0UL;
         },
         [get_xy](Add) {

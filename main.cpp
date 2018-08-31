@@ -1,18 +1,55 @@
+#include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include "DebuggerREPL.hpp"
+#include "REPL/Command/MakeCommand.hpp"
+#include "REPL/Command/Argument.hpp"
+#include "REPL/Command/Flag.hpp"
+#include "REPL/Command/Verb.hpp"
+#include "REPL/Command/Verb.hpp"
+#include "Util/IndentHelper.hpp"
 
 using xd::DebuggerREPL;
+using xd::repl::cmd::make_command;
+using xd::repl::cmd::Argument;
+using xd::repl::cmd::Flag;
+using xd::repl::cmd::Verb;
+using xd::util::IndentHelper;
 
-void parse_commandline(int argc, char **argv) {
-  std::vector<std::string> arg_list(argv, argv + argc);
-  // TODO
+std::string stringify_args(int argc, char **argv) {
+  const std::vector<std::string> args(argv, argv + argc);
+
+  std::stringstream ss;
+  std::for_each(args.begin(), args.end(), [&ss](const std::string &s) {
+    ss << s << " ";
+  });
+
+  return ss.str();
 }
 
 int main(int argc, char **argv) {
-  parse_commandline(argc, argv);
+  const auto cmdline_str = stringify_args(argc, argv);
+
+  const auto cmdline_cmd = make_command(Verb(argv[0], "",
+    {}, {},
+    [](const auto &flags, const auto &args) {
+      return []() {
+        return;
+      };
+    }));
+
+  try {
+    const auto cmdline_action = cmdline_cmd->match(cmdline_str);
+    cmdline_action.value()();
+  } catch (const std::runtime_error &e) {
+    auto indent = IndentHelper();
+    std::cerr << e.what() << std::endl;
+    cmdline_cmd->print(std::cerr, indent);
+    exit(1);
+  }
 
   DebuggerREPL dbg_repl;
   dbg_repl.run();
@@ -169,6 +206,7 @@ int main(int argc, char** argv) {
 */
 
 /*
+#include <iostream>
 #include "Parser/ParserException.hpp"
 #include "Parser/Parser.hpp"
 
@@ -188,10 +226,9 @@ void print_parser_exception(const ParserException& e) {
 }
 
 int main() {
-
   Parser parser;
   try {
-    auto expr = parser.parse("(($rip-&main) + 0x40) + (*$esp)");
+    auto expr = parser.parse("0x1101");
   } catch (const ExpectMissingTokenException &e) {
     std::cerr << e.msg() << std::endl;
     print_parser_exception(e);

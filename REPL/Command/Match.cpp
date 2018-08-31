@@ -47,7 +47,7 @@ std::pair<StrConstIt, ArgsHandle> xd::repl::cmd::match_args(
   for (const auto& arg : args) {
     it = skip_whitespace(it, end);
 
-    auto arg_end = arg.match(it, end);
+    const auto arg_end = arg.match(it, end);
     if (arg_end == it) {
       if (!arg.is_optional()) {
         throw std::runtime_error("Failed to match arg!");
@@ -72,34 +72,50 @@ std::pair<StrConstIt, FlagsHandle> xd::repl::cmd::match_flags(
 
   auto it = skip_whitespace(begin, end);
   while (it != end && *it == '-') {
-    auto matched_flag = flags.end();
-    for (auto flag_it = flags.begin(); flag_it != flags.end(); ++flag_it) {
-      auto [args_end, args] = flag_it->match(it, end);
-      if (args_end != it) {
-        matched_flag = flag_it;
-        flags_handle.put(*matched_flag, args);
-        it = skip_whitespace(args_end, end);
-        break;
-      }
-    }
-    if (matched_flag == flags.end()) {
-      if (!ignore_unknown_flags) {
-        const auto next_ws = next_whitespace(it, end);
-        throw std::runtime_error("Unknown flag '" + std::string(it, next_ws) + "'!");
-      } else {
-        // Find the next potential arg
+    const auto flag_it = std::find_if(flags.begin(), flags.end(),
+        [it, end](const auto &flag) {
+          return flag.match_name(it, end) != it;
+        });
+
+    if (flag_it == flags.end()) {
+      if (ignore_unknown_flags) {
+        // Find the next potential flag
         const auto prev_it = it;
         it = next_char(it, end, '-');
-        // If this is the last potential arg, skip beyond it and bail out
+        // If this is the last potential flag, skip beyond it and bail out
         if (it == prev_it) {
           it = next_whitespace(it, end);
-          break;
+          return std::make_pair(it, flags_handle);
         }
+      } else {
+        const auto next_ws = next_whitespace(it, end);
+        throw std::runtime_error("Unknown flag '" + std::string(it, next_ws) + "'!");
       }
     }
 
-
+    const auto [args_end, args] = flag_it->match(it, end);
+    if (args_end != it) {
+      flags_handle.put(*flag_it, args);
+      it = skip_whitespace(args_end, end);
+    }
   }
 
   return std::make_pair(it, flags_handle);
+}
+
+std::optional<Argument> xd::repl::cmd::get_next_arg(
+    StrConstIt begin, StrConstIt end, const std::vector<Argument> &args)
+{
+  auto it = begin;
+  for (const auto& arg : args) {
+    it = skip_whitespace(it, end);
+
+    const auto arg_end = arg.match(it, end);
+    if (arg_end == it)
+      return arg;
+
+    it = arg_end;
+  }
+
+  return std::nullopt;
 }

@@ -5,6 +5,8 @@
 #ifndef XENDBG_MATCH_HPP
 #define XENDBG_MATCH_HPP
 
+#include <stdexcept>
+
 #include "ArgsHandle.hpp"
 #include "Argument.hpp"
 #include "Flag.hpp"
@@ -23,6 +25,9 @@ namespace xd::repl::cmd {
   std::pair<std::string::const_iterator, FlagsHandle> match_flags(
       std::string::const_iterator begin, std::string::const_iterator end,
       const std::vector<Flag> &flags, bool ignore_unknown_flags = false);
+
+  std::optional<Argument> get_next_arg(std::string::const_iterator begin,
+      std::string::const_iterator end, const std::vector<Argument> &args);
 }
 
 #endif //XENDBG_MATCH_HPP

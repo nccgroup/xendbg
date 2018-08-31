@@ -32,6 +32,8 @@ namespace xd::repl::cmd {
     const std::string& get_long_name() const { return _long_name; };
     const std::string& get_description() const { return _description; };
 
+    std::string::const_iterator match_name(
+        std::string::const_iterator begin, std::string::const_iterator end) const;
     std::pair<std::string::const_iterator, ArgsHandle> match(
         std::string::const_iterator begin, std::string::const_iterator end) const;
 

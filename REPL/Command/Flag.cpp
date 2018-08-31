@@ -53,37 +53,46 @@ void Flag::add_arg(Argument arg) {
   _args.push_back(std::move(arg));
 }
 
-std::pair<std::string::const_iterator, ArgsHandle> Flag::match(
+std::string::const_iterator Flag::match_name(
     std::string::const_iterator begin, std::string::const_iterator end) const
 {
   auto flag_start = next_not_char(begin, end, '-');
 
   if (flag_start == begin)
-    return std::make_pair(begin, ArgsHandle());
+    return begin;
 
   const auto next_ws = next_whitespace(flag_start, end);
 
   // Short flag: -f
-  auto flag_end = begin;
   if (flag_start == begin+1) {
     if (flag_start == next_ws && !_short_name)
-      flag_end = next_ws;       // Empty short flag: -
+      return next_ws;       // Empty short flag: -  TODO: requires space after?
     else if (*flag_start == _short_name)
-      flag_end = flag_start+1;  // Matched short flag
+      return flag_start+1;  // Matched short flag
     else
-      return std::make_pair(begin, ArgsHandle());
+      return begin;
   }
 
   // Long flag: --flag
   else if (flag_start == begin+2) {
     if (flag_start == next_ws && _long_name.empty())
-      flag_end = next_ws;  // Empty long flag: --
+      return next_ws;  // Empty long flag: --
     else if (_long_name.size() == (size_t)(next_ws - flag_start) && std::equal(
         _long_name.begin(), _long_name.end(), flag_start, next_ws))
-      flag_end = next_ws;  // Matched long flag
+      return next_ws;  // Matched long flag
     else
-      return std::make_pair(begin, ArgsHandle());
+      return begin;
   }
 
-  return match_args(flag_end, end, _args);
+  return begin;
+}
+
+std::pair<std::string::const_iterator, ArgsHandle> Flag::match(
+    std::string::const_iterator begin, std::string::const_iterator end) const
+{
+  const auto args_begin = match_name(begin, end);
+  if (args_begin == begin)
+    return std::make_pair(begin, ArgsHandle());
+
+  return match_args(args_begin, end, _args);
 }

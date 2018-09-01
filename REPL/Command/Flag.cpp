@@ -7,8 +7,10 @@
 #include "../../Util/IndentHelper.hpp"
 #include "../../Util/string.hpp"
 
+using xd::repl::cmd::Argument;
 using xd::repl::cmd::ArgsHandle;
 using xd::repl::cmd::Flag;
+using xd::repl::cmd::FlagArgMatchFailedException;
 using xd::repl::cmd::match_args;
 using xd::repl::cmd::validate_args;
 using xd::repl::cmd::validate_new_arg;
@@ -56,6 +58,7 @@ void Flag::add_arg(Argument arg) {
 std::string::const_iterator Flag::match_name(
     std::string::const_iterator begin, std::string::const_iterator end) const
 {
+  begin = skip_whitespace(begin, end);
   auto flag_start = next_not_char(begin, end, '-');
 
   if (flag_start == begin)
@@ -69,8 +72,6 @@ std::string::const_iterator Flag::match_name(
       return next_ws;       // Empty short flag: -  TODO: requires space after?
     else if (*flag_start == _short_name)
       return flag_start+1;  // Matched short flag
-    else
-      return begin;
   }
 
   // Long flag: --flag
@@ -80,8 +81,6 @@ std::string::const_iterator Flag::match_name(
     else if (_long_name.size() == (size_t)(next_ws - flag_start) && std::equal(
         _long_name.begin(), _long_name.end(), flag_start, next_ws))
       return next_ws;  // Matched long flag
-    else
-      return begin;
   }
 
   return begin;
@@ -94,5 +93,20 @@ std::pair<std::string::const_iterator, ArgsHandle> Flag::match(
   if (args_begin == begin)
     return std::make_pair(begin, ArgsHandle());
 
-  return match_args(args_begin, end, _args);
+  try {
+    return match_args(args_begin, end, _args);
+  } catch (const ArgMatchFailedException &e) {
+    throw FlagArgMatchFailedException(e.get_pos(), *this, e.get_argument());
+  }
+}
+
+std::optional<std::pair<std::string::const_iterator, Argument>>
+Flag::get_next_arg(
+    std::string::const_iterator begin, std::string::const_iterator end) const
+{
+  const auto name_end = match_name(begin, end);
+  if (name_end == begin)
+    return std::nullopt;
+
+  return xd::repl::cmd::get_next_arg(skip_whitespace(name_end, end), end, _args);
 }

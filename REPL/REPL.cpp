@@ -105,9 +105,10 @@ void REPL::run() {
 
 std::vector<std::string> REPL::complete(const std::string &s) {
   for (const auto &cmd : _commands) {
-    auto options = cmd->complete(s);
-    if (options.has_value())
+    auto options = cmd->complete(s.begin(), s.end());
+    if (options.has_value()) {
       return options.value();
+      }
   }
 
   std::vector<std::string> options;
@@ -127,7 +128,7 @@ void REPL::interpret_line(const std::string& line) {
   }
 
   for (const auto &cmd : _commands) {
-    auto action = cmd->match(line);
+    auto action = cmd->match(line.begin(), line.end());
     if (action) {
       (action.value())();
       return;

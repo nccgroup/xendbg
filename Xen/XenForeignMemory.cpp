@@ -3,6 +3,7 @@
 //
 
 #include <cstring>
+#include <iostream>
 
 #include "Domain.hpp"
 #include "XenForeignMemory.hpp"

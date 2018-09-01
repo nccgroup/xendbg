@@ -30,9 +30,9 @@ namespace xd::repl::cmd {
 
     virtual void print(std::ostream& out, xd::util::IndentHelper& indent) const = 0;
 
-    virtual std::optional<Action> match(const std::string &s) const = 0;
-    virtual std::optional<std::vector<std::string>> complete(
-        const std::string& s) const = 0;
+    virtual std::optional<Action> match(std::string::const_iterator begin, std::string::const_iterator end) const = 0;
+
+    virtual std::optional<std::vector<std::string>> complete(std::string::const_iterator begin, std::string::const_iterator end) const = 0;
 
   private:
     const std::string _name;

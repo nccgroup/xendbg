@@ -26,6 +26,7 @@ namespace xd::repl {
     using NoMatchHandlerFn = std::function<void(const std::string &)>;
 
     static REPL *_s_instance;
+
     static std::vector<std::string> _s_completion_options;
 
     static void init_readline();
@@ -59,7 +60,8 @@ namespace xd::repl {
     NoMatchHandlerFn _no_match_handler;
 
   private:
-    std::vector<std::string> complete(const std::string &s);
+    std::vector<std::string> complete(
+        const std::string &s);
     void interpret_line(const std::string& line);
     std::string read_line();
     void run();

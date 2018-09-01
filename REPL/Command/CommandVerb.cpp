@@ -13,16 +13,11 @@ void CommandVerb::print(std::ostream& out, IndentHelper& indent) const {
   _verb.print(out, indent);
 }
 
-std::optional<Action> CommandVerb::match(const std::string& s) const {
-  auto action = _verb.match(s.begin(), s.end());
-  if (action)
-    return action;
-
-  return std::nullopt;
+std::optional<Action> CommandVerb::match(std::string::const_iterator begin, std::string::const_iterator end) const {
+  return _verb.match(begin, end);
 }
 
-std::optional<std::vector<std::string>> CommandVerb::complete(
-    const std::string& s) const
+std::optional<std::vector<std::string>> CommandVerb::complete(std::string::const_iterator begin, std::string::const_iterator end) const
 {
-  return _verb.complete(s.begin(), s.end());
+  return _verb.complete(begin, end);
 }

@@ -41,13 +41,13 @@ namespace xd::repl::cmd {
     std::string get_name() const { return _name; };
     std::string get_description() const { return _description; };
 
+    std::string::const_iterator match_name(std::string::const_iterator begin, std::string::const_iterator end) const;
     std::optional<Action> match(std::string::const_iterator begin,
         std::string::const_iterator end) const;
     std::optional<std::vector<std::string>> complete(
         std::string::const_iterator begin, std::string::const_iterator end) const;
 
   private:
-    std::string::const_iterator match_prefix_skipping_whitespace(std::string::const_iterator begin, std::string::const_iterator end) const;
     std::pair<std::string::const_iterator, FlagsHandle> match_flags(
         std::string::const_iterator begin, std::string::const_iterator end) const;
     std::pair<std::string::const_iterator, ArgsHandle> match_args(

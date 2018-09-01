@@ -23,9 +23,8 @@ namespace xd::repl::cmd {
 
     void print(std::ostream& out, xd::util::IndentHelper& indent) const override;
 
-    std::optional <Action> match(const std::string &s) const override;
-    std::optional<std::vector<std::string>> complete(
-        const std::string& s) const override;
+    std::optional <Action> match(std::string::const_iterator begin, std::string::const_iterator end) const override;
+    std::optional<std::vector<std::string>> complete(std::string::const_iterator begin, std::string::const_iterator end) const override;
 
   private:
     Verb _verb;

@@ -110,7 +110,18 @@ void DebuggerREPL::setup_repl() {
     Verb("attach", "Attach to a domain.",
       {},
       {
-        Argument("domid/name", "Either the numeric domID or the name of a guest to attach to.", match_optionally_quoted_string)
+        Argument("domid/name",
+            "Either the numeric domID or the name of a guest to attach to.", 
+            match_optionally_quoted_string,
+              [this](const auto&, const auto&) {
+                const auto domains = _debugger.get_guest_domains();
+                std::vector<std::string> options;
+                std::transform(domains.begin(), domains.end(),
+                  std::back_inserter(options), [](const auto& domain) {
+                    return domain.get_name();
+                  });
+                return options;
+              }),
       },
       [this](auto &/*flags*/, auto &args) {
         const auto domid_or_name = args.get("domid/name");
@@ -194,7 +205,10 @@ void DebuggerREPL::setup_repl() {
       Verb("print", "Display the value of an expression.",
         {
           Flag('f', "format", "Format.", {
-            Argument("fmt", "The format to use (b/x/d)", next_whitespace),
+            Argument("fmt", "The format to use (b/x/d)", next_whitespace,
+                [](const auto& a, const auto& b) {
+                  return std::vector<std::string>{"b", "x", "d"};
+                }),
           })
         },
         {

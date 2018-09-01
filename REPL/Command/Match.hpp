@@ -14,6 +14,31 @@
 
 namespace xd::repl::cmd {
 
+  // TODO
+  class UnknownFlagException : public std::exception {
+    public:
+      UnknownFlagException(std::string::const_iterator pos)
+        : _pos(pos) {};
+
+    std::string::const_iterator get_pos() const { return _pos; }
+
+    private:
+      std::string::const_iterator _pos;
+  };
+
+  class ArgMatchFailedException : public std::exception {
+  public:
+    ArgMatchFailedException(std::string::const_iterator pos, Argument arg)
+      : _pos(pos), _arg(arg) {};
+
+    std::string::const_iterator get_pos() const { return _pos; }
+    const Argument &get_argument() const { return _arg; };
+    
+  private:
+    std::string::const_iterator _pos;
+    Argument _arg;
+  };
+
   void validate_args(const std::vector<Argument> &args);
   void validate_new_arg(const std::vector<Argument> &args,
       const Argument &new_arg);
@@ -26,8 +51,9 @@ namespace xd::repl::cmd {
       std::string::const_iterator begin, std::string::const_iterator end,
       const std::vector<Flag> &flags, bool ignore_unknown_flags = false);
 
-  std::optional<Argument> get_next_arg(std::string::const_iterator begin,
-      std::string::const_iterator end, const std::vector<Argument> &args);
+  std::optional<std::pair<std::string::const_iterator, Argument>> get_next_arg(
+      std::string::const_iterator begin, std::string::const_iterator end,
+      const std::vector<Argument> &args);
 }
 
 #endif //XENDBG_MATCH_HPP

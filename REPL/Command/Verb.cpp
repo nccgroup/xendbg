@@ -65,20 +65,33 @@ void Verb::add_arg(Argument arg) {
   _args.push_back(arg);
 }
 
+std::string::const_iterator Verb::match_name(
+        std::string::const_iterator begin, std::string::const_iterator end) const
+{
+  const auto first_non_ws = skip_whitespace(begin, end);
+  const auto name_end = expect(_name, first_non_ws, end);
+
+  if (name_end == first_non_ws)
+    return begin;
+
+  return name_end;
+}
+
 std::optional<Action> Verb::match(std::string::const_iterator begin,
     std::string::const_iterator end) const
 {
-  const auto flags_start = match_prefix_skipping_whitespace(begin, end);
+  const auto name_end = match_name(begin, end);
 
-  if (flags_start == begin) {
+  if (name_end == begin)
     return std::nullopt;
-  }
 
-  auto [flags_end, flags] = match_flags(flags_start, end);
-  auto [args_end, args] = match_args(flags_end, end);
+  auto [flags_end, flags] = match_flags(skip_whitespace(name_end , end), end);
+  auto [args_end, args] = match_args(skip_whitespace(flags_end, end), end);
 
-  if (args_end != end)
-    throw std::runtime_error("Unknown arg(s): " + std::string(args_end, end)); // TODO
+  const auto next_non_ws = skip_whitespace(args_end, end);
+  if (next_non_ws != end)
+    // TODO
+    throw std::runtime_error("Unknown arg(s): " + std::string(next_non_ws, end));
 
   return _make_action(flags, args);
 }
@@ -86,36 +99,41 @@ std::optional<Action> Verb::match(std::string::const_iterator begin,
 std::optional<std::vector<std::string>> Verb::complete(
     std::string::const_iterator begin, std::string::const_iterator end) const
 {
-  const auto flags_start = match_prefix_skipping_whitespace(begin, end);
+  const auto name_end = match_name(begin, end);
 
-  if (flags_start == begin) {
+  if (name_end == begin)
     return std::nullopt;
-  }
-
+  
   // Parse out flags to figure out which ones are left to autocomplete
-  auto [_, flags] = xd::repl::cmd::match_flags(flags_start, end, _flags, true);
+  try {
+    auto [flags_end, flags] = xd::repl::cmd::match_flags(
+        skip_whitespace(name_end, end), end, _flags, true);
 
-  std::vector<std::string> options;
-  for (const auto &flag : _flags) {
-    if (!flags.has(flag.get_short_name())) {
-      options.push_back(std::string("-") + flag.get_short_name());
-      options.push_back("--" + flag.get_long_name());
+    std::vector<std::string> options;
+
+    const auto next_arg_and_pos = get_next_arg(
+        skip_whitespace(flags_end, end), end, _args);
+    if (next_arg_and_pos) {
+      const auto [pos, next_arg] = next_arg_and_pos.value();
+      auto arg_options = next_arg.complete(pos, end);
+      if (arg_options)
+        options.swap(arg_options.value());
     }
+
+    for (const auto &flag : _flags) {
+      if (!flags.has(flag.get_short_name())) {
+        options.push_back(std::string("-") + flag.get_short_name());
+        options.push_back("--" + flag.get_long_name());
+      }
+    }
+    return options;
+
+  } catch (const FlagArgMatchFailedException &e) {
+    const auto post_arg = skip_whitespace(next_whitespace(e.get_pos(), end), end);
+    if (post_arg == end)
+      return e.get_argument().complete(e.get_pos(), end);
+    return std::vector<std::string>();
   }
-
-  return options;
-}
-
-std::string::const_iterator Verb::match_prefix_skipping_whitespace(
-        std::string::const_iterator begin, std::string::const_iterator end) const
-{
-  const auto first_non_ws = skip_whitespace(begin, end);
-  const auto start = expect(_name, first_non_ws, end);
-
-  if (start == first_non_ws)
-    return begin;
-
-  return start;
 }
 
 std::pair<std::string::const_iterator, FlagsHandle> Verb::match_flags(

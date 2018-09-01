@@ -1,16 +1,25 @@
 #include <algorithm>
 #include <cwctype>
+#include <iostream>
 
 #include "string.hpp"
 
 using xd::util::string::StrConstIt;
 
-StrConstIt xd::util::string::expect(const std::string& target, StrConstIt begin, StrConstIt end) {
-  auto new_end = begin + target.size();
-  if ((size_t)(end - begin) >= target.size() &&
-    std::equal(target.begin(), target.end(), begin, new_end))
+StrConstIt xd::util::string::expect(
+    StrConstIt target_begin, StrConstIt target_end,
+    StrConstIt begin, StrConstIt end)
+{
+  const auto target_size = (target_end - target_begin);
+  auto new_end = begin + target_size;
+  if ((end - begin) >= target_size &&
+    std::equal(target_begin, target_end, begin, new_end))
     return new_end;
   return begin;
+}
+
+StrConstIt xd::util::string::expect(const std::string& target, StrConstIt begin, StrConstIt end) {
+  return expect(target.begin(), target.end(), begin, end);
 }
 
 StrConstIt xd::util::string::next_char(StrConstIt begin, StrConstIt end, char c) {

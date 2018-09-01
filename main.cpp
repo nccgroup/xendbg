@@ -42,7 +42,8 @@ int main(int argc, char **argv) {
     }));
 
   try {
-    const auto cmdline_action = cmdline_cmd->match(cmdline_str);
+    const auto cmdline_action = cmdline_cmd->match(
+        cmdline_str.begin(), cmdline_str.end());
     cmdline_action.value()();
   } catch (const std::runtime_error &e) {
     auto indent = IndentHelper();

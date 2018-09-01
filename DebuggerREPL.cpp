@@ -148,17 +148,30 @@ void DebuggerREPL::setup_repl() {
 
     Verb("detach", "Detach from the current domain.",
       {}, {},
-      [this](auto &flags, auto &args) {
+      [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
           get_domain_or_fail();
           _debugger.detach();
         };
       }),
+
+    Verb("pause", "Pause the current domain",
+      {}, {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          get_domain_or_fail().pause();
+        };
+      }),
+
+    Verb("unpause", "Unpause the current domain",
+      {}, {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          get_domain_or_fail().unpause();
+        };
+      }),
   }));
 
-  /**
-   *
-   */
   _repl.add_command(make_command("info", "Query the state of Xen, the attached guest and its registers.", {
       Verb("guest", "Query the state of the current guest.",
         {}, {},
@@ -363,8 +376,10 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
 
       return std::visit(util::overloaded {
           [this, x_value](Dereference) {
-            const auto mem = get_domain_or_fail().map_memory(x_value, XC_PAGE_SIZE, PROT_READ);
-            return *((uint64_t*)mem.get());
+            uint64_t mem;
+            get_domain_or_fail().read_memory(
+                x_value, &mem, sizeof(uint64_t));
+            return mem;
           },
           [x_value](Negate) {
             return -x_value;
@@ -405,11 +420,11 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
             const auto address = evaluate_expression(ex->x.as_unex().x, false);
             const auto value = evaluate_expression(ex->y, false);
 
-            const auto mem = get_domain_or_fail().map_memory(address, XC_PAGE_SIZE, PROT_WRITE);
-            *((uint64_t*)mem.get()) = value;
-          }
+            get_domain_or_fail().write_memory(
+                address, (void*)&value, sizeof(uint64_t));
 
-          return 0UL;
+            return value;
+          }
         },
         [get_xy](Add) {
           const auto [x, y] = get_xy();

@@ -30,7 +30,7 @@ namespace xd::xen {
     ~PrivCmd();
 
     template<typename Domain_t, typename InitFn_t, typename CleanupFn_t>
-    void hypercall_domctl(Domain_t domain, uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) {
+    void hypercall_domctl(Domain_t domain, uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) const {
       xen_domctl domctl;
       domctl.domain = domain.get_domid();
       domctl.interface_version = XEN_DOMCTL_INTERFACE_VERSION;

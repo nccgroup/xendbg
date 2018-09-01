@@ -28,6 +28,8 @@ namespace xd::xen {
       _xen.get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
     }
 
+    void read_memory(Address address, void *data, size_t size);
+    void write_memory(Address address, void *data, size_t size);
 
     MemInfo map_meminfo() const;
     MappedMemory map_memory(Address address, size_t size, int prot) const;

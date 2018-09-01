@@ -44,6 +44,38 @@ MemInfo Domain::map_meminfo() const {
   return _xen.get_xenctrl().map_domain_meminfo(*this);
 }
 
+void Domain::read_memory(Address address, void *data, size_t size) {
+  hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio, [address, data, size](auto u) {
+    auto& memio = u->gdbsx_guest_memio;
+    memio.pgd3val = 0;
+    memio.gva = address;
+    memio.uva = (uint64_aligned_t)((unsigned long)data);
+    memio.len = size;
+    memio.gwr = 0;
+
+    if (mlock(data, size))
+      throw XenException("mlock failed!");
+  }, [data, size]() {
+    munlock(data, size);
+  });
+}
+
+void Domain::write_memory(Address address, void *data, size_t size) {
+  hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio, [address, data, size](auto u) {
+    auto& memio = u->gdbsx_guest_memio;
+    memio.pgd3val = 0;
+    memio.gva = address;
+    memio.uva = (uint64_aligned_t)((unsigned long)data);
+    memio.len = size;
+    memio.gwr = 1;
+
+    if (mlock(data, size))
+      throw XenException("mlock failed!");
+  }, [data, size]() {
+    munlock(data, size);
+  });
+}
+
 MappedMemory Domain::map_memory(Address address, size_t size, int prot) const {
   return _xen.get_xen_foreign_memory().map(*this, address, size, prot);
 }

@@ -11,7 +11,7 @@ using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::ArgsHandle;
 using xd::repl::cmd::FlagsHandle;
-using xd::util::string::expect;
+using xd::util::string::is_prefix;
 using xd::util::string::next_char;
 using xd::util::string::next_not_char;
 using xd::util::string::next_whitespace;
@@ -126,7 +126,7 @@ xd::repl::cmd::get_next_arg(StrConstIt begin, StrConstIt end,
           options.value().begin(), options.value().end(),
           [it, arg_end](const auto &opt) {
             return (arg_end - it < opt.size()) &&
-              it != expect(it, arg_end, opt.begin(), opt.end());
+              is_prefix(it, arg_end, opt.begin(), opt.end());
           });
 
       if (has_partial_match)

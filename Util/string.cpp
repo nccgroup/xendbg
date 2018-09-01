@@ -6,20 +6,23 @@
 
 using xd::util::string::StrConstIt;
 
-StrConstIt xd::util::string::expect(
+bool xd::util::string::is_prefix(
     StrConstIt target_begin, StrConstIt target_end,
     StrConstIt begin, StrConstIt end)
 {
   const auto target_size = (target_end - target_begin);
   auto new_end = begin + target_size;
-  if ((end - begin) >= target_size &&
-    std::equal(target_begin, target_end, begin, new_end))
-    return new_end;
-  return begin;
+  return ((end - begin) >= target_size &&
+    std::equal(target_begin, target_end, begin, new_end));
 }
 
 StrConstIt xd::util::string::expect(const std::string& target, StrConstIt begin, StrConstIt end) {
-  return expect(target.begin(), target.end(), begin, end);
+  const auto first_non_ws = skip_whitespace(begin, end);
+  const auto next_ws = next_whitespace(first_non_ws, end);
+  if (std::equal(target.begin(), target.end(), first_non_ws, next_ws)) {
+    return next_ws;
+  };
+  return begin;
 }
 
 StrConstIt xd::util::string::next_char(StrConstIt begin, StrConstIt end, char c) {

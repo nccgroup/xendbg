@@ -68,10 +68,9 @@ void Verb::add_arg(Argument arg) {
 std::string::const_iterator Verb::match_name(
         std::string::const_iterator begin, std::string::const_iterator end) const
 {
-  const auto first_non_ws = skip_whitespace(begin, end);
-  const auto name_end = expect(_name, first_non_ws, end);
+  const auto name_end = expect(_name, begin, end);
 
-  if (name_end == first_non_ws)
+  if (name_end == begin)
     return begin;
 
   return name_end;

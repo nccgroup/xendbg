@@ -425,6 +425,8 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
 
             return value;
           }
+
+          throw std::runtime_error("lhs must be deref or var");
         },
         [get_xy](Add) {
           const auto [x, y] = get_xy();

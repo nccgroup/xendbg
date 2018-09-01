@@ -29,7 +29,6 @@ void Command::print(std::ostream& out, IndentHelper& indent) const {
 }
 
 std::optional<Action> Command::match(std::string::const_iterator begin, std::string::const_iterator end) const {
-  begin = skip_whitespace(begin, end);
   const auto name_end = expect(get_name(), begin, end);
 
   if (name_end == begin)
@@ -45,7 +44,6 @@ std::optional<Action> Command::match(std::string::const_iterator begin, std::str
 }
 
 std::optional<std::vector<std::string>> Command::complete(std::string::const_iterator begin, std::string::const_iterator end) const {
-  begin = skip_whitespace(begin, end);
   const auto name_end = expect(get_name(), begin, end);
 
   // If s doesn't have this command as a prefix, neither this command

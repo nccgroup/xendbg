@@ -107,6 +107,7 @@ MemInfo XenCtrl::map_domain_meminfo(const Domain &domain) const {
   };
 
   const auto meminfo = new struct xc_domain_meminfo;
+  std::memset(meminfo, 0, sizeof(struct xc_domain_meminfo));
 
   int err;
   if (err = xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo)) {

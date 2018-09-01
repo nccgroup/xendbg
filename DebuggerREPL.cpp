@@ -376,10 +376,17 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
 
       return std::visit(util::overloaded {
           [this, x_value](Dereference) {
+
+            const auto mem = get_domain_or_fail().map_memory(
+                x_value, sizeof(uint64_t), PROT_READ);
+            return *((uint64_t*)mem.get());
+
+          /*
             uint64_t mem;
             get_domain_or_fail().read_memory(
                 x_value, &mem, sizeof(uint64_t));
             return mem;
+            */
           },
           [x_value](Negate) {
             return -x_value;

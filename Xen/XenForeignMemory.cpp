@@ -25,13 +25,13 @@ XenForeignMemory::XenForeignMemory()
     throw XenException("Failed to open Xen foreign memory handle!");
 }
 
+/*
+ * NOTE: the p2m table doesn't seem to contain a mapping for the null page.
+ */
 MappedMemory XenForeignMemory::map(const Domain &domain, Address address, size_t size, int prot) const {
-  if (address < XC_PAGE_SIZE) {
-    throw XenException("Addresses below 0x1000 cannot be mapped!");
-  }
-
   auto meminfo = domain.map_meminfo();
-  xen_pfn_t base_mfn = pfn_to_mfn_pv((address >> XC_PAGE_SHIFT)-1, meminfo->p2m_table, domain.get_word_size());
+  xen_pfn_t base_mfn = pfn_to_mfn_pv(address >> XC_PAGE_SHIFT,
+      meminfo->p2m_table, domain.get_word_size());
 
   size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
@@ -43,8 +43,8 @@ MappedMemory XenForeignMemory::map(const Domain &domain, Address address, size_t
   if (!errors)
     throw XenException("Failed to allocate error table: " + std::string(std::strerror(errno)));
 
-  for (int i = 0; i < num_pages; ++i) {
-    pages[i] = base_mfn + 1;
+  for (size_t i = 0; i < num_pages; ++i) {
+    pages[i] = base_mfn + i;
   }
 
   char *mem_page_base = (char*)xenforeignmemory_map(_xen_foreign_memory.get(), domain.get_domid(), prot, num_pages, pages, errors);

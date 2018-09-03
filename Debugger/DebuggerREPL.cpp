@@ -6,13 +6,14 @@
 #include <stdexcept>
 
 #include "DebuggerREPL.hpp"
-#include "Parser/Parser.hpp"
-#include "REPL/Command/Argument.hpp"
-#include "REPL/Command/Flag.hpp"
-#include "REPL/Command/MakeCommand.hpp"
-#include "REPL/Command/MatchHelper.hpp"
-#include "REPL/Command/Verb.hpp"
-#include "Util/string.hpp"
+#include "../Xen/XenException.hpp"
+#include "../Parser/Parser.hpp"
+#include "../REPL/Command/Argument.hpp"
+#include "../REPL/Command/Flag.hpp"
+#include "../REPL/Command/MakeCommand.hpp"
+#include "../REPL/Command/MatchHelper.hpp"
+#include "../REPL/Command/Verb.hpp"
+#include "../Util/string.hpp"
 
 using xd::Debugger;
 using xd::parser::Parser;
@@ -42,7 +43,13 @@ DebuggerREPL::DebuggerREPL() {
 }
 
 void DebuggerREPL::run() {
-  repl::REPL::run(_repl);
+  repl::REPL::run(_repl, [](const auto &action) {
+    try {
+      action();
+    } catch (const xen::XenException &e) {
+      std::cerr << e.what() << " (" << std::strerror(e.) << ")" std::endl;
+    }
+  });
 }
 
 void DebuggerREPL::setup_repl() {

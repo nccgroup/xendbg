@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Xen/Domain.hpp"
+#include "../Xen/Domain.hpp"
 
 namespace xd {
 

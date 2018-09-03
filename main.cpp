@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "DebuggerREPL.hpp"
+#include "Debugger/DebuggerREPL.hpp"
 #include "REPL/Command/MakeCommand.hpp"
 #include "REPL/Command/Argument.hpp"
 #include "REPL/Command/Flag.hpp"

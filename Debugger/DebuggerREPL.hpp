@@ -8,8 +8,8 @@
 #include <string>
 
 #include "Debugger.hpp"
-#include "Parser/Expression/Expression.hpp"
-#include "REPL/REPL.hpp"
+#include "../Parser/Expression/Expression.hpp"
+#include "../REPL/REPL.hpp"
 
 namespace xd {
 

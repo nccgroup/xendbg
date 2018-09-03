@@ -14,6 +14,7 @@
 #include "../Util/string.hpp"
 
 using xd::repl::REPL;
+using xd::repl::cmd::Action;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::CommandVerb;
 using xd::repl::cmd::Flag;
@@ -26,10 +27,10 @@ using xd::util::string::skip_whitespace;
 REPL *REPL::_s_instance;
 std::vector<std::string> REPL::_s_completion_options;
 
-void REPL::run(REPL &repl) {
+void REPL::run(REPL &repl, REPL::ActionHandlerFn action_handler) {
   init_readline();
   REPL::_s_instance = &repl;
-  REPL::_s_instance->run(); // TODO: exception handling
+  REPL::_s_instance->run(action_handler);
   REPL::_s_instance = nullptr;
   deinit_readline();
 }
@@ -105,13 +106,21 @@ void REPL::exit() {
   _running = false;
 }
 
-void REPL::run() {
+void REPL::run(ActionHandlerFn action_handler) {
   _running = true;
   while (_running) {
     if (_prompt_configurator)
       _prompt = _prompt_configurator();
-    auto line = read_line();
-    interpret_line(line);
+
+    const auto line = read_line();
+    const auto action = interpret_line(line);
+
+    if (action)
+      action_handler(action.value());
+    else if (_no_match_handler)
+      _no_match_handler(line);
+    else
+      std::cout << "Invalid input." << std::endl;
   };
 }
 
@@ -132,27 +141,15 @@ std::vector<std::string> REPL::complete(const std::string &s) {
   return options;
 }
 
-void REPL::interpret_line(const std::string& line) {
-  // Ignore empty lines, but print a newline so the prompt doesn't double up
+std::optional<Action> REPL::interpret_line(const std::string& line) {
+  // Ignore empty (including whitespace-only) lines
   if (skip_whitespace(line.begin(), line.end()) == line.end()) {
-    std::cout << std::endl;
-    return;
+    return std::nullopt;
   }
 
   for (const auto &cmd : _commands) {
-    auto action = cmd->match(line.begin(), line.end());
-    if (action) {
-      (action.value())();
-      return;
-    }
+    return cmd->match(line.begin(), line.end());
   }
-
-  if (_no_match_handler) {
-    _no_match_handler(line);
-    return;
-  }
-
-  std::cerr << "Invalid input." << std::endl;
 }
 
 void REPL::print_help(std::ostream &out) {

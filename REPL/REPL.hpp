@@ -12,19 +12,22 @@
 #include <string>
 #include <vector>
 
+#include "Command/Action.hpp"
 #include "Command/CommandBase.hpp"
 
 namespace xd::repl {
 
   class REPL {
-  public:
-    static void run(REPL& repl);
-
   private:
     using CommandPtr = std::unique_ptr<cmd::CommandBase>;
     using PromptConfiguratorFn = std::function<std::string()>;
     using NoMatchHandlerFn = std::function<void(const std::string &)>;
+    using ActionHandlerFn = std::function<void(const cmd::Action &)>;
 
+  public:
+    static void run(REPL& repl, ActionHandlerFn action_handler);
+
+  private:
     static REPL *_s_instance;
 
     static std::vector<std::string> _s_completion_options;
@@ -45,6 +48,7 @@ namespace xd::repl {
     void add_command(CommandPtr cmd);
     void exit();
     void print_help(std::ostream &out);
+
     void set_prompt_configurator(PromptConfiguratorFn f) {
       _prompt_configurator = std::move(f);
     }
@@ -62,9 +66,10 @@ namespace xd::repl {
   private:
     std::vector<std::string> complete(
         const std::string &s);
-    void interpret_line(const std::string& line);
+    std::optional<cmd::Action> interpret_line(const std::string& line);
     std::string read_line();
-    void run();
+
+    void run(ActionHandlerFn action_handler);
 
   };
 

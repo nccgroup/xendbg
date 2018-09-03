@@ -290,7 +290,7 @@ void DebuggerREPL::setup_repl() {
           return [this, expr_str, printer]() {
             Parser parser;
             const auto expr = parser.parse(expr_str);
-            const auto result = evaluate_expression(expr, false);
+            const auto result = evaluate_expression(expr);
             printer(std::cout, result);
             std::cout << std::endl;
           };
@@ -298,29 +298,25 @@ void DebuggerREPL::setup_repl() {
 
   _repl.add_command(make_command(
       Verb("set", "Write to a variable, register, or memory region.",
-        {},
+        {
+          Flag('w', "word-size", "Size of each word to read.", {
+              Argument("size", "The size of the word to set (b/h/w/g).",
+                  make_match_one_of({"b", "h", "w", "g"}),
+                  [](const auto& a, const auto& b) {
+                    return std::vector<std::string>{"b", "h", "w", "g"};
+                  }),
+          }),
+        },
         {
           Argument("{$var, *expr} = expr", "", match_everything),
         },
-        [this](auto &/*flags*/, auto &args) {
+        [this](auto &flags, auto &args) {
           const auto expr_str = args.get(0);
+
           return [this, expr_str]() {
             Parser parser;
             const auto expr = parser.parse(expr_str);
-
-            // $var = expr
-            const bool lhs_is_var =
-              expr.is_binex() && expr.as_binex().x.template is_of_type<Variable>();
-
-            // *expr = expr
-            const bool lhs_is_deref =
-              expr.is_binex() && expr.as_binex().x.is_unex();
-
-            if (!lhs_is_var && !lhs_is_deref)
-              throw InvalidInputException("Input must be of the form {$var, *expr} = expr");
-
-            const auto result = evaluate_expression(expr, true);
-            std::cout << result << std::endl;
+            evaluate_set_expression(expr);
           };
         })));
 
@@ -385,7 +381,41 @@ void DebuggerREPL::print_xen_info(const xen::XenHandle &xen) {
   std::cout << "Xen " << version.major << "." << version.minor << std::endl;
 }
 
-uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_write) {
+void xd::dbg::DebuggerREPL::evaluate_set_expression(const Expression &expr, size_t word_size) {
+  assert(word_size <= sizeof(uint64_t));
+
+  // $var = expr
+  const bool lhs_is_var =
+    expr.is_binex() && expr.as_binex().x.template is_of_type<Variable>();
+
+  // *expr = expr
+  const bool lhs_is_deref =
+    expr.is_binex() && expr.as_binex().x.is_unex();
+
+  if ((!lhs_is_var && !lhs_is_deref) || !std::holds_alternative<Equals>(expr.as_binex().op))
+    throw InvalidInputException("Input must be of the form {$var, *expr} = expr");
+
+  const auto& ex = expr.as_binex();
+
+  if (lhs_is_var) {
+    const auto &var_name = ex.x.as<Variable>().value;
+    const auto value = evaluate_expression(ex.y);
+
+    // TODO: VCPU ID
+    if (xd::xen::is_register_name(var_name))
+      get_domain_or_fail().write_register(var_name, value);
+    else
+      _debugger.set_var(var_name, value);
+
+  } else /*if (lhs_is_deref)*/ {
+    const auto address = evaluate_expression(ex.x.as_unex().x);
+    const auto value = evaluate_expression(ex.y);
+
+    get_domain_or_fail().write_memory(address, (void*)&value, word_size);
+  }
+}
+
+uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
   return expr.visit<uint64_t>(util::overloaded {
     [](const Constant& ex) {
       return ex.value;
@@ -403,15 +433,15 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
       else
         return _debugger.get_var(var_name); 
     },
-    [this, allow_write](const Expression::UnaryExpressionPtr& ex) {
+    [this](const Expression::UnaryExpressionPtr& ex) {
       const auto& op = ex->op;
-      const auto& x_value = evaluate_expression(ex->x, allow_write);
+      const auto& x_value = evaluate_expression(ex->x);
 
       return std::visit(util::overloaded {
           [this, x_value](Dereference) {
 
             const auto mem = get_domain_or_fail().map_memory(
-                x_value, sizeof(uint64_t), PROT_READ);
+                x_value, word_size, PROT_READ);
             return *((uint64_t*)mem.get());
 
           /*
@@ -426,23 +456,21 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
           },
       }, op);
     },
-    [this, allow_write](const Expression::BinaryExpressionPtr& ex) {
+    [this](const Expression::BinaryExpressionPtr& ex) {
       const auto& op = ex->op;
-      const auto get_xy = [this, allow_write, &ex]() {
+      const auto get_xy = [this, &ex]() {
         return std::make_pair(
-            evaluate_expression(ex->x, allow_write),
-            evaluate_expression(ex->y, allow_write));
+            evaluate_expression(ex->x),
+            evaluate_expression(ex->y));
       };
 
       return std::visit(util::overloaded {
-        [this, allow_write, &ex](Equals) {
-          if (!allow_write)
-            // TODO
-            throw InvalidInputException("Use 'set' to modify variables.");
+        [this, &ex](Equals) {
+          throw InvalidInputException("Use 'set' to modify variables.");
 
           if (ex->x.is_of_type<Variable>()) {
             const auto &var_name = ex->x.as<Variable>().value;
-            const auto value = evaluate_expression(ex->y, allow_write);
+            const auto value = evaluate_expression(ex->y);
 
             // TODO: VCPU ID
             if (xd::xen::is_register_name(var_name))
@@ -455,8 +483,8 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
           } else if (ex->x.is_unex() &&
               std::holds_alternative<Dereference>(ex->x.as_unex().op))
           {
-            const auto address = evaluate_expression(ex->x.as_unex().x, false);
-            const auto value = evaluate_expression(ex->y, false);
+            const auto address = evaluate_expression(ex->x.as_unex().x);
+            const auto value = evaluate_expression(ex->y);
 
             get_domain_or_fail().write_memory(
                 address, (void*)&value, sizeof(uint64_t));

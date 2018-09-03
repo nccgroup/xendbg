@@ -37,7 +37,8 @@ namespace xd::dbg {
     static void print_domain_info(const xen::Domain& domain);
     static void print_registers(const xen::Registers& regs);
     static void print_xen_info(const xen::XenHandle& xen);
-    uint64_t evaluate_expression(const parser::expr::Expression& expr, bool allow_write);
+    uint64_t evaluate_expression(const parser::expr::Expression& expr);
+    void evaluate_set_expression(const parser::expr::Expression& expr, size_t word_size);
 
   private:
     Debugger _debugger;

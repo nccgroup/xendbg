@@ -18,6 +18,7 @@ using xd::xen::XenHandle;
 Domain& Debugger::attach(DomID domid) {
   _current_vcpu = 0;
   _domain.emplace(_xen, domid);
+  _domain.value().set_debugging(true);
 
   return _domain.value();
 }

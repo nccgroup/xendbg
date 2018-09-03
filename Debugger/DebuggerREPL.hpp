@@ -5,13 +5,23 @@
 #ifndef XENDBG_DEBUGGERREPL_HPP
 #define XENDBG_DEBUGGERREPL_HPP
 
+#include <stdexcept>
 #include <string>
 
 #include "Debugger.hpp"
 #include "../Parser/Expression/Expression.hpp"
 #include "../REPL/REPL.hpp"
 
-namespace xd {
+namespace xd::dbg {
+
+  class NoGuestAttachedException : public std::exception {
+  };
+
+  class InvalidInputException : public std::runtime_error {
+  public:
+    InvalidInputException(const std::string &what)
+      : std::runtime_error(what.c_str()) {};
+  };
 
   class DebuggerREPL {
   public:

@@ -19,10 +19,12 @@ namespace xd::xen {
         : std::runtime_error(what), _err(0) {};
 
     explicit XenException(const std::string& what, int err)
-        : std::runtime_error(what.c_str()), _err(err) {}
+        : std::runtime_error(what.c_str()), _err(err) {};
 
     explicit XenException(const char* what, int err)
-        : std::runtime_error(what), _err(err) {}
+        : std::runtime_error(what), _err(err) {};
+
+    int get_err() const { return _err; };
 
   private:
     int _err;

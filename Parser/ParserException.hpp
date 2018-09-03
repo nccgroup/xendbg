@@ -57,7 +57,7 @@ namespace xd::parser::except {
       strncpy(_msg, msg.c_str(), PARSER_EXCEPTION_BUF_SIZE);
     };
 
-    virtual const char *msg() const noexcept { return _msg; }
+    const char *what() const noexcept override { return _msg; }
 
   private:
     char _msg[PARSER_EXCEPTION_BUF_SIZE];

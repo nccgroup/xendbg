@@ -15,7 +15,10 @@
 #include "../REPL/Command/Verb.hpp"
 #include "../Util/string.hpp"
 
-using xd::Debugger;
+using xd::dbg::Debugger;
+using xd::dbg::DebuggerREPL;
+using xd::dbg::InvalidInputException;
+using xd::dbg::NoGuestAttachedException;
 using xd::parser::Parser;
 using xd::parser::expr::Constant;
 using xd::parser::expr::Expression;
@@ -36,8 +39,6 @@ using xd::repl::cmd::match::match_everything;
 using xd::util::string::next_whitespace;
 using xd::util::string::match_optionally_quoted_string;
 
-using xd::DebuggerREPL;
-
 DebuggerREPL::DebuggerREPL() {
   setup_repl();
 }
@@ -47,7 +48,15 @@ void DebuggerREPL::run() {
     try {
       action();
     } catch (const xen::XenException &e) {
-      std::cerr << e.what() << " (" << std::strerror(e.) << ")" std::endl;
+      std::cout << e.what() << " (" << std::strerror(e.get_err()) << ")" << std::endl;
+    } catch (const InvalidInputException &e) {
+      std::cout << e.what() << std::endl;
+    } catch (const NoGuestAttachedException &e) {
+      std::cout << "No guest! Attach to a guest with 'guest attach' first." << std::endl;
+    } catch (const parser::except::ParserException &e) {
+      std::cout << "Invalid input: " << e.what() << std::endl;
+    } catch (const parser::except::ExpectException &e) {
+      std::cout << "Invalid input: " << e.what() << std::endl;
     }
   });
 }
@@ -291,7 +300,7 @@ void DebuggerREPL::setup_repl() {
               expr.is_binex() && expr.as_binex().x.is_unex();
 
             if (!lhs_is_var && !lhs_is_deref)
-              throw std::runtime_error("Input must be of the form {$var, *expr} = expr");
+              throw InvalidInputException("Input must be of the form {$var, *expr} = expr");
 
             const auto result = evaluate_expression(expr, true);
             std::cout << result << std::endl;
@@ -312,7 +321,7 @@ void DebuggerREPL::setup_repl() {
 
             // Make sure the expr is of the form $var
             if (!expr.template is_of_type<Variable>())
-              throw std::runtime_error("Not a variable!");
+              throw InvalidInputException("'" + expr_str + "' is not a variable!");
 
             const auto name = expr.template as<Variable>().value;
             _debugger.delete_var(name);
@@ -324,7 +333,7 @@ void DebuggerREPL::setup_repl() {
 xd::xen::Domain &DebuggerREPL::get_domain_or_fail() {
   auto& domain = _debugger.get_current_domain();
   if (!domain)
-    throw std::runtime_error("No domain!");
+    throw NoGuestAttachedException();
   return domain.value();
 }
 
@@ -399,8 +408,6 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
             return -x_value;
           },
       }, op);
-
-      return 0UL;
     },
     [this, allow_write](const Expression::BinaryExpressionPtr& ex) {
       const auto& op = ex->op;
@@ -414,7 +421,7 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
         [this, allow_write, &ex](Equals) {
           if (!allow_write)
             // TODO
-            throw std::runtime_error("Use 'set' to modify variables.");
+            throw InvalidInputException("Use 'set' to modify variables.");
 
           if (ex->x.is_of_type<Variable>()) {
             const auto &var_name = ex->x.as<Variable>().value;
@@ -440,7 +447,7 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
             return value;
           }
 
-          throw std::runtime_error("lhs must be deref or var");
+          throw InvalidInputException("LHS must be either a dereference (*expr) or a variable ($var).");
         },
         [get_xy](Add) {
           const auto [x, y] = get_xy();
@@ -459,8 +466,6 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr, bool allow_wr
           return x / y;
         },
       }, op);
-
-      return 0UL;
     },
   });
 }

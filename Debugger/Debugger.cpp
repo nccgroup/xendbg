@@ -10,7 +10,7 @@
 #include "Debugger.hpp"
 #include "../Util/overloaded.hpp"
 
-using xd::Debugger;
+using xd::dbg::Debugger;
 using xd::xen::Domain;
 using xd::xen::DomID;
 using xd::xen::XenHandle;

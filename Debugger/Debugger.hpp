@@ -12,7 +12,7 @@
 
 #include "../Xen/Domain.hpp"
 
-namespace xd {
+namespace xd::dbg {
 
   class Debugger {
   private:

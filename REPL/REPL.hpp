@@ -47,6 +47,7 @@ namespace xd::repl {
 
     void add_command(CommandPtr cmd);
     void exit();
+    const std::string &get_prompt() { return _prompt; };
     void print_help(std::ostream &out);
 
     void set_prompt_configurator(PromptConfiguratorFn f) {

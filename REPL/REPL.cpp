@@ -10,11 +10,14 @@
 
 #include "REPL.hpp"
 #include "Command/MakeCommand.hpp"
+#include "Command/Match.hpp"
 #include "../Util/IndentHelper.hpp"
 #include "../Util/string.hpp"
 
 using xd::repl::REPL;
 using xd::repl::cmd::Action;
+using xd::repl::cmd::ArgMatchFailedException;
+using xd::repl::cmd::FlagArgMatchFailedException;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::CommandVerb;
 using xd::repl::cmd::Flag;
@@ -113,14 +116,24 @@ void REPL::run(ActionHandlerFn action_handler) {
       _prompt = _prompt_configurator();
 
     const auto line = read_line();
-    const auto action = interpret_line(line);
 
-    if (action)
-      action_handler(action.value());
-    else if (_no_match_handler)
-      _no_match_handler(line);
-    else
-      std::cout << "Invalid input." << std::endl;
+    try {
+      const auto action = interpret_line(line);
+      if (action)
+        action_handler(action.value());
+      else if (_no_match_handler)
+        _no_match_handler(line);
+      else
+        std::cout << "Invalid input." << std::endl;
+    } catch (const ArgMatchFailedException &e) {
+      std::cout << "Invalid value for argument '" << e.get_argument().get_name()
+        << "'!" << std::endl;;
+      continue;
+    } catch (const FlagArgMatchFailedException &e) {
+      std::cout << "Invalid value for argument '" << e.get_argument().get_name()
+        << "' of flag '" << e.get_flag().get_long_name() << "'!" << std::endl;;
+      continue;
+    }
   };
 }
 
@@ -148,8 +161,12 @@ std::optional<Action> REPL::interpret_line(const std::string& line) {
   }
 
   for (const auto &cmd : _commands) {
-    return cmd->match(line.begin(), line.end());
+    const auto action = cmd->match(line.begin(), line.end());
+    if (action)
+      return action;
   }
+
+  return std::nullopt;
 }
 
 void REPL::print_help(std::ostream &out) {

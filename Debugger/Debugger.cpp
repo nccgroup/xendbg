@@ -11,6 +11,8 @@
 #include "../Util/overloaded.hpp"
 
 using xd::dbg::Debugger;
+using xd::dbg::NoSuchSymbolException;
+using xd::dbg::NoSuchVariableException;
 using xd::xen::Domain;
 using xd::xen::DomID;
 using xd::xen::XenHandle;
@@ -73,10 +75,14 @@ std::vector<Domain> Debugger::get_guest_domains() {
 }
 
 const Debugger::Symbol &Debugger::lookup_symbol(const std::string &name) {
+  if (!_symbols.count(name))
+    throw NoSuchSymbolException(name);
   return _symbols.at(name);
 }
 
 uint64_t Debugger::get_var(const std::string &name) {
+  if (!_variables.count(name))
+    throw NoSuchSymbolException(name);
   return _variables.at(name);
 }
 

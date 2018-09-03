@@ -12,7 +12,7 @@
 #include "REPL/Command/Verb.hpp"
 #include "Util/IndentHelper.hpp"
 
-using xd::DebuggerREPL;
+using xd::dbg::DebuggerREPL;
 using xd::repl::cmd::make_command;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;

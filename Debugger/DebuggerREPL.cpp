@@ -19,6 +19,8 @@ using xd::dbg::Debugger;
 using xd::dbg::DebuggerREPL;
 using xd::dbg::InvalidInputException;
 using xd::dbg::NoGuestAttachedException;
+using xd::dbg::NoSuchSymbolException;
+using xd::dbg::NoSuchVariableException;
 using xd::parser::Parser;
 using xd::parser::expr::Constant;
 using xd::parser::expr::Expression;
@@ -35,6 +37,7 @@ using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::make_command;
 using xd::repl::cmd::Verb;
+using xd::repl::cmd::match::make_match_one_of;
 using xd::repl::cmd::match::match_everything;
 using xd::util::string::next_whitespace;
 using xd::util::string::match_optionally_quoted_string;
@@ -48,15 +51,26 @@ void DebuggerREPL::run() {
     try {
       action();
     } catch (const xen::XenException &e) {
-      std::cout << e.what() << " (" << std::strerror(e.get_err()) << ")" << std::endl;
+      std::cout << e.what();
+      if (e.get_err())
+        std::cout << " (" << std::strerror(e.get_err()) << ")";
+        std::cout << std::endl;
     } catch (const InvalidInputException &e) {
       std::cout << e.what() << std::endl;
     } catch (const NoGuestAttachedException &e) {
       std::cout << "No guest! Attach to a guest with 'guest attach' first." << std::endl;
     } catch (const parser::except::ParserException &e) {
-      std::cout << "Invalid input: " << e.what() << std::endl;
+      std::cout << "Invalid input! Parse failed at:" << std::endl;
+      std::cout << e.input() << std::endl;
+      std::cout << std::string(e.pos(), ' ') << "^" << std::endl;
     } catch (const parser::except::ExpectException &e) {
-      std::cout << "Invalid input: " << e.what() << std::endl;
+      std::cout << "Invalid input! Parse failed at:" << std::endl;
+      std::cout << e.input() << std::endl;
+      std::cout << std::string(e.pos(), ' ') << "^" << std::endl;
+    } catch (const NoSuchSymbolException &e) {
+      std::cout << "No such symbol: " << e.what() << std::endl;
+    } catch (const NoSuchVariableException &e) {
+      std::cout << "No such variable: " << e.what() << std::endl;
     }
   });
 }
@@ -142,15 +156,15 @@ void DebuggerREPL::setup_repl() {
       [this](auto &/*flags*/, auto &args) {
         const auto domid_or_name = args.get("domid/name");
 
-        xen::DomID domid;
-        try {
-          domid = (xen::DomID)std::stoul(domid_or_name);
-        } catch (std::invalid_argument& e) {
-          domid = _debugger.get_xen_handle().get_xenstore()
-              .get_domid_from_name(domid_or_name);
-        }
+        return [this, domid_or_name]() {
+          xen::DomID domid;
+          try {
+            domid = (xen::DomID)std::stoul(domid_or_name);
+          } catch (std::invalid_argument& e) {
+            domid = _debugger.get_xen_handle().get_xenstore()
+                .get_domid_from_name(domid_or_name);
+          }
 
-        return [this, domid]() {
           _debugger.attach(domid);
 
           const auto domain = _debugger.get_current_domain().value();
@@ -213,6 +227,7 @@ void DebuggerREPL::setup_repl() {
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
             const auto& vars = _debugger.get_vars();
+
             for (const auto& var : vars) {
               std::cout << var.first << "\t" << var.second << std::endl;
             }
@@ -234,7 +249,7 @@ void DebuggerREPL::setup_repl() {
       Verb("print", "Display the value of an expression.",
         {
           Flag('f', "format", "Format.", {
-            Argument("fmt", "The format to use (b/x/d)", next_whitespace,
+            Argument("fmt", "The format to use (b/x/d).", make_match_one_of({"b", "x", "d"}),
                 [](const auto& a, const auto& b) {
                   return std::vector<std::string>{"b", "x", "d"};
                 }),
@@ -265,6 +280,8 @@ void DebuggerREPL::setup_repl() {
                 break;
               case 'b':
                 printer = print_as_bin;
+                break;
+              case 'd':
                 break;
             }
           }

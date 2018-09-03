@@ -7,12 +7,25 @@
 
 #include <optional>
 #include <memory>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
 #include "../Xen/Domain.hpp"
 
 namespace xd::dbg {
+
+  class NoSuchVariableException : public std::runtime_error {
+  public:
+    NoSuchVariableException(const std::string &name)
+      : std::runtime_error(name) {};
+  };
+
+  class NoSuchSymbolException : public std::runtime_error {
+  public:
+    NoSuchSymbolException(const std::string &name)
+      : std::runtime_error(name) {};
+  };
 
   class Debugger {
   private:

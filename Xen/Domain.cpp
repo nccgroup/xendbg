@@ -54,7 +54,7 @@ void Domain::read_memory(Address address, void *data, size_t size) {
     memio.gwr = 0;
 
     if (mlock(data, size))
-      throw XenException("mlock failed!");
+      throw XenException("mlock failed!", errno);
   }, [data, size]() {
     munlock(data, size);
   });
@@ -70,7 +70,7 @@ void Domain::write_memory(Address address, void *data, size_t size) {
     memio.gwr = 1;
 
     if (mlock(data, size))
-      throw XenException("mlock failed!");
+      throw XenException("mlock failed!", errno);
   }, [data, size]() {
     munlock(data, size);
   });

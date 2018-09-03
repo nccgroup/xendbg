@@ -14,7 +14,8 @@
 
 namespace xd::repl::cmd {
 
-  // TODO
+  class DefaultArgPositionException : public std::exception {};
+
   class UnknownFlagException : public std::exception {
     public:
       UnknownFlagException(std::string::const_iterator pos)

@@ -14,6 +14,12 @@
 
 namespace xd::repl::cmd {
 
+  class NoSuchArgumentException : public std::runtime_error {
+  public:
+    NoSuchArgumentException(const std::string &msg)
+      : std::runtime_error(msg) {};
+  };
+
   class ArgsHandle {
   private:
     using ArgName = std::string;
@@ -36,14 +42,14 @@ namespace xd::repl::cmd {
     ArgValue get(size_t index) const {
       auto val = get_opt(index);
       if (!val)
-        throw std::runtime_error("No such argument!");
+        throw NoSuchArgumentException("index " + std::to_string(index));
       return val.value();
     }
 
     ArgValue get(const std::string &name) const {
       auto val = get_opt(name);
       if (!val)
-        throw std::runtime_error("No such argument!");
+        throw NoSuchArgumentException(name);
       return val.value();
     }
 

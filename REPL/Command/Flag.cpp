@@ -26,9 +26,9 @@ Flag::Flag(char short_name, std::string long_name, std::string description,
     _description(std::move(description)), _args(std::move(args))
 {
   if (next_whitespace(_long_name.begin(), _long_name.end()) != _long_name.end())
-    throw std::runtime_error("Flag name cannot contain whitespace!");
+    throw FlagNameException("Flag name cannot contain whitespace!");
   if (next_char(_long_name.begin(), _long_name.end(), '-') == _long_name.begin())
-    throw std::runtime_error("Flag name cannot start with a '-' character!");
+    throw FlagNameException("Flag name cannot start with a '-' character!");
   validate_args(_args);
 }
 

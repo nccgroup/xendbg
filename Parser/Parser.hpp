@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <queue>
 #include <stack>
+#include <stdexcept>
 #include <string>
 #include <variant>
 
@@ -25,6 +26,28 @@
 #include "../Util/overloaded.hpp"
 
 namespace xd::parser {
+
+  class NoSuchBinaryOperatorException : public std::exception {
+  public:
+    explicit NoSuchBinaryOperatorException(token::Symbol symbol)
+      : _symbol(symbol) {};
+
+    token::Symbol get_symbol() { return _symbol; };
+
+  private:
+      token::Symbol _symbol;
+  };
+
+  class NoSuchUnaryOperatorException : public std::exception {
+  public:
+    explicit NoSuchUnaryOperatorException(token::Symbol symbol)
+      : _symbol(symbol) {};
+
+    token::Symbol get_symbol() { return _symbol; };
+
+  private:
+      token::Symbol _symbol;
+  };
 
   class Parser {
   public:

@@ -90,7 +90,7 @@ std::optional<Action> Verb::match(std::string::const_iterator begin,
   const auto next_non_ws = skip_whitespace(args_end, end);
   if (next_non_ws != end)
     // TODO
-    throw std::runtime_error("Unknown arg(s): " + std::string(next_non_ws, end));
+    throw ExtraArgumentException("Extra arg(s): " + std::string(next_non_ws, end));
 
   return _make_action(flags, args);
 }

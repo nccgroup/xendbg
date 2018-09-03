@@ -52,7 +52,7 @@ Parser::Operator Parser::symbol_to_binop(const Symbol& symbol) {
     case Type::Equals:
       return expr::op::Equals();
     default:
-      throw std::runtime_error("Symbol does not represent a binary operator!");
+      throw NoSuchBinaryOperatorException(symbol);
   }
 };
 
@@ -65,7 +65,7 @@ Parser::Operator Parser::symbol_to_unop(const Symbol& symbol) {
     case Type::Star:
       return expr::op::Dereference();
     default:
-      throw std::runtime_error("Symbol does not represent a unary operator!");
+      throw NoSuchUnaryOperatorException(symbol);
   }
 };
 

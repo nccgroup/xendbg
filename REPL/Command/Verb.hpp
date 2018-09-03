@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <variant>
@@ -25,6 +26,12 @@ namespace xd::util {
 }
 
 namespace xd::repl::cmd {
+
+  class ExtraArgumentException : public std::runtime_error {
+  public:
+    ExtraArgumentException(const std::string &msg)
+      : std::runtime_error(msg) {};
+  };
 
   class Verb {
   private:

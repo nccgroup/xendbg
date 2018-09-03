@@ -23,7 +23,7 @@ void xd::repl::cmd::validate_args(const std::vector<Argument> &args) {
   for (const auto& arg : args) {
     if (arg.get_default_value().empty()) {
       if (prev_arg_has_default) {
-        throw std::runtime_error("Args with defaults must come at the end of the args list!");
+        throw DefaultArgPositionException();
       }
     } else {
       prev_arg_has_default = true;
@@ -38,7 +38,7 @@ void xd::repl::cmd::validate_new_arg(const std::vector<Argument> &args,
       !args.back().get_default_value().empty() &&
       new_arg.get_default_value().empty())
   {
-    throw std::runtime_error("Args with defaults come at the end of the args list!");
+    throw DefaultArgPositionException();
   }
 }
 

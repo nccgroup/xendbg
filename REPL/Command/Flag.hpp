@@ -20,6 +20,12 @@ namespace xd::util {
 
 namespace xd::repl::cmd {
 
+  class FlagNameException : public std::runtime_error {
+  public:
+    FlagNameException(const std::string &msg)
+      : std::runtime_error(msg) {};
+  };
+
   class Flag {
   public:
     Flag(char short_name, std::string long_name, std::string description,

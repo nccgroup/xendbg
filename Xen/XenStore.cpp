@@ -21,7 +21,7 @@ std::vector<std::string> XenStore::read_directory(const std::string &dir) const 
   char **entries = xs_directory(_xenstore.get(), XBT_NULL, dir.c_str(), &num_entries);
 
   if (!entries)
-    throw XenException("Read from directory \"" + dir + "\" failed!");
+    throw XenException("Read from directory \"" + dir + "\" failed!", errno);
 
   std::vector<std::string> ret;
   ret.reserve(num_entries);
@@ -42,7 +42,7 @@ std::string XenStore::read(const std::string &file) const {
   xs_transaction_end(_xenstore.get(), transaction, false);
 
   if (!contents)
-    throw XenException("Read from \"" + file + "\" failed!");
+    throw XenException("Read from \"" + file + "\" failed!", errno);
 
   return std::string(contents);
 }

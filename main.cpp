@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Debugger/DebuggerREPL.hpp"
+#include "Parser/Parser.hpp"
 #include "REPL/Command/MakeCommand.hpp"
 #include "REPL/Command/Argument.hpp"
 #include "REPL/Command/Flag.hpp"

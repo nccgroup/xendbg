@@ -9,7 +9,9 @@ namespace xd::util {
 
   template<typename Container>
   void clear(Container &c) {
-    Container().swap(c);
+    //Container().swap(c);
+    while (!c.empty())
+      c.pop();
   }
 
 }

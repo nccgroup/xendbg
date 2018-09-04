@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "Token/Symbol.hpp"
+
 #define PARSER_EXCEPTION_BUF_SIZE 0x200
 
 namespace xd::parser::except {
@@ -73,6 +75,34 @@ namespace xd::parser::except {
   public:
     ExpectMissingTokenException(const std::string &input, const std::string &msg)
         : ExpectException(input, input.size(), msg) {};
+  };
+
+  class MissingOperandException : public ParserException {
+  public:
+    MissingOperandException(const std::string &input, size_t pos)
+        : ParserException(input, pos) {};
+  };
+
+  class NoSuchBinaryOperatorException {
+  public:
+    explicit NoSuchBinaryOperatorException(token::Symbol symbol)
+      : _symbol(symbol) {};
+
+    token::Symbol get_symbol() { return _symbol; };
+
+  private:
+      token::Symbol _symbol;
+  };
+
+  class NoSuchUnaryOperatorException {
+  public:
+    explicit NoSuchUnaryOperatorException(token::Symbol symbol)
+      : _symbol(symbol) {};
+
+    token::Symbol get_symbol() { return _symbol; };
+
+  private:
+      token::Symbol _symbol;
   };
 
 }

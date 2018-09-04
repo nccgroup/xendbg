@@ -18,6 +18,10 @@
 #include "../Util/pop_ret.hpp"
 
 using xd::parser::Parser;
+using xd::parser::except::MissingExpressionException;
+using xd::parser::except::MissingOperandException;
+using xd::parser::except::NoSuchBinaryOperatorException;
+using xd::parser::except::NoSuchUnaryOperatorException;
 using xd::parser::expr::Expression;
 using xd::parser::expr::op::BinaryOperator;
 using xd::parser::expr::op::precedence_of;
@@ -70,6 +74,7 @@ Parser::Operator Parser::symbol_to_unop(const Symbol& symbol) {
 };
 
 Expression Parser::parse(std::string input) {
+
   _input = input;
   clear(_operands);
   clear(_operators);
@@ -92,13 +97,15 @@ void Parser::consume() {
 }
 
 const Parser::Token& Parser::next_token() {
+  if (_tokens.empty())
+    throw MissingExpressionException(_input, _input.size());
   return _tokens.front();
 }
 
 void Parser::parse_expression() {
   parse_unit();
 
-  while (is_binary_operator_symbol(next_token())) {
+  while (!_tokens.empty() && is_binary_operator_symbol(next_token())) {
     push_operator_and_merge(
         symbol_to_binop(
             std::get<token::Symbol>(next_token())));
@@ -156,19 +163,27 @@ void xd::parser::Parser::push_operator_and_merge(Parser::Operator op) {
 }
 
 void xd::parser::Parser::pop_operator_and_merge() {
-  const auto& op = _operators.top();
   std::visit(util::overloaded {
     [](const Sentinel& op) {
       throw except::SentinelMergeException();
     },
     [this](const UnaryOperator& op) {
+      if (_operands.empty()) {
+        const auto pos = _tokens_pos.empty() ? _input.size() : _tokens_pos.front();
+        throw MissingOperandException(_input, pos);
+      }
+
       auto x = pop_ret(_operands);
       _operands.emplace(op, std::move(x));
     },
     [this](const BinaryOperator& op) {
+      if (_operands.size() < 2) {
+        const auto pos = _tokens_pos.empty() ? _input.size() : _tokens_pos.front();
+        throw MissingOperandException(_input, pos);
+      }
+
       auto y = pop_ret(_operands);
       auto x = pop_ret(_operands);
-
       _operands.emplace(op, std::move(x), std::move(y));
     }
   }, pop_ret(_operators));

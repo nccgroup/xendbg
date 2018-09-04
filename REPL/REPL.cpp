@@ -124,7 +124,7 @@ void REPL::run(ActionHandlerFn action_handler) {
     try {
       const auto action = interpret_line(line);
       if (action) {
-        add_history(line.c_str());
+        //add_history(line.c_str());
         action_handler(action.value());
       } else if (_no_match_handler) {
         _no_match_handler(line);

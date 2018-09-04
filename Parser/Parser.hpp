@@ -27,28 +27,6 @@
 
 namespace xd::parser {
 
-  class NoSuchBinaryOperatorException : public std::exception {
-  public:
-    explicit NoSuchBinaryOperatorException(token::Symbol symbol)
-      : _symbol(symbol) {};
-
-    token::Symbol get_symbol() { return _symbol; };
-
-  private:
-      token::Symbol _symbol;
-  };
-
-  class NoSuchUnaryOperatorException : public std::exception {
-  public:
-    explicit NoSuchUnaryOperatorException(token::Symbol symbol)
-      : _symbol(symbol) {};
-
-    token::Symbol get_symbol() { return _symbol; };
-
-  private:
-      token::Symbol _symbol;
-  };
-
   class Parser {
   public:
     expr::Expression parse(std::string input);

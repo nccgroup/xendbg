@@ -611,7 +611,6 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
     },
     [this](const Label& ex) {
       const auto label = ex.value;
-      // TODO: handle symbol not existing
       return _debugger.lookup_symbol(label).address;
     },
     [this](const Variable& ex) {
@@ -627,16 +626,14 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
       const auto& x_value = evaluate_expression(ex->x);
 
       return std::visit(util::overloaded {
-          [this, x_value](Dereference) {
-
-            const auto mem = get_domain_or_fail().map_memory(
-                x_value, sizeof(uint64_t), PROT_READ);
-            return *((uint64_t*)mem.get());
-
-          },
-          [x_value](Negate) {
-            return -x_value;
-          },
+        [this, x_value](Dereference) {
+          const auto mem = get_domain_or_fail().map_memory(
+              x_value, sizeof(uint64_t), PROT_READ);
+          return *((uint64_t*)mem.get());
+        },
+        [x_value](Negate) {
+          return -x_value;
+        },
       }, op);
     },
     [this](const Expression::BinaryExpressionPtr& ex) {

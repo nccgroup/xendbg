@@ -14,9 +14,6 @@
 
 namespace xd::dbg {
 
-  class NoGuestAttachedException : public std::exception {
-  };
-
   class InvalidInputException : public std::runtime_error {
   public:
     InvalidInputException(const std::string &what)
@@ -39,6 +36,7 @@ namespace xd::dbg {
     static void print_xen_info(const xen::XenHandle& xen);
     uint64_t evaluate_expression(const parser::expr::Expression& expr);
     void evaluate_set_expression(const parser::expr::Expression& expr, size_t word_size);
+    void examine(uint64_t address, size_t word_size, size_t num_words);
 
   private:
     Debugger _debugger;

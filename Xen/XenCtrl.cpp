@@ -157,6 +157,10 @@ void XenCtrl::set_domain_single_step(const Domain &domain, bool enable, VCPU_ID 
 }
 
 void XenCtrl::pause_domain(const Domain &domain) const {
+  const auto dominfo = domain.get_info();
+  if (dominfo.paused)
+    return;
+
   int err;
   if (err = xc_domain_pause(_xenctrl.get(), domain.get_domid()))
     throw XenException(
@@ -164,6 +168,10 @@ void XenCtrl::pause_domain(const Domain &domain) const {
 }
 
 void XenCtrl::unpause_domain(const Domain &domain) const {
+  const auto dominfo = domain.get_info();
+  if (!dominfo.paused)
+    return;
+
   int err;
   if (err = xc_domain_unpause(_xenctrl.get(), domain.get_domid()))
     throw XenException(

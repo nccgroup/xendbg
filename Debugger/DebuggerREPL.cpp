@@ -2,6 +2,7 @@
 // Created by Spencer Michaels on 8/28/18.
 //
 
+#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 
@@ -11,6 +12,7 @@
 #include "../REPL/Command/Argument.hpp"
 #include "../REPL/Command/Flag.hpp"
 #include "../REPL/Command/MakeCommand.hpp"
+#include "../REPL/Command/Match.hpp"
 #include "../REPL/Command/MatchHelper.hpp"
 #include "../REPL/Command/Verb.hpp"
 #include "../Util/string.hpp"
@@ -36,9 +38,10 @@ using xd::parser::expr::op::Divide;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::make_command;
-using xd::repl::cmd::Verb;
 using xd::repl::cmd::match::make_match_one_of;
 using xd::repl::cmd::match::match_everything;
+using xd::repl::cmd::match::match_number_unsigned;
+using xd::repl::cmd::Verb;
 using xd::util::string::next_whitespace;
 using xd::util::string::match_optionally_quoted_string;
 
@@ -71,6 +74,8 @@ void DebuggerREPL::run() {
       std::cout << "No such symbol: " << e.what() << std::endl;
     } catch (const NoSuchVariableException &e) {
       std::cout << "No such variable: " << e.what() << std::endl;
+    } catch (const NoSuchBreakpointException &e) {
+      std::cout << "No such breakpoint: #" << e.get_id() << std::endl;
     }
   });
 }
@@ -86,6 +91,26 @@ void DebuggerREPL::setup_repl() {
     if (domain)
       prompt = "xen:" + std::to_string(domain.value().get_domid()) + " " + prompt;
     return prompt;
+  });
+
+  _repl.set_custom_completer([this](const std::string &line) {
+    // satisfy type-inference
+    std::optional<std::vector<std::string>> ret = std::nullopt;
+
+    const auto last_ws_pos = next_whitespace(line.rbegin(), line.rend());
+    if (last_ws_pos == line.rend())
+      return ret;
+
+    if (*(last_ws_pos-1) == '&') {
+      const auto symbol_map = _debugger.get_symbols();
+      std::vector<std::string> options;
+      std::transform(symbol_map.begin(), symbol_map.end(), std::back_inserter(options),
+        [](const auto &pair) {
+          return std::string("&") + pair.first;
+        });
+      ret = std::move(options);
+    }
+    return ret;
   });
 
   /**
@@ -132,7 +157,7 @@ void DebuggerREPL::setup_repl() {
           const auto domains = _debugger.get_guest_domains();
           for (const auto &domain : domains) {
             // TODO: formatting
-            std::cout << domain.get_domid() << "\t" << domain.get_name() << std::endl;
+            std::cout << domain.get_name() << "\t" << domain.get_domid() << std::endl;
           }
         };
       }),
@@ -142,7 +167,7 @@ void DebuggerREPL::setup_repl() {
       {
         Argument("domid/name",
             "Either the numeric domID or the name of a guest to attach to.", 
-            match_optionally_quoted_string,
+            match_optionally_quoted_string<std::string::const_iterator>,
               [this](const auto&, const auto&) {
                 const auto domains = _debugger.get_guest_domains();
                 std::vector<std::string> options;
@@ -165,8 +190,13 @@ void DebuggerREPL::setup_repl() {
                 .get_domid_from_name(domid_or_name);
           }
 
-          _debugger.attach(domid);
+          const auto prev_domain = _debugger.get_current_domain();
+          if (prev_domain && prev_domain.value().get_domid() == domid) {
+            std::cout << "Already attached." << std::endl;
+            return;
+          }
 
+          _debugger.attach(domid);
           const auto domain = _debugger.get_current_domain().value();
           std::cout << "Attached to guest " << domain.get_domid() << " (" << domain.get_name() << ")." << std::endl;
 
@@ -180,7 +210,11 @@ void DebuggerREPL::setup_repl() {
       {}, {},
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
-          get_domain_or_fail();
+          const auto& domain = get_domain_or_fail();
+          const auto domid = domain.get_domid();
+          const auto name = domain.get_name();
+          std::cout << "Detached from guest " << domid << " (" << name << ")." << std::endl;
+
           _debugger.detach();
         };
       }),
@@ -198,6 +232,17 @@ void DebuggerREPL::setup_repl() {
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
           get_domain_or_fail().unpause();
+        };
+      }),
+
+    Verb("reboot", "Reboot the current domain",
+      {}, {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          auto& domain = get_domain_or_fail();
+          domain.reboot();
+          _debugger.detach();
+          _debugger.attach(domain.get_domid());
         };
       }),
   }));
@@ -249,8 +294,8 @@ void DebuggerREPL::setup_repl() {
       Verb("print", "Display the value of an expression.",
         {
           Flag('f', "format", "Format.", {
-            Argument("fmt", "The format to use (b/x/d).", make_match_one_of({"b", "x", "d"}),
-                [](const auto& a, const auto& b) {
+            Argument("fmt", "The format to use.", make_match_one_of({"b", "x", "d"}),
+                [](const auto&, const auto&) {
                   return std::vector<std::string>{"b", "x", "d"};
                 }),
           })
@@ -263,14 +308,14 @@ void DebuggerREPL::setup_repl() {
             out << std::dec << result;
           };
           const auto print_as_hex = [](std::ostream &out, uint64_t result) {
-            out << std::showbase << std::hex << result;
+            out << std::showbase << std::hex << result << std::dec;
           };
           const auto print_as_bin = [](std::ostream &out, uint64_t result) {
             // TODO: don't print leading zeroes?
             out << "0b" << std::bitset<CHAR_BIT * sizeof(uint64_t)>(result);
           };
 
-          std::function<void(std::ostream&, uint64_t)> printer = print_as_dec;
+          std::function<void(std::ostream&, uint64_t)> printer = print_as_hex;
           if (flags.has('f')) {
             const auto format = flags.get('f').value().get(0);
             assert(format.size() == 1);
@@ -282,6 +327,10 @@ void DebuggerREPL::setup_repl() {
                 printer = print_as_bin;
                 break;
               case 'd':
+                printer = print_as_dec;
+                break;
+              default:
+                printer = print_as_hex;
                 break;
             }
           }
@@ -313,10 +362,32 @@ void DebuggerREPL::setup_repl() {
         [this](auto &flags, auto &args) {
           const auto expr_str = args.get(0);
 
-          return [this, expr_str]() {
+          size_t word_size = 0;
+          const auto word_size_flag = flags.get('w');
+
+          if (word_size_flag) {
+            const auto word_size_str = word_size_flag.value().get(0);
+            switch (word_size_str[0]) {
+              case 'b':
+                word_size = 1;
+                break;
+              case 'h':
+                word_size = 2;
+                break;
+              case 'w':
+                word_size = 4;
+                break;
+              case 'g':
+                word_size = 8;
+                break;
+            }
+          }
+
+          return [this, expr_str, word_size]() {
             Parser parser;
             const auto expr = parser.parse(expr_str);
-            evaluate_set_expression(expr);
+            evaluate_set_expression(expr,
+                word_size ? word_size : get_domain_or_fail().get_word_size());
           };
         })));
 
@@ -341,6 +412,117 @@ void DebuggerREPL::setup_repl() {
           };
         })));
 
+  _repl.add_command(make_command(
+      Verb("examine", "Read memory.",
+        {
+          Flag('w', "word-size", "Size of each word to read.", {
+              Argument("size", "The size of the word to read (b/h/w/g).",
+                  make_match_one_of({"b", "h", "w", "g"}),
+                  [](const auto& a, const auto& b) {
+                    return std::vector<std::string>{"b", "h", "w", "g"};
+                  }),
+          }),
+          Flag('n', "num-words", "Number of words to read.", {
+              Argument("num", "The number of words to read.", match_number_unsigned),
+          })
+        },
+        {
+          Argument("expr", "", match_everything),
+        },
+        [this](auto &flags, auto &args) {
+          const auto expr_str = args.get(0);
+
+          size_t word_size = 0;
+          const auto word_size_flag = flags.get('w');
+
+          if (word_size_flag) {
+            const auto word_size_str = word_size_flag.value().get(0);
+            switch (word_size_str[0]) {
+              case 'b':
+                word_size = 1;
+                break;
+              case 'h':
+                word_size = 2;
+                break;
+              case 'w':
+                word_size = 4;
+                break;
+              case 'g':
+                word_size = 8;
+                break;
+            }
+          }
+
+          size_t num_words = 1;
+          const auto num_words_flag = flags.get('n');
+          if (num_words_flag) {
+            num_words = std::stoul(num_words_flag.value().get(0));
+          }
+
+          return [this, expr_str, word_size, num_words]() {
+            Parser parser;
+            const auto expr = parser.parse(expr_str);
+            const auto addr = evaluate_expression(expr);
+            examine(
+                addr, 
+                word_size ? word_size : get_domain_or_fail().get_word_size(),
+                num_words);
+          };
+        })));
+
+  _repl.add_command(make_command("breakpoint", "Manage breakpoints.", {
+    Verb("create", "Create a breakpoint.",
+      {},
+      {
+        Argument("addr", "The address at which to create a breakpoint.", match_everything)
+      },
+      [this](auto &/*flags*/, auto &args) {
+        const auto address_str = args.get(0);
+
+        return [this, address_str]() {
+          Parser parser;
+          const auto address_expr = parser.parse(address_str);
+          const auto address = evaluate_expression(address_expr);
+
+          const auto id = _debugger.create_breakpoint(address);
+          std::cout << "Created breakpoint #" << id << "." << std::endl;
+        };
+      }),
+    Verb("delete", "Delete a breakpoint.",
+      {},
+      {
+        Argument("id", "The ID of a breakpoint to delete.", match_number_unsigned)
+      },
+      [this](auto &/*flags*/, auto &args) {
+        const auto id = std::stoul(args.get(0));
+        return [this, id]() {
+          _debugger.delete_breakpoint(id);
+          std::cout << "Deleted breakpoint #" << id << "." << std::endl;
+        };
+      }),
+    Verb("list", "List breakpoints.",
+      {}, {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          const auto bps = _debugger.get_breakpoints();
+          std::cout << std::showbase << std::hex;
+          for (const auto pair : bps) {
+            std::cout << pair.first << ":\t" << pair.second.address << std::endl;
+          }
+          std::cout << std::dec;
+        };
+      }),
+    }));
+
+  _repl.add_command(make_command(
+      Verb("continue", "Continue until the next breakpoint.",
+        {}, {},
+        [this](auto &/*flags*/, auto &/*args*/) {
+          return [this]() {
+            const auto bp = _debugger.continue_until_breakpoint();
+            std::cout << "Hit breakpoint #" << bp.id << "." << std::endl;
+          };
+        })));
 }
 
 xd::xen::Domain &DebuggerREPL::get_domain_or_fail() {
@@ -356,7 +538,10 @@ void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
   std::cout
     << "Domain " << domain.get_domid() << " (" << domain.get_name() << "):" << std::endl
     << domain.get_word_size() * 8 << "-bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl
-    << (dominfo.max_vcpu_id+1) << "VCPUs" << std::endl;
+    << (dominfo.max_vcpu_id+1) << " VCPUs" << std::endl
+    << (dominfo.paused ? "Paused" : "Running") << std::endl
+    << (dominfo.crashed ? "Crashed" : "")
+    << std::endl;
 }
 
 void DebuggerREPL::print_registers(const xen::Registers& regs) {
@@ -374,6 +559,8 @@ void DebuggerREPL::print_registers(const xen::Registers& regs) {
       });
     }
   }, regs);
+
+  std::cout << std::dec;
 }
 
 void DebuggerREPL::print_xen_info(const xen::XenHandle &xen) {
@@ -411,7 +598,9 @@ void xd::dbg::DebuggerREPL::evaluate_set_expression(const Expression &expr, size
     const auto address = evaluate_expression(ex.x.as_unex().x);
     const auto value = evaluate_expression(ex.y);
 
-    get_domain_or_fail().write_memory(address, (void*)&value, word_size);
+    const auto mem = get_domain_or_fail().map_memory(
+        address, sizeof(uint64_t), PROT_WRITE);
+    memcpy((void*)mem.get(), (void*)&value, word_size);
   }
 }
 
@@ -441,15 +630,9 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
           [this, x_value](Dereference) {
 
             const auto mem = get_domain_or_fail().map_memory(
-                x_value, word_size, PROT_READ);
+                x_value, sizeof(uint64_t), PROT_READ);
             return *((uint64_t*)mem.get());
 
-          /*
-            uint64_t mem;
-            get_domain_or_fail().read_memory(
-                x_value, &mem, sizeof(uint64_t));
-            return mem;
-            */
           },
           [x_value](Negate) {
             return -x_value;
@@ -465,34 +648,9 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
       };
 
       return std::visit(util::overloaded {
-        [this, &ex](Equals) {
+        [](Equals) {
           throw InvalidInputException("Use 'set' to modify variables.");
-
-          if (ex->x.is_of_type<Variable>()) {
-            const auto &var_name = ex->x.as<Variable>().value;
-            const auto value = evaluate_expression(ex->y);
-
-            // TODO: VCPU ID
-            if (xd::xen::is_register_name(var_name))
-              get_domain_or_fail().write_register(var_name, value);
-            else
-              _debugger.set_var(var_name, value); 
-
-            return value;
-
-          } else if (ex->x.is_unex() &&
-              std::holds_alternative<Dereference>(ex->x.as_unex().op))
-          {
-            const auto address = evaluate_expression(ex->x.as_unex().x);
-            const auto value = evaluate_expression(ex->y);
-
-            get_domain_or_fail().write_memory(
-                address, (void*)&value, sizeof(uint64_t));
-
-            return value;
-          }
-
-          throw InvalidInputException("LHS must be either a dereference (*expr) or a variable ($var).");
+          return 0UL; // satisfy the compiler's type-inference
         },
         [get_xy](Add) {
           const auto [x, y] = get_xy();
@@ -513,4 +671,32 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
       }, op);
     },
   });
+}
+
+void DebuggerREPL::examine(uint64_t address, size_t word_size, size_t num_words) {
+  assert(word_size <= sizeof(uint64_t));
+  assert(word_size > 0);
+  assert(num_words > 0);
+
+  const auto mem_handle = get_domain_or_fail().map_memory(
+      address, word_size*num_words, PROT_READ);
+  auto mem = mem_handle.get();
+
+  const auto newline_limit = 3*sizeof(uint64_t)/word_size;
+
+  std::cout << std::hex << std::showbase;
+  std::cout << address << " to " << address + word_size*num_words << ":" << std::endl;
+  std::cout << std::noshowbase << std::setfill('0');
+  for (size_t i = 0; i < num_words; ++i) {
+    auto target = mem+i+word_size-1;
+    for (size_t j = 0; j < word_size; ++j) {
+      std::cout << std::setw(2) << static_cast<unsigned>(*target);
+      --target;
+    }
+    std::cout << " ";
+
+    if (i != num_words-1 && (i % newline_limit) == newline_limit-1)
+      std::cout << std::endl;
+  }
+  std::cout << std::dec << std::endl;
 }

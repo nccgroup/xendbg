@@ -18,11 +18,11 @@ namespace xd::parser::expr::op {
 
   template <> struct _precedence<Equals>      { static const Precedence p = 1; };
   template <> struct _precedence<Negate>      { static const Precedence p = 10; };
-  template <> struct _precedence<Dereference> { static const Precedence p = 10; };
   template <> struct _precedence<Add>         { static const Precedence p = 20; };
   template <> struct _precedence<Subtract>    { static const Precedence p = 20; };
   template <> struct _precedence<Multiply>    { static const Precedence p = 30; };
   template <> struct _precedence<Divide>      { static const Precedence p = 30; };
+  template <> struct _precedence<Dereference> { static const Precedence p = 50; };
 
   template <typename T>
   Precedence precedence_of(const T&) {

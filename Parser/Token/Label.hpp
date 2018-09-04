@@ -26,7 +26,7 @@ namespace xd::parser::token {
 
   public:
     static TokenMatchResult<Label> match(std::string::const_iterator begin, std::string::const_iterator end) {
-      std::regex r("^\\&[A-Za-z][A-Za-z0-9_]*");
+      std::regex r("^\\&[A-Za-z_][A-Za-z0-9_]*");
       std::smatch m;
 
       if (!std::regex_search(begin, end, m, r))

@@ -15,6 +15,8 @@ namespace xd::repl::cmd::match {
 
   std::string::const_iterator match_everything(
       std::string::const_iterator begin, std::string::const_iterator end);
+  std::string::const_iterator match_number_unsigned(
+      std::string::const_iterator begin, std::string::const_iterator end);
 
   MatcherFn make_match_one_of(std::vector<std::string> options);
 

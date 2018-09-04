@@ -10,6 +10,8 @@
 #include "Debugger.hpp"
 #include "../Util/overloaded.hpp"
 
+#define INFINITE_LOOP_X86 0xFEEB
+
 using xd::dbg::Debugger;
 using xd::dbg::NoSuchSymbolException;
 using xd::dbg::NoSuchVariableException;
@@ -19,13 +21,18 @@ using xd::xen::XenHandle;
 
 Domain& Debugger::attach(DomID domid) {
   _current_vcpu = 0;
+  _next_breakpoint_id = 0;
   _domain.emplace(_xen, domid);
-  _domain.value().set_debugging(true);
+  _domain->set_debugging(true);
 
   return _domain.value();
 }
 
 void Debugger::detach() {
+  for (const auto &bp : _breakpoints) {
+    delete_breakpoint(bp.first);
+  }
+
   _symbols.clear();
   _variables.clear();
   _domain.reset();
@@ -62,6 +69,55 @@ void Debugger::load_symbols_from_file(const std::string &name) {
   }
 }
 
+size_t Debugger::create_breakpoint(xen::Address address) {
+  if (!_domain)
+    throw NoGuestAttachedException();
+
+  const auto mem_handle = _domain->map_memory(address, 2, PROT_READ | PROT_WRITE);
+  const auto mem = (uint16_t*)mem_handle.get();
+
+  const auto id = _next_breakpoint_id++;
+  const auto orig_bytes = *mem;
+
+  _domain->pause();
+  _breakpoints[id] = Breakpoint{ id, address, orig_bytes };
+  *mem = INFINITE_LOOP_X86;
+  _domain->unpause();
+
+  return id;
+}
+
+void Debugger::delete_breakpoint(size_t id) {
+  if (!_domain)
+    throw NoGuestAttachedException();
+
+  if (_breakpoints.count(id) == 0)
+    throw NoSuchBreakpointException(id);
+  const auto &bp = _breakpoints.at(id);
+
+  const auto mem_handle = _domain->map_memory(bp.address, 2, PROT_WRITE);
+  const auto mem = (uint16_t*)mem_handle.get();
+
+  _domain->pause();
+  *mem = bp.orig_bytes;
+  _breakpoints.erase(_breakpoints.find(id));
+  _domain->unpause();
+}
+
+Debugger::Breakpoint Debugger::continue_until_breakpoint() {
+  if (!_domain)
+    throw NoGuestAttachedException();
+
+  _domain->unpause();
+
+  std::optional<Breakpoint> bp;
+  while (!(bp = check_breakpoint_hit()));
+
+  _domain->pause();
+
+  return *bp;
+}
+
 std::vector<Domain> Debugger::get_guest_domains() {
   const auto domids = _xen.get_xenstore().get_guest_domids();
 
@@ -92,7 +148,36 @@ void Debugger::set_var(const std::string &name, uint64_t value) {
 
 void Debugger::delete_var(const std::string &name) {
   if (!_variables.count(name))
-    // TODO
-    throw std::runtime_error("No such variable!");
+    throw NoSuchVariableException("No such variable!");
   _variables.erase(name);
+}
+
+std::optional<Debugger::Breakpoint> Debugger::check_breakpoint_hit() {
+  if (!_domain)
+    throw NoGuestAttachedException();
+
+  const auto address = std::visit(util::overloaded {
+    [](const xen::Registers32 regs) {
+      return (uint64_t)regs.eip;
+    },
+    [](const xen::Registers64 regs) {
+      return (uint64_t)regs.rip;
+    }
+  }, _domain->get_cpu_context(_current_vcpu));
+
+  const auto mem_handle = _domain->map_memory(address, 2, PROT_READ);
+  const auto mem = (uint16_t*)mem_handle.get();
+
+  if (*mem != INFINITE_LOOP_X86)
+    return std::nullopt;
+
+  const auto found = std::find_if(_breakpoints.begin(), _breakpoints.end(),
+    [address](const auto &pair) {
+      return pair.second.address == address;
+    });
+
+  if (found == _breakpoints.end())
+    return std::nullopt;
+
+  return found->second;
 }

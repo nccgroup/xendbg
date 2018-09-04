@@ -23,6 +23,7 @@ namespace xd::repl {
     using PromptConfiguratorFn = std::function<std::string()>;
     using NoMatchHandlerFn = std::function<void(const std::string &)>;
     using ActionHandlerFn = std::function<void(const cmd::Action &)>;
+    using CompleterFn = std::function<std::optional<std::vector<std::string>>(const std::string &)>;
 
   public:
     static void run(REPL& repl, ActionHandlerFn action_handler);
@@ -56,6 +57,9 @@ namespace xd::repl {
     void set_no_match_handler(NoMatchHandlerFn f) {
       _no_match_handler = std::move(f);
     }
+    void set_custom_completer(CompleterFn f) {
+      _custom_completer = std::move(f);
+    }
 
   private:
     bool _running;
@@ -63,6 +67,7 @@ namespace xd::repl {
     std::vector<CommandPtr> _commands;
     PromptConfiguratorFn _prompt_configurator;
     NoMatchHandlerFn _no_match_handler;
+    CompleterFn _custom_completer;
 
   private:
     std::vector<std::string> complete(

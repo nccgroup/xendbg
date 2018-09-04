@@ -2,6 +2,8 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
+#include "BridgeHeaders/libxl.h"
+
 #include "Domain.hpp"
 
 using xd::xen::Domain;
@@ -42,6 +44,14 @@ int Domain::get_word_size() const {
 
 MemInfo Domain::map_meminfo() const {
   return _xen.get_xenctrl().map_domain_meminfo(*this);
+}
+
+// TODO: This doesn't seem to have any effect.
+void Domain::reboot() const {
+  libxl_ctx *ctx;
+  libxl_ctx_alloc(&ctx, LIBXL_VERSION, 0, nullptr);
+  libxl_domain_reboot(ctx, _domid);
+  libxl_ctx_free(ctx);
 }
 
 void Domain::read_memory(Address address, void *data, size_t size) {

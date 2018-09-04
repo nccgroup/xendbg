@@ -16,42 +16,34 @@ if (APPLE)
     include_directories("/usr/local/opt/xen/xen/include/public")
 endif()
 
-add_executable(xendbg
-    main.cpp
-    Parser/Parser.cpp
-        Parser/Expression/ExpressionGeneric.hpp
-        Parser/Expression/Operator/BinaryOperator.hpp
-        Parser/Expression/Operator/Precedence.hpp
-        Parser/Expression/Operator/UnaryOperator.hpp
-    Parser/ParserException.hpp
-    Parser/Sentinel.hpp
-    Parser/Tokenizer.hpp
-    Parser/Token/Variable.hpp
-    Parser/Token/Label.hpp
-    Parser/Token/Symbol.hpp
-    Parser/Token/Match.hpp
-        Parser/Predicate.hpp
-    Util/overloaded.hpp
-    Util/pop_ret.hpp
-    Util/clear.hpp
-    REPL/REPL.cpp
-    REPL/REPL.hpp
-        Xen/Domain.cpp
-    Xen/Domain.hpp Xen/XenException.hpp Xen/XenStore.cpp Xen/XenStore.hpp
-    Xen/XenCtrl.cpp Xen/XenCtrl.hpp Xen/XenForeignMemory.cpp
-    Xen/XenForeignMemory.hpp Xen/Common.hpp Xen/Registers.hpp
-    Xen/BridgeHeaders/xenctrl.h Xen/BridgeHeaders/xenstore.h
-    Xen/BridgeHeaders/xenforeignmemory.h Xen/BridgeHeaders/xenguest.h
-    Xen/BridgeHeaders/domctl.h Xen/PrivCmd.cpp Xen/PrivCmd.hpp
-        REPL/Command/Action.hpp REPL/Command/Command.cpp
-    REPL/Command/Command.hpp Util/string.hpp Util/string.cpp
-    REPL/Command/Verb.cpp REPL/Command/Verb.hpp REPL/Command/Argument.cpp
-    REPL/Command/Argument.hpp REPL/Command/Flag.cpp REPL/Command/Flag.hpp
-    REPL/Command/ArgsHandle.cpp REPL/Command/ArgsHandle.hpp
-    REPL/Command/FlagsHandle.cpp REPL/Command/FlagsHandle.hpp
-    REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp
-    REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
-    REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
-    Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp Debugger/Debugger.cpp Debugger/Debugger.hpp Debugger/DebuggerREPL.cpp Debugger/DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp  Parser/Expression/Expression.hpp)
+add_executable(xendbg main.cpp Parser/Parser.cpp
+  Parser/Expression/ExpressionGeneric.hpp
+  Parser/Expression/Operator/BinaryOperator.hpp
+  Parser/Expression/Operator/Precedence.hpp
+  Parser/Expression/Operator/UnaryOperator.hpp Parser/ParserException.hpp
+  Parser/Sentinel.hpp Parser/Tokenizer.hpp Parser/Token/Variable.hpp
+  Parser/Token/Label.hpp Parser/Token/Symbol.hpp Parser/Token/Match.hpp
+  Parser/Predicate.hpp Util/overloaded.hpp Util/pop_ret.hpp Util/clear.hpp
+  REPL/REPL.cpp REPL/REPL.hpp Xen/Domain.cpp Xen/Domain.hpp
+  Xen/XenException.hpp Xen/XenStore.cpp Xen/XenStore.hpp Xen/XenCtrl.cpp
+  Xen/XenCtrl.hpp Xen/XenForeignMemory.cpp Xen/XenForeignMemory.hpp
+  Xen/Common.hpp Xen/Registers.hpp Xen/BridgeHeaders/xenctrl.h
+  Xen/BridgeHeaders/xenstore.h Xen/BridgeHeaders/xenforeignmemory.h
+  Xen/BridgeHeaders/xenguest.h Xen/BridgeHeaders/domctl.h Xen/PrivCmd.cpp
+  Xen/PrivCmd.hpp REPL/Command/Action.hpp REPL/Command/Command.cpp
+  REPL/Command/Command.hpp Util/string.hpp Util/string.cpp
+  REPL/Command/Verb.cpp REPL/Command/Verb.hpp REPL/Command/Argument.cpp
+  REPL/Command/Argument.hpp REPL/Command/Flag.cpp REPL/Command/Flag.hpp
+  REPL/Command/ArgsHandle.cpp REPL/Command/ArgsHandle.hpp
+  REPL/Command/FlagsHandle.cpp REPL/Command/FlagsHandle.hpp
+  REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp
+  REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
+  REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
+  Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp
+  Debugger/Debugger.cpp Debugger/Debugger.hpp Debugger/DebuggerREPL.cpp
+  Debugger/DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp
+  REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp
+  Parser/Expression/Expression.hpp)
 
-target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore)
+target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore
+  xenlight xlutil)

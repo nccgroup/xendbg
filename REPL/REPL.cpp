@@ -7,6 +7,7 @@
 #include <string>
 
 #include <readline/readline.h>
+#include <readline/history.h>
 
 #include "REPL.hpp"
 #include "Command/MakeCommand.hpp"
@@ -23,12 +24,14 @@ using xd::repl::cmd::CommandVerb;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::Verb;
 using xd::repl::cmd::make_command;
+using xd::repl::cmd::UnknownFlagException;
 using xd::util::IndentHelper;
 using xd::util::string::skip_whitespace;
 
 
 REPL *REPL::_s_instance;
 std::vector<std::string> REPL::_s_completion_options;
+static char completer_word_break_characters[] = " \t\n\"\\'`@$><=;|{(";
 
 void REPL::run(REPL &repl, REPL::ActionHandlerFn action_handler) {
   init_readline();
@@ -40,6 +43,7 @@ void REPL::run(REPL &repl, REPL::ActionHandlerFn action_handler) {
 
 void REPL::init_readline() {
   rl_attempted_completion_function = REPL::attempted_completion_function;
+  rl_completer_word_break_characters = completer_word_break_characters;
 }
 
 void REPL::deinit_readline() {
@@ -119,25 +123,43 @@ void REPL::run(ActionHandlerFn action_handler) {
 
     try {
       const auto action = interpret_line(line);
-      if (action)
+      if (action) {
+        add_history(line.c_str());
         action_handler(action.value());
-      else if (_no_match_handler)
+      } else if (_no_match_handler) {
         _no_match_handler(line);
-      else
+      } else {
         std::cout << "Invalid input." << std::endl;
+      }
+
     } catch (const ArgMatchFailedException &e) {
-      std::cout << "Invalid value for argument '" << e.get_argument().get_name()
+      std::cout << "Invalid value '" << 
+        std::string(e.get_pos(), util::string::next_whitespace(e.get_pos(), line.end()))
+        << "' for argument '" << e.get_argument().get_name()
         << "'!" << std::endl;;
       continue;
     } catch (const FlagArgMatchFailedException &e) {
-      std::cout << "Invalid value for argument '" << e.get_argument().get_name()
+      std::cout << "Invalid value '" << 
+        std::string(e.get_pos(), util::string::next_whitespace(e.get_pos(), line.end()))
+        << "' for argument '" << e.get_argument().get_name()
         << "' of flag '" << e.get_flag().get_long_name() << "'!" << std::endl;;
+      continue;
+    } catch (const UnknownFlagException &e) {
+      std::cout << "No such flag: " <<
+        std::string(e.get_pos(), util::string::next_whitespace(e.get_pos(), line.end()))
+        << std::endl;
       continue;
     }
   };
 }
 
 std::vector<std::string> REPL::complete(const std::string &s) {
+  if (_custom_completer) {
+    const auto options = _custom_completer(s);
+    if (options)
+      return options.value();
+  }
+
   for (const auto &cmd : _commands) {
     auto options = cmd->complete(s.begin(), s.end());
     if (options.has_value()) {

@@ -23,6 +23,8 @@ namespace xd::xen {
     DomInfo get_info() const;
     int get_word_size() const;
 
+    void reboot() const;
+
     template<typename InitFn_t, typename CleanupFn_t>
     void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) const {
       _xen.get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);

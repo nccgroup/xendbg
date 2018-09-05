@@ -26,8 +26,8 @@ using xd::repl::cmd::Verb;
 using xd::repl::cmd::make_command;
 using xd::repl::cmd::UnknownFlagException;
 using xd::util::IndentHelper;
+using xd::util::string::next_whitespace;
 using xd::util::string::skip_whitespace;
-
 
 REPL *REPL::_s_instance;
 std::vector<std::string> REPL::_s_completion_options;
@@ -114,12 +114,25 @@ void REPL::exit() {
 }
 
 void REPL::run(ActionHandlerFn action_handler) {
+  using_history();
+
   _running = true;
   while (_running) {
     if (_prompt_configurator)
       _prompt = _prompt_configurator();
 
-    const auto line = read_line();
+    auto line = read_line();
+
+    // Just hitting enter repeats the last line
+    if (line.empty()) {
+      const auto last_line = history_get(where_history())->line;
+      line = std::string(last_line);
+
+    // A line with only spaces should be ignored
+    } else if (skip_whitespace(line.begin(), line.end()) == line.end()) {
+      std::cout << std::endl;
+      continue;
+    }
 
     try {
       const auto action = interpret_line(line);
@@ -134,19 +147,22 @@ void REPL::run(ActionHandlerFn action_handler) {
 
     } catch (const ArgMatchFailedException &e) {
       std::cout << "Invalid value '" << 
-        std::string(e.get_pos(), util::string::next_whitespace(e.get_pos(), line.end()))
+        std::string(e.get_pos(), next_whitespace<std::string::const_iterator>(
+              e.get_pos(), line.end()))
         << "' for argument '" << e.get_argument().get_name()
         << "'!" << std::endl;;
       continue;
     } catch (const FlagArgMatchFailedException &e) {
       std::cout << "Invalid value '" << 
-        std::string(e.get_pos(), util::string::next_whitespace(e.get_pos(), line.end()))
+        std::string(e.get_pos(), next_whitespace<std::string::const_iterator>(
+              e.get_pos(), line.end()))
         << "' for argument '" << e.get_argument().get_name()
         << "' of flag '" << e.get_flag().get_long_name() << "'!" << std::endl;;
       continue;
     } catch (const UnknownFlagException &e) {
       std::cout << "No such flag: " <<
-        std::string(e.get_pos(), util::string::next_whitespace(e.get_pos(), line.end()))
+        std::string(e.get_pos(), next_whitespace<std::string::const_iterator>(
+              e.get_pos(), line.end()))
         << std::endl;
       continue;
     }
@@ -177,11 +193,6 @@ std::vector<std::string> REPL::complete(const std::string &s) {
 }
 
 std::optional<Action> REPL::interpret_line(const std::string& line) {
-  // Ignore empty (including whitespace-only) lines
-  if (skip_whitespace(line.begin(), line.end()) == line.end()) {
-    return std::nullopt;
-  }
-
   for (const auto &cmd : _commands) {
     const auto action = cmd->match(line.begin(), line.end());
     if (action)

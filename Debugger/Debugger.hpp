@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <capstone/capstone.h>
+
 #include "../Xen/Domain.hpp"
 
 namespace xd::dbg {
@@ -82,14 +84,15 @@ namespace xd::dbg {
     void delete_var(const std::string &name);
 
   private:
-    Breakpoint insert_breakpoint(xen::Address address);
-    void remove_breakpoint(const Breakpoint &bp);
-    xen::Address check_infinite_loop_hit(const xen::Domain &domain);
-    std::optional<Breakpoint> check_breakpoint_hit(const xen::Domain &domain);
-    std::pair<xen::Address, xen::Address> get_address_of_next_instruction(
-            const xen::Domain &domain);
+    Breakpoint insert_infinite_loop(xen::Address address);
+    void remove_infinite_loop(const Breakpoint &bp);
+    std::optional<Breakpoint> get_breakpoint_by_address(xen::Address address);
+    xen::Address check_infinite_loop_hit();
+    std::optional<Breakpoint> check_breakpoint_hit();
+    std::pair<xen::Address, xen::Address> get_address_of_next_instruction();
 
   private:
+    csh _capstone;
     size_t _current_vcpu;
     xen::XenHandle _xen;
     std::optional<xen::Domain> _domain;

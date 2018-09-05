@@ -5,6 +5,7 @@
 #include <set>
 #include <unordered_map>
 
+#include "XenException.hpp"
 #include "../Util/overloaded.hpp"
 #include "Registers.hpp"
 
@@ -39,6 +40,8 @@ Registers32::ValueType Registers32::get_by_name(const std::string &name) const {
     { "gs",     [](auto &regs) { return regs.gs; } },
   };
 
+  if (get_by_name_map.count(name) == 0)
+    throw xen::XenException("No such register: " + name);
   return get_by_name_map.at(name)(*this);
 }
 
@@ -62,6 +65,8 @@ void Registers32::set_by_name(const std::string &name, ValueType value) {
     { "gs",     [](auto &regs, auto value) { regs.gs = value; } },
   };
 
+  if (set_by_name_map.count(name) == 0)
+    throw xen::XenException("No such register: " + name);
   return set_by_name_map.at(name)(*this, value);
 }
 
@@ -92,6 +97,8 @@ Registers64::ValueType Registers64::get_by_name(const std::string &name) const {
       { "ss",     [](auto &regs) { return regs.ss; } },
   };
 
+  if (get_by_name_map.count(name) == 0)
+    throw xen::XenException("No such register: " + name);
   return get_by_name_map.at(name)(*this);
 }
 
@@ -122,6 +129,8 @@ void Registers64::set_by_name(const std::string &name, ValueType value) {
       { "ss",     [](auto &regs, auto value) { regs.ss = value; } },
   };
 
+  if (set_by_name_map.count(name) == 0)
+    throw xen::XenException("No such register: " + name);
   return set_by_name_map.at(name)(*this, value);
 }
 

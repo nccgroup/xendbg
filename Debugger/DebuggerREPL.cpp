@@ -523,6 +523,15 @@ void DebuggerREPL::setup_repl() {
             std::cout << "Hit breakpoint #" << bp.id << "." << std::endl;
           };
         })));
+
+  _repl.add_command(make_command(
+      Verb("step", "Step forward one instruction.",
+        {}, {},
+        [this](auto &/*flags*/, auto &/*args*/) {
+          return [this]() {
+            _debugger.single_step();
+          };
+        })));
 }
 
 xd::xen::Domain &DebuggerREPL::get_domain_or_fail() {

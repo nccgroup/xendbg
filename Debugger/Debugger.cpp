@@ -17,6 +17,7 @@
 using xd::dbg::Debugger;
 using xd::dbg::NoSuchSymbolException;
 using xd::dbg::NoSuchVariableException;
+using xd::xen::Address;
 using xd::xen::Domain;
 using xd::xen::DomID;
 using xd::xen::XenHandle;
@@ -118,8 +119,14 @@ void Debugger::single_step() {
 
   _domain->pause();
 
-  const auto next_instr_address = get_address_of_next_instruction(*_domain);
-  const auto bp = insert_breakpoint(next_instr_address);
+  // For conditional branches, we need to insert BPs at both potential locations.
+  const auto [addr1, addr2] = get_address_of_next_instruction(*_domain);
+
+  Breakpoint bp1, bp2;
+  if (addr1)
+      bp1 = insert_breakpoint(addr1);
+  if (addr2)
+      bp2 = insert_breakpoint(addr2);
 
   _domain->unpause();
 
@@ -127,7 +134,10 @@ void Debugger::single_step() {
 
   _domain->pause();
 
-  remove_breakpoint(bp);
+  if (addr1)
+      remove_breakpoint(bp1);
+  if (addr2)
+      remove_breakpoint(bp2);
 }
 
 std::vector<Domain> Debugger::get_guest_domains() {
@@ -198,7 +208,7 @@ xd::xen::Address Debugger::check_infinite_loop_hit(const xen::Domain &domain) {
   return (*mem == X86_INFINITE_LOOP) ? address : 0;
 }
 
-xd::xen::Address Debugger::get_address_of_next_instruction(
+std::pair<Address, Address> Debugger::get_address_of_next_instruction(
     const xen::Domain &domain)
 {
   const auto mode =
@@ -222,24 +232,29 @@ xd::xen::Address Debugger::get_address_of_next_instruction(
 	size_t instrs_size;
   if (cs_open(CS_ARCH_X86, mode, &handle) != CS_ERR_OK)
     throw std::runtime_error("Failed to open Capstone handle!");
+
   instrs_size = cs_disasm(handle, mem, read_size-1,
       address, 0, &instrs);
 
   if (instrs_size < 2)
     throw std::runtime_error("Failed to read instructions!");
 
+  auto cur_instr = instrs[0];
   const auto next_instr_address = instrs[1].address;
-  if (strcmp("jmp", instrs[0].mnemonic) == 0) {
-    throw std::runtime_error("'jmp' not yet supported!");
-  } else if (strcmp("call", instrs[0].mnemonic) == 0) {
-    throw std::runtime_error("'call' not yet supported!");
-  } else if (strcmp("ret", instrs[0].mnemonic) == 0) {
-    throw std::runtime_error("'call' not yet supported!");
+
+  std::pair<Address, Address> ret;
+  if (cs_insn_group(handle, &cur_instr, X86_GRP_JUMP)) {
+    ret = std::make_pair(next_instr_address, X86_REL_ADDR(cur_instr));
+  } else if (cs_insn_group(handle, &cur_instr, X86_GRP_CALL)) {
+    ret = std::make_pair(0, X86_REL_ADDR(cur_instr));
+  } else if (cs_insn_group(handle, &cur_instr, X86_GRP_RET)) {
+    ret = std::make_pair(0, X86_REL_ADDR(cur_instr));
+  } else {
+    ret = std::make_pair(next_instr_address, 0);
   }
 
   cs_close(&handle);
-
-  return next_instr_address;
+  return ret;
 }
 
 Debugger::Breakpoint Debugger::insert_breakpoint(xen::Address address) {

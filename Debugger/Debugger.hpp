@@ -86,7 +86,8 @@ namespace xd::dbg {
     void remove_breakpoint(const Breakpoint &bp);
     xen::Address check_infinite_loop_hit(const xen::Domain &domain);
     std::optional<Breakpoint> check_breakpoint_hit(const xen::Domain &domain);
-    xen::Address get_address_of_next_instruction(const xen::Domain &domain);
+    std::pair<xen::Address, xen::Address> get_address_of_next_instruction(
+            const xen::Domain &domain);
 
   private:
     size_t _current_vcpu;

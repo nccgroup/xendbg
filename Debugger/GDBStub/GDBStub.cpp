@@ -2,6 +2,7 @@
 // Created by Spencer Michaels on 9/5/18.
 //
 
+#include <iostream>
 #include <stdexcept>
 #include <sstream>
 
@@ -13,7 +14,6 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "GDBPacket.hpp"
 #include "GDBPacketIO.hpp"
 #include "GDBStub.hpp"
 #include "../../Util/overloaded.hpp"
@@ -40,13 +40,61 @@ void GDBStub::run() {
   int listen_fd = tcp_socket_open(_address, _port);
   int remote_fd = tcp_socket_accept(listen_fd);
 
+  // TODO: clean this up
+  char ack;
+  const auto bytes_read = read(remote_fd, &ack, sizeof(ack));
+  if (bytes_read <= 0)
+    std::runtime_error("Didn't get an ack from remote!");
+  if (ack != '+')
+    std::runtime_error("Unexpected value.");
+  write(remote_fd, &ack, sizeof(ack));
+
   GDBPacketIO io(remote_fd);
 
   bool running = true;
   while (running) {
     try {
       const auto packet = io.read_packet();
-    } catch (const std::runtime_error &e) {
+      const auto visitor = util::overloaded {
+        [&io](const pkt::QueryThreadInfoRequest &req) {
+          io.write_packet(pkt::QueryThreadInfoResponse({0}));
+        },
+        [](const pkt::StopReasonRequest &req) {
+        },
+        [](const pkt::SetThreadRequest &req) {
+        },
+        [](const pkt::GeneralRegisterReadRequest &req) {
+        },
+        [](const pkt::GeneralRegisterWriteRequest &req) {
+        },
+        [](const pkt::MemoryReadRequest &req) {
+        },
+        [](const pkt::MemoryWriteRequest &req) {
+        },
+        [](const pkt::ContinueRequest &req) {
+        },
+        [](const pkt::ContinueSignalRequest &req) {
+        },
+        [](const pkt::StepRequest &req) {
+        },
+        [](const pkt::StepSignalRequest &req) {
+        },
+        [](const pkt::BreakpointInsertRequest &req) {
+        },
+        [](const pkt::BreakpointRemoveRequest &req) {
+        },
+        [](const pkt::RestartRequest &req) {
+        },
+        [](const pkt::DetachRequest &req) {
+        },
+      };
+
+      std::visit(visitor, packet);
+
+    } catch (const UnknownPacketTypeException &e) {
+      std::cout << "Unknown packet type:" << std::endl;
+      std::cout << e.what() << std::endl;
+      io.write_packet(pkt::NotSupportedResponse());
     }
   }
 }

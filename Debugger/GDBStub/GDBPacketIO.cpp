@@ -5,31 +5,35 @@
 
 #include <unistd.h>
 
-#include "GDBPacket.hpp"
 #include "GDBPacketIO.hpp"
+#include "GDBResponsePacket.hpp"
+#include "GDBRequestPacket.hpp"
 #include "../../Util/pop_ret.hpp"
 #include "../../Util/string.hpp"
 
 #define PACKET_BUFFER_MAX_SIZE 0x400
 
 using xd::dbg::gdbstub::GDBPacketIO;
-using xd::dbg::gdbstub::pkt::GDBPacket;
+using xd::dbg::gdbstub::pkt::GDBResponsePacket;
+using xd::dbg::gdbstub::pkt::GDBRequestPacket;
 using xd::util::pop_ret;
-
-using namespace xd::dbg::gdbstub::pkt;
 
 GDBPacketIO::GDBPacketIO(int remote_fd)
   : _remote_fd(remote_fd)
 {
 }
 
-std::unique_ptr<GDBPacket> GDBPacketIO::read_packet() {
+GDBRequestPacket GDBPacketIO::read_packet() {
   const auto raw_packet = read_raw_packet();
-  return std::make_unique<NotSupported>();
+
+  if (raw_packet.empty())
+    throw std::runtime_error("Empty packet!");
+
+  return parse_raw_packet(raw_packet);
 }
 
-void GDBPacketIO::write_packet(std::unique_ptr<GDBPacket> packet) {
-  const auto raw_packet = packet->to_string();
+void GDBPacketIO::write_packet(const GDBResponsePacket& packet) {
+  const auto raw_packet = packet.to_string();
   write_raw_packet(raw_packet);
 }
 
@@ -41,27 +45,34 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
   while (_raw_packets.empty()) {
     const auto bytes_read = read(_remote_fd, buffer_ptr, remaining_space);
 
-    // TODO: if == 0 then remote has closed, do something
+    if (bytes_read == 0)
+      throw std::runtime_error("Remote closed!");
     if (bytes_read < 0)
       throw std::runtime_error("Failed to read from remote FD!");
 
-    buffer_ptr += bytes_read;
     remaining_space -= bytes_read;
-
     if (remaining_space == 0)
       throw std::runtime_error("Packet too long!");
 
-    _raw_packet_buffer.append(std::string(buffer_ptr, bytes_read));
+    _buffer.reserve(_buffer.size() + bytes_read);
+    for (auto i = 0; i < bytes_read; ++i) {
+      _buffer.push_back(*buffer_ptr++);
+    }
+    buffer_ptr += bytes_read;
 
-    auto start = _raw_packet_buffer.find('$');
-    auto end = _raw_packet_buffer.find('\0', start+1);
-    while (start != std::string::npos && end != std::string::npos) {
-      auto csum_start = _raw_packet_buffer.find('#', start);
-      if (csum_start != end-3)
-        throw std::runtime_error("Malformed packet: missing checksum delimiter!");
+    static constexpr char PACKET_BEGIN = '$';
+    static constexpr char CHECKSUM_START = '#';
 
-      const auto contents = _raw_packet_buffer.substr(start+1, csum_start-start-1);
-      const auto checksum_str = _raw_packet_buffer.substr(csum_start+1, 2);
+    auto start = std::find(_buffer.begin(), _buffer.end(), PACKET_BEGIN);
+    while (start != _buffer.end()) {
+      const auto csum_start = std::find(_buffer.begin(), _buffer.end(), CHECKSUM_START);
+
+      const auto end = csum_start + 3;
+      if (end > _buffer.end())
+        throw std::runtime_error("Malformed packet: missing checksum!");
+
+      std::string contents(start+1, csum_start);
+      std::string checksum_str(csum_start+1, end);
       const auto checksum = (uint8_t)std::stoul(checksum_str, 0, 16);
 
       const auto checksum_calculated = std::accumulate(
@@ -71,42 +82,46 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
       // Otherwise, drop it and notify GDB of the failure
       if (checksum_calculated == checksum) {
         write(_remote_fd, "+", 1); // ACK
-
         _raw_packets.push(RawGDBPacket{contents});
       } else {
         write(_remote_fd, "-", 1); // Notify GDB of checksum error
       }
 
-      start = _raw_packet_buffer.find('$', end);
-      end = _raw_packet_buffer.find('\0', start);
+      start = std::find(start+1, _buffer.end(), PACKET_BEGIN);
     }
 
     // Remove read data from the temp buffer
     // If a packet is half-arrived, preserve its data for later
-    if (start != std::string::npos)
-      _raw_packet_buffer = _raw_packet_buffer.substr(start);
+    if (start != _buffer.end())
+      _buffer = Buffer(start, _buffer.end());
     else
-      _raw_packet_buffer.clear();
+      _buffer.clear();
   }
 
   const auto packet = _raw_packets.front();
   _raw_packets.pop();
 
+  std::cout << "RECV: " << packet << std::endl;
+
   return packet;
 }
 
-void GDBPacketIO::write_raw_packet(RawGDBPacket raw_packet) {
-  const auto checksum = std::accumulate(raw_packet.begin(), raw_packet.end(), (uint8_t)0);
+void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
+  const uint8_t checksum = std::accumulate(raw_packet.begin(), raw_packet.end(), (uint8_t)0);
 
   std::stringstream ss;
   ss << "$" << raw_packet << "#";
-  ss << std::hex << checksum << "\0";
+  ss << std::hex << std::setfill('0');
+  ss << std::setw(2) << (uint32_t)checksum;
   const auto ss_str = ss.str();
 
-  const auto data = ss_str.c_str();
-  auto remaining = ss_str.size();
+  std::cout << "SEND: " << ss_str << std::endl;
 
-  auto data_ptr = data;
+  std::vector<char> data(ss_str.begin(), ss_str.end());
+  data.push_back('\0');
+
+  auto remaining = data.size();
+  auto data_ptr = &data[0];
   while (remaining) {
     // TODO: if == 0 then remote has closed, do something
     auto bytes_written = write(_remote_fd, data_ptr, remaining);
@@ -119,13 +134,43 @@ void GDBPacketIO::write_raw_packet(RawGDBPacket raw_packet) {
   }
 }
 
-std::unique_ptr<GDBPacket> GDBPacketIO::parse_packet(const RawGDBPacket &buffer)
+GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
 {
-  size_t buffer_pos = 0;
-
-  switch (buffer_pos++) {
-    // TODO
+  switch (raw_packet[0]) {
+    case 'q':
+      if (raw_packet == "qfThreadInfo") {
+        return pkt::QueryThreadInfoRequest(raw_packet);
+      }
+      break;
+    case '?':
+      return pkt::StopReasonRequest(raw_packet);
+    case 'H':
+      return pkt::SetThreadRequest(raw_packet);
+    case 'G':
+      return pkt::GeneralRegisterWriteRequest(raw_packet);
+    case 'g':
+      return pkt::GeneralRegisterReadRequest(raw_packet);
+    case 'M':
+      return pkt::MemoryWriteRequest(raw_packet);
+    case 'm':
+      return pkt::MemoryReadRequest(raw_packet);
+    case 'c':
+      return pkt::ContinueRequest(raw_packet);
+    case 'C':
+      return pkt::ContinueSignalRequest(raw_packet);
+    case 's':
+      return pkt::StepRequest(raw_packet);
+    case 'S':
+      return pkt::StepSignalRequest(raw_packet);
+    case 'z':
+      return pkt::BreakpointInsertRequest(raw_packet);
+    case 'Z':
+      return pkt::BreakpointRemoveRequest(raw_packet);
+    case 'R':
+      return pkt::RestartRequest(raw_packet);
+    case 'D':
+      return pkt::DetachRequest(raw_packet);
   }
 
-  throw std::runtime_error("Unknown packet type!");
+  throw UnknownPacketTypeException(raw_packet);
 }

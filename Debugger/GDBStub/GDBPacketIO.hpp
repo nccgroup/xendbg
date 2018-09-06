@@ -16,32 +16,38 @@
 
 #include <netinet/in.h>
 
+#include "GDBRequestPacket.hpp"
+#include "GDBResponsePacket.hpp"
+
 namespace xd::dbg::gdbstub {
 
-  namespace pkt {
-    class GDBPacket;
-  }
+  class UnknownPacketTypeException : public std::runtime_error {
+  public:
+    UnknownPacketTypeException(const std::string &data)
+      : std::runtime_error(data) {};
+  };
 
   class GDBPacketIO {
   public:
     explicit GDBPacketIO(int remote_fd);
 
-    std::unique_ptr<pkt::GDBPacket> read_packet();
-    void write_packet(std::unique_ptr<pkt::GDBPacket> packet);
+    pkt::GDBRequestPacket read_packet();
+    void write_packet(const pkt::GDBResponsePacket& packet);
 
   private:
     using RawGDBPacket = std::string;
 
     RawGDBPacket read_raw_packet();
-    void write_raw_packet(RawGDBPacket raw_packet);
+    void write_raw_packet(const RawGDBPacket& raw_packet);
 
-    std::unique_ptr<pkt::GDBPacket> parse_packet(const RawGDBPacket &buffer);
+    pkt::GDBRequestPacket parse_raw_packet(const RawGDBPacket &raw_packet);
 
   private:
+    using Buffer = std::vector<char>;
+      
     const int _remote_fd;
-
     std::queue<RawGDBPacket> _raw_packets;
-    std::string _raw_packet_buffer;
+    Buffer _buffer;
   };
 
 }

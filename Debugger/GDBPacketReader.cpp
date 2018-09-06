@@ -1,3 +1,4 @@
+#include <iostream>
 #include <numeric>
 #include <string>
 
@@ -14,9 +15,8 @@ using xd::dbg::stub::GDBPacketReader;
 using xd::util::pop_ret;
 
 GDBPacketReader::GDBPacketReader(int remote_fd)
-  : _remote_fd(remote_fd), _buffer_pos(0)
+  : _remote_fd(remote_fd)
 {
-  memset(_buffer, 0xFF, sizeof(_buffer));
 }
 
 GDBPacket GDBPacketReader::read_and_parse_packet() {
@@ -30,56 +30,61 @@ GDBPacket GDBPacketReader::read_and_parse_packet() {
     write(_remote_fd, "+", 1); // ACK: OK
   }
 
-  return parse_packet(packet.contents);
+  return Packet{};
+  //return parse_packet(packet.contents);
 }
 
 GDBPacketReader::RawGDBPacket GDBPacketReader::read_packet() {
-  char *buffer_ptr = _buffer;
-  size_t remaining_space = sizeof(_buffer);
+  char buffer[PACKET_BUFFER_MAX_SIZE];
+  char *buffer_ptr = buffer;
+  size_t remaining_space = sizeof(buffer);
 
   while (_raw_packets.empty()) {
-    const size_t bytes_read = read(_remote_fd, buffer_ptr, remaining_space);
+    const auto bytes_read = read(_remote_fd, buffer_ptr, remaining_space);
+    if (bytes_read < 0)
+      throw std::runtime_error("Failed to read remote FD!");
+
+    _raw_packet_buffer.append(std::string(buffer_ptr, bytes_read));
+
     buffer_ptr += bytes_read;
     remaining_space -= bytes_read;
-
     if (remaining_space == 0)
       throw std::runtime_error("Packet too long!");
 
-    char *start = strchr(_buffer, '$');
-    char *chksum = strchr(start, '#');
-    char *end = strchr(chksum, '\0');
-    while (start && chksum && end) {
-      // Skip beyond the start-of-packet and checksum delimiters
-      start++;
-      chksum++;
+    auto start = _raw_packet_buffer.find('$');
+    auto end = _raw_packet_buffer.find('\0', start+1);
+    while (start != std::string::npos && end != std::string::npos) {
+      auto csum_start = _raw_packet_buffer.find('#', start);
+      if (csum_start != end-3)
+        throw std::runtime_error("Malformed packet: missing checksum delimiter!");
 
-      // NOTE: checksum is not validated here, just read
+      const auto checksum_str = _raw_packet_buffer.substr(csum_start+1, 2);
+      const auto checksum = (uint8_t)std::stoul(checksum_str, 0, 16);
+
+      const auto content = _raw_packet_buffer.substr(start+1, csum_start-start-1);
+
       _raw_packets.push(RawGDBPacket{
-          std::string(start, end-start-2),
-          (uint8_t)((chksum[0] << 4) + chksum[1])
+        content,
+        checksum
       });
 
-      start = strchr(end, '$');
-      chksum = strchr(start, '#');
-      end = strchr(chksum, '\0');
+      std::cout << "content: " << content << std::endl;
+      std::cout << "checksum: " << checksum << std::endl;
+
+      start = _raw_packet_buffer.find('$', end);
+      end = _raw_packet_buffer.find('\0', start);
     }
 
-    if (start) {
-      // Move the remaining data to the front of the buffer.
-      char tmp_buffer[sizeof(_buffer)];
-      const size_t copy_size = sizeof(_buffer) - (start - _buffer);
-      memcpy(tmp_buffer, start, copy_size);
-      memcpy(_buffer, tmp_buffer, copy_size);
-      // Ensure no spurious null bytes are present
-      memset(_buffer + copy_size, 0xFF, sizeof(_buffer) - copy_size);
-    }
-    _buffer_pos = 0;
+    if (start != std::string::npos)
+      _raw_packet_buffer = _raw_packet_buffer.substr(start);
+    else
+      _raw_packet_buffer.clear();
   }
 
-  const auto raw_packet = _raw_packets.front();
+  const auto packet = _raw_packets.front();
   _raw_packets.pop();
 
-  return raw_packet;
+  return packet;
 }
 
 GDBPacket GDBPacketReader::parse_packet(const std::string &buffer)

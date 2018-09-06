@@ -229,8 +229,7 @@ xd::xen::Address Debugger::check_infinite_loop_hit() {
   return (*mem == X86_INFINITE_LOOP) ? address : 0;
 }
 
-std::pair<Address, Address> Debugger::get_address_of_next_instruction()
-{
+std::pair<Address, Address> Debugger::get_address_of_next_instruction() {
   const auto read_eip_rip = [this]() {
     return std::visit(util::overloaded {
       [](const xen::Registers32 regs) {

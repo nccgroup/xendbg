@@ -35,10 +35,7 @@ void GDBStub::run(int port, in_addr_t addr) {
   bool running = true;
   while (running) {
     try {
-      const auto packet = reader.read_packet();
-      std::visit(util::overloaded {
-        // TODO
-      }, packet);
+      const auto packet = reader.read_and_parse_packet();
     } catch (const std::runtime_error &e) {
       reply_not_supported();
     }

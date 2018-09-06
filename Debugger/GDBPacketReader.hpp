@@ -37,8 +37,7 @@ namespace xd::dbg::stub {
     const int _remote_fd;
 
     std::queue<RawGDBPacket> _raw_packets;
-    char _buffer[PACKET_BUFFER_MAX_SIZE];
-    size_t _buffer_pos;
+    std::string _raw_packet_buffer;
   };
 
 }

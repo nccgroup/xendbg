@@ -43,7 +43,9 @@ add_executable(xendbg main.cpp Parser/Parser.cpp
   Debugger/Debugger.cpp Debugger/Debugger.hpp Debugger/DebuggerREPL.cpp
   Debugger/DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp
   REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp
-  Parser/Expression/Expression.hpp Debugger/GDBStub.cpp Debugger/GDBStub.hpp)
+  Parser/Expression/Expression.hpp Debugger/GDBStub/GDBStub.cpp
+  Debugger/GDBStub/GDBStub.hpp Debugger/GDBStub/GDBPacketIO.cpp
+  Debugger/GDBStub/GDBPacketIO.hpp Debugger/GDBStub/GDBPacket.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore
   xenlight xlutil capstone)

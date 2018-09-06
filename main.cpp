@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "Debugger/GDBStub/GDBStub.hpp"
 #include "Debugger/DebuggerREPL.hpp"
 #include "Parser/Parser.hpp"
 #include "REPL/Command/MakeCommand.hpp"
@@ -14,6 +15,7 @@
 #include "Util/IndentHelper.hpp"
 
 using xd::dbg::DebuggerREPL;
+using xd::dbg::gdbstub::GDBStub;
 using xd::repl::cmd::make_command;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;

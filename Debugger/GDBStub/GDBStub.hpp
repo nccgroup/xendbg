@@ -12,23 +12,22 @@
 
 #include <netinet/in.h>
 
-namespace xd::dbg::stub {
+namespace xd::dbg::gdbstub {
 
   class GDBStub {
   public:
-    void run(int port, in_addr_t addr = INADDR_LOOPBACK);
+    GDBStub(int port);
+    GDBStub(in_addr_t address, int port);
+
+    void run();
 
   private:
     int tcp_socket_open(in_addr_t addr, int port);
     int tcp_socket_accept(int sock_fd);
 
-    void reply(const std::string &buffer);
-    void reply_error(uint8_t err);
-    void reply_ok();
-    void reply_not_supported();
-
   private:
-    int _remote_fd;
+    in_addr_t _address;
+    int _port;
   };
 
 }

@@ -13,31 +13,40 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "GDBPacketReader.hpp"
+#include "GDBPacket.hpp"
+#include "GDBPacketIO.hpp"
 #include "GDBStub.hpp"
-#include "../Util/overloaded.hpp"
+#include "../../Util/overloaded.hpp"
 
-using xd::dbg::stub::GDBPacketReader;
-using xd::dbg::stub::GDBStub;
+using xd::dbg::gdbstub::GDBPacketIO;
+using xd::dbg::gdbstub::GDBStub;
 using xd::util::overloaded;
 
 int tcp_socket_open(in_addr_t addr, int port);
 int tcp_socket_accept(int sock_fd);
 int receive_packet(void *buffer);
-char read_char(int remote_fd);
 
-void GDBStub::run(int port, in_addr_t addr) {
-  int listen_fd = tcp_socket_open(addr, port);
-  _remote_fd = tcp_socket_accept(listen_fd);
+GDBStub::GDBStub(int port)
+  : _address(INADDR_LOOPBACK), _port(port)
+{
+}
 
-  GDBPacketReader reader(_remote_fd);
+GDBStub::GDBStub(in_addr_t address, int port)
+  : _address(address), _port(port)
+{
+}
+
+void GDBStub::run() {
+  int listen_fd = tcp_socket_open(_address, _port);
+  int remote_fd = tcp_socket_accept(listen_fd);
+
+  GDBPacketIO io(remote_fd);
 
   bool running = true;
   while (running) {
     try {
-      const auto packet = reader.read_and_parse_packet();
+      const auto packet = io.read_packet();
     } catch (const std::runtime_error &e) {
-      reply_not_supported();
     }
   }
 }
@@ -92,39 +101,4 @@ int GDBStub::tcp_socket_accept(int sock_fd) {
   signal(SIGPIPE, SIG_IGN);
 
   return remote_fd;
-}
-
-void GDBStub::reply(const std::string &buffer) {
-  const auto checksum = std::accumulate(buffer.begin(), buffer.end(), 0);
-
-  std::stringstream ss;
-  ss << "$";
-  ss << buffer;
-  ss << "#";
-  ss << std::hex << checksum;
-
-  size_t bytes_to_write = buffer.size();
-  auto buffer_ptr = buffer.c_str();
-
-  while (bytes_to_write) {
-    const auto bytes_written = write(_remote_fd, buffer_ptr, bytes_to_write);
-    bytes_to_write -= bytes_written;
-
-    if (bytes_written < 0)
-      throw std::runtime_error("Failed to write to remote FD!");
-  }
-}
-
-void GDBStub::reply_error(uint8_t err) {
-  std::stringstream ss;
-  ss << "E" << std::hex << err;
-  reply(ss.str());
-}
-
-void GDBStub::reply_ok() {
-  reply("OK");
-}
-
-void GDBStub::reply_not_supported() {
-  reply("");
 }

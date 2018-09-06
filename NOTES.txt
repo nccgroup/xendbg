@@ -1,17 +1,3 @@
-Note: segfault with sufficiently long print statement?
-
-print 000000000000
-
-or:
-
-> print 01939
-
-1
-
-> print 9231
-
-9231
-
-> print 01
-
-...segfault?
+NOTE: Stepping through with single_step() produces different results than
+just unpausing. May have to do with flags, as the point where I noticed this
+happening involved being trapped in a loop infinitely.

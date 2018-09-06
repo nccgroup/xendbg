@@ -3,29 +3,49 @@
 //
 
 #include <stdexcept>
+#include <sstream>
 
 #include <cstring>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <unistd.h>
 #include <netinet/tcp.h>
+#include <numeric>
+#include <signal.h>
+#include <unistd.h>
 
+#include "GDBPacketReader.hpp"
 #include "GDBStub.hpp"
+#include "../Util/overloaded.hpp"
 
-using xd::debugger::GDBStub;
+using xd::dbg::stub::GDBPacketReader;
+using xd::dbg::stub::GDBStub;
+using xd::util::overloaded;
 
 int tcp_socket_open(in_addr_t addr, int port);
 int tcp_socket_accept(int sock_fd);
-bool receive_and_process_packet(int remote_fd);
+int receive_packet(void *buffer);
+char read_char(int remote_fd);
 
-void xd::debugger::GDBStub::run(int port) {
-  int listen_fd = tcp_socket_open(INADDR_LOOPBACK, port);
-  int remote_fd = tcp_socket_accept(listen_fd);
+void GDBStub::run(int port, in_addr_t addr) {
+  int listen_fd = tcp_socket_open(addr, port);
+  _remote_fd = tcp_socket_accept(listen_fd);
 
-  while (receive_and_process_packet(remote_fd));
+  GDBPacketReader reader(_remote_fd);
+
+  bool running = true;
+  while (running) {
+    try {
+      const auto packet = reader.read_packet();
+      std::visit(util::overloaded {
+        // TODO
+      }, packet);
+    } catch (const std::runtime_error &e) {
+      reply_not_supported();
+    }
+  }
 }
 
-int tcp_socket_open(in_addr_t addr, int port) {
+int GDBStub::tcp_socket_open(in_addr_t addr, int port) {
   int sock_fd = socket(PF_INET, SOCK_STREAM, 0);
   if (sock_fd < 0)
     throw std::runtime_error("Failed to open socket!");
@@ -52,7 +72,7 @@ int tcp_socket_open(in_addr_t addr, int port) {
 }
 
 
-int tcp_socket_accept(int sock_fd) {
+int GDBStub::tcp_socket_accept(int sock_fd) {
   if (sock_fd < 0)
     throw std::runtime_error("Invalid socket FD!");
 
@@ -77,6 +97,37 @@ int tcp_socket_accept(int sock_fd) {
   return remote_fd;
 }
 
-bool receive_and_process_packet(int remote_fd) {
+void GDBStub::reply(const std::string &buffer) {
+  const auto checksum = std::accumulate(buffer.begin(), buffer.end(), 0);
 
+  std::stringstream ss;
+  ss << "$";
+  ss << buffer;
+  ss << "#";
+  ss << std::hex << checksum;
+
+  size_t bytes_to_write = buffer.size();
+  auto buffer_ptr = buffer.c_str();
+
+  while (bytes_to_write) {
+    const auto bytes_written = write(_remote_fd, buffer_ptr, bytes_to_write);
+    bytes_to_write -= bytes_written;
+
+    if (bytes_written < 0)
+      throw std::runtime_error("Failed to write to remote FD!");
+  }
+}
+
+void GDBStub::reply_error(uint8_t err) {
+  std::stringstream ss;
+  ss << "E" << std::hex << err;
+  reply(ss.str());
+}
+
+void GDBStub::reply_ok() {
+  reply("OK");
+}
+
+void GDBStub::reply_not_supported() {
+  reply("");
 }

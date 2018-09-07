@@ -172,6 +172,8 @@ namespace xd::dbg::gdbstub::pkt {
       while (has_more() && peek() != ch) {
         s.push_back(get_char());
       }
+      if (has_more())
+        get_char();
       return s;
     }
 
@@ -218,6 +220,7 @@ namespace xd::dbg::gdbstub::pkt {
       expect_char(':');
       while (has_more()) {
         const auto feature = read_until_char_or_end(';');
+        std::cout << feature << std::endl;
         _features.push_back(feature);
       }
       expect_end();

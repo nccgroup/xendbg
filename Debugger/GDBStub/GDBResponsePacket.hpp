@@ -54,10 +54,14 @@ namespace xd::dbg::gdbstub::pkt {
       : _features(features) {};
 
     std::string to_string() const override {
+      if (_features.empty())
+        return "";
+
       std::stringstream ss;
-      std::for_each(_features.begin(), _features.end(),
+      ss << _features.front();
+      std::for_each(_features.begin()+1, _features.end(),
         [&ss](const auto& feature) {
-          ss << feature << " ;";
+          ss << ";" << feature;
         }
       );
       return ss.str();

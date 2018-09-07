@@ -17,9 +17,10 @@ using xd::dbg::gdbstub::GDBPacketIO;
 using xd::dbg::gdbstub::pkt::GDBResponsePacket;
 using xd::dbg::gdbstub::pkt::GDBRequestPacket;
 using xd::util::pop_ret;
+using xd::util::string::is_prefix;
 
 GDBPacketIO::GDBPacketIO(int remote_fd)
-  : _remote_fd(remote_fd)
+  : _remote_fd(remote_fd), _ack_enabled(true)
 {
 }
 
@@ -54,19 +55,21 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
     if (remaining_space == 0)
       throw std::runtime_error("Packet too long!");
 
+    // TODO: Is there a more efficient way to do this?
     _buffer.reserve(_buffer.size() + bytes_read);
+    std::cout << "BUF:  ";
     for (auto i = 0; i < bytes_read; ++i) {
+      std::cout << *buffer_ptr;
       _buffer.push_back(*buffer_ptr++);
     }
-    buffer_ptr += bytes_read;
+    std::cout << std::endl;
 
     static constexpr char PACKET_BEGIN = '$';
     static constexpr char CHECKSUM_START = '#';
 
     auto start = std::find(_buffer.begin(), _buffer.end(), PACKET_BEGIN);
-    while (start != _buffer.end()) {
-      const auto csum_start = std::find(_buffer.begin(), _buffer.end(), CHECKSUM_START);
-
+    auto csum_start = std::find(_buffer.begin(), _buffer.end(), CHECKSUM_START);
+    while (start != _buffer.end() && csum_start != _buffer.end()) {
       const auto end = csum_start + 3;
       if (end > _buffer.end())
         throw std::runtime_error("Malformed packet: missing checksum!");
@@ -81,13 +84,17 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
       // If the checksums match, ACK the packet and record its contents
       // Otherwise, drop it and notify GDB of the failure
       if (checksum_calculated == checksum) {
-        write(_remote_fd, "+", 1); // ACK
+        if (_ack_enabled) {
+          std::cout << "ACK" << std::endl;
+          write(_remote_fd, "+", 1);
+        }
         _raw_packets.push(RawGDBPacket{contents});
-      } else {
-        write(_remote_fd, "-", 1); // Notify GDB of checksum error
+      } else if (_ack_enabled) {
+        write(_remote_fd, "-", 1);
       }
 
       start = std::find(start+1, _buffer.end(), PACKET_BEGIN);
+      csum_start = std::find(start, _buffer.end(), CHECKSUM_START);
     }
 
     // Remove read data from the temp buffer
@@ -96,6 +103,8 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
       _buffer = Buffer(start, _buffer.end());
     else
       _buffer.clear();
+
+    std::cout << "REMN: " << std::string(_buffer.begin(), _buffer.end()) << std::endl;
   }
 
   const auto packet = _raw_packets.front();
@@ -132,26 +141,51 @@ void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
     data_ptr += bytes_written;
     remaining -= bytes_written;
   }
+
+  /*
+  if (_ack_enabled) {
+    char ack;
+    const auto bytes_read = read(_remote_fd, &ack, 1);
+    if (bytes_read < 0)
+      throw std::runtime_error("Failed to read from remote FD!");
+    if (bytes_read == 0)
+      throw std::runtime_error("Remote closed while waiting for ACK!");
+    std::cout << ack << std::endl;
+    if (ack != '+')
+      throw std::runtime_error("Did not get expected ACK!");
+  }
+  */
 }
 
 GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
 {
   switch (raw_packet[0]) {
     case 'q':
-      if (raw_packet == "qfThreadInfo") {
+      if (raw_packet == "qfThreadInfo")
         return pkt::QueryThreadInfoStartRequest(raw_packet);
-      } else if (raw_packet == "qsThreadInfo") {
+      else if (raw_packet == "qsThreadInfo")
         return pkt::QueryThreadInfoContinuingRequest(raw_packet);
-      }
+      else if (raw_packet == "qC")
+        return pkt::QueryCurrentThreadIDRequest(raw_packet);
+      else if (is_prefix(std::string("qSupported"), raw_packet)) // TODO
+        return pkt::QuerySupportedRequest(raw_packet);
+      break;
+    case 'Q':
+      if (raw_packet == "QStartNoAckMode")
+        return pkt::StartNoAckModeRequest(raw_packet);
       break;
     case '?':
       return pkt::StopReasonRequest(raw_packet);
     case 'H':
       return pkt::SetThreadRequest(raw_packet);
+    case 'p':
+      return pkt::RegisterReadRequest(raw_packet);
+    case 'P':
+      return pkt::RegisterWriteRequest(raw_packet);
     case 'G':
-      return pkt::GeneralRegisterWriteRequest(raw_packet);
+      return pkt::GeneralRegistersBatchWriteRequest(raw_packet);
     case 'g':
-      return pkt::GeneralRegisterReadRequest(raw_packet);
+      return pkt::GeneralRegistersBatchReadRequest(raw_packet);
     case 'M':
       return pkt::MemoryWriteRequest(raw_packet);
     case 'm':

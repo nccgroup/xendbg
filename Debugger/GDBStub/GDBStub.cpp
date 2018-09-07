@@ -56,6 +56,21 @@ void GDBStub::run() {
     try {
       const auto packet = io.read_packet();
       const auto visitor = util::overloaded {
+        [&io](const pkt::StartNoAckModeRequest &req) {
+          //io.write_packet(pkt::NotSupportedResponse());
+          // TODO: Turning off acks makes LLDB send much slower
+          io.write_packet(pkt::OKResponse());
+          io.set_ack_enabled(false);
+        },
+        [&io](const pkt::QuerySupportedRequest &req) {
+          io.write_packet(pkt::QuerySupportedResponse({
+            "QStartNoAckMode+"
+          }));
+        },
+        [&io](const pkt::QueryCurrentThreadIDRequest &req) {
+          // TODO
+          io.write_packet(pkt::QueryCurrentThreadIDResponse(1));
+        },
         [&io](const pkt::QueryThreadInfoStartRequest &req) {
           io.write_packet(pkt::QueryThreadInfoResponse({0}));
         },
@@ -68,15 +83,23 @@ void GDBStub::run() {
         [&io](const pkt::SetThreadRequest &req) {
           io.write_packet(pkt::OKResponse());
         },
-        [&io](const pkt::GeneralRegisterReadRequest &req) {
-          GDBRegisters32 dummy_regs;
-          memset((void*)&dummy_regs, 0x00, sizeof(dummy_regs));
-          dummy_regs.values.eax = 0xEFBEADDE;//EFBEADDE;
-          dummy_regs.values.eflags = 0xEFBEADDE;
-          dummy_regs.values.gs = 0xEFBEADDE;
-          io.write_packet(pkt::GeneralRegisterReadResponse(dummy_regs));
+        [&io](const pkt::RegisterReadRequest &req) {
+          // TODO
+          io.write_packet(pkt::RegisterReadResponse(0xDEADBEEF));
         },
-        [&io](const pkt::GeneralRegisterWriteRequest &req) {
+        [&io](const pkt::RegisterWriteRequest &req) {
+          io.write_packet(pkt::OKResponse());
+        },
+        [&io](const pkt::GeneralRegistersBatchReadRequest &req) {
+          // TODO
+          GDBRegisters64 dummy_regs;
+          memset((void*)&dummy_regs, 0x00, sizeof(dummy_regs));
+          dummy_regs.values.rax = 0xEFBEADDEEFBEADDE;
+          dummy_regs.values.rflags = 0xEFBEADDE;
+          dummy_regs.values.gs = 0xEFBEADDE;
+          io.write_packet(pkt::GeneralRegistersBatchReadResponse(dummy_regs));
+        },
+        [&io](const pkt::GeneralRegistersBatchWriteRequest &req) {
           io.write_packet(pkt::OKResponse());
         },
         [&io](const pkt::MemoryReadRequest &req) {
@@ -114,7 +137,7 @@ void GDBStub::run() {
       std::visit(visitor, packet);
 
     } catch (const UnknownPacketTypeException &e) {
-      std::cout << "Unknown packet type:" << std::endl;
+      std::cout << "[!] Unrecognized packet: ";
       std::cout << e.what() << std::endl;
       io.write_packet(pkt::NotSupportedResponse());
     }

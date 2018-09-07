@@ -167,6 +167,14 @@ namespace xd::dbg::gdbstub::pkt {
       return num;
     };
 
+    std::string read_until_char_or_end(char ch) {
+      std::string s;
+      while (has_more() && peek() != ch) {
+        s.push_back(get_char());
+      }
+      return s;
+    }
+
     template <typename Word_t>
     std::optional<Word_t> read_word_unsigned_opt() {
       static constexpr auto SIZE = 2*sizeof(Word_t);
@@ -190,6 +198,35 @@ namespace xd::dbg::gdbstub::pkt {
   private:
     const std::string _data;
     std::string::const_iterator _it;
+  };
+
+  class StartNoAckModeRequest : public GDBRequestPacketBase {
+  public:
+    StartNoAckModeRequest(const std::string &data)
+      : GDBRequestPacketBase(data, "QStartNoAckMode")
+    {
+      expect_end();
+    };
+  };
+
+  class QuerySupportedRequest : public GDBRequestPacketBase {
+  public:
+    QuerySupportedRequest(const std::string &data)
+      : GDBRequestPacketBase(data, "qSupported")
+    {
+      skip_space();
+      expect_char(':');
+      while (has_more()) {
+        const auto feature = read_until_char_or_end(';');
+        _features.push_back(feature);
+      }
+      expect_end();
+    };
+
+    const std::vector<std::string> get_features() { return _features; };
+
+  private:
+    std::vector<std::string> _features;
   };
 
   class RestartRequest : public GDBRequestPacketBase {
@@ -217,6 +254,15 @@ namespace xd::dbg::gdbstub::pkt {
 
   private:
     size_t _pid;
+  };
+
+  class QueryCurrentThreadIDRequest : public GDBRequestPacketBase {
+  public:
+    QueryCurrentThreadIDRequest(const std::string &data)
+      : GDBRequestPacketBase(data, "qC")
+    {
+      expect_end();
+    };
   };
 
   class QueryThreadInfoStartRequest : public GDBRequestPacketBase {
@@ -265,11 +311,47 @@ namespace xd::dbg::gdbstub::pkt {
     size_t _thread_id;
   };
 
-  DECLARE_SIMPLE_REQUEST(GeneralRegisterReadRequest, 'g');
-
-  class GeneralRegisterWriteRequest : public GDBRequestPacketBase {
+  class RegisterReadRequest : public GDBRequestPacketBase {
   public:
-    GeneralRegisterWriteRequest(const std::string &data)
+    RegisterReadRequest(const std::string &data)
+      : GDBRequestPacketBase(data, 'p')
+    {
+      skip_space();
+      _register = read_hex_number();
+      expect_end();
+    };
+
+    uint8_t get_register() { return _register; };
+
+  private:
+    uint8_t _register;
+  };
+
+  class RegisterWriteRequest : public GDBRequestPacketBase {
+  public:
+    RegisterWriteRequest(const std::string &data)
+      : GDBRequestPacketBase(data, 'P')
+    {
+      skip_space();
+      _register = read_byte();
+      expect_char('=');
+      _value = read_hex_number();
+      expect_end();
+    };
+
+    uint8_t get_register() { return _register; };
+    uint64_t get_value() { return _value; };
+
+  private:
+    uint8_t _register;
+    uint64_t _value;
+  };
+
+  DECLARE_SIMPLE_REQUEST(GeneralRegistersBatchReadRequest, 'g');
+
+  class GeneralRegistersBatchWriteRequest : public GDBRequestPacketBase {
+  public:
+    GeneralRegistersBatchWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'g')
     {
       skip_space();
@@ -415,12 +497,17 @@ namespace xd::dbg::gdbstub::pkt {
   DECLARE_BREAKPOINT_REQUEST(BreakpointRemoveRequest, 'Z');
 
   using GDBRequestPacket = std::variant<
+    StartNoAckModeRequest,
+    QuerySupportedRequest,
+    QueryCurrentThreadIDRequest,
     QueryThreadInfoStartRequest,
     QueryThreadInfoContinuingRequest,
     StopReasonRequest,
     SetThreadRequest,
-    GeneralRegisterReadRequest,
-    GeneralRegisterWriteRequest,
+    RegisterReadRequest,
+    RegisterWriteRequest,
+    GeneralRegistersBatchReadRequest,
+    GeneralRegistersBatchWriteRequest,
     MemoryReadRequest,
     MemoryWriteRequest,
     ContinueRequest,

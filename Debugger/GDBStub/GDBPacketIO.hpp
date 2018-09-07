@@ -33,6 +33,7 @@ namespace xd::dbg::gdbstub {
 
     pkt::GDBRequestPacket read_packet();
     void write_packet(const pkt::GDBResponsePacket& packet);
+    void set_ack_enabled(bool enabled) { _ack_enabled = enabled; };
 
   private:
     using RawGDBPacket = std::string;
@@ -46,6 +47,7 @@ namespace xd::dbg::gdbstub {
     using Buffer = std::vector<char>;
       
     const int _remote_fd;
+    bool _ack_enabled;
     std::queue<RawGDBPacket> _raw_packets;
     Buffer _buffer;
   };

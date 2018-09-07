@@ -48,6 +48,48 @@ namespace xd::dbg::gdbstub::pkt {
     uint8_t _error_code;
   };
 
+  class QuerySupportedResponse : public GDBResponsePacket {
+  public:
+    QuerySupportedResponse(std::vector<std::string> features)
+      : _features(features) {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      std::for_each(_features.begin(), _features.end(),
+        [&ss](const auto& feature) {
+          ss << feature << " ;";
+        }
+      );
+      return ss.str();
+    }
+
+  private:
+    std::vector<std::string> _features;
+  };
+
+  // NOTE: thread ID 0 = any thread, ID -1 = all threads
+  // so these have to be zero-indexed.
+  class QueryCurrentThreadIDResponse : public GDBResponsePacket {
+  public:
+    QueryCurrentThreadIDResponse(size_t thread_id)
+      : _thread_id(thread_id) {}
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      ss << "QC";
+      if (_thread_id == (size_t)-1) {
+        ss << "-1";
+      } else {
+        ss << std::hex;
+        ss << _thread_id;
+      }
+      return ss.str();
+    }
+
+  private:
+    size_t _thread_id;
+  };
+
   class QueryThreadInfoResponse : public GDBResponsePacket {
   public:
     QueryThreadInfoResponse(std::vector<size_t> thread_ids)
@@ -61,6 +103,7 @@ namespace xd::dbg::gdbstub::pkt {
       std::stringstream ss;
 
       ss << "m";
+      ss << std::hex;
       ss << _thread_ids.front();
       std::for_each(_thread_ids.begin()+1, _thread_ids.end(),
         [&ss](const auto& tid) {
@@ -82,9 +125,24 @@ namespace xd::dbg::gdbstub::pkt {
     };
   };
 
-  class GeneralRegisterReadResponse : public GDBResponsePacket {
+  class RegisterReadResponse : public GDBResponsePacket {
   public:
-    GeneralRegisterReadResponse(GDBRegisters registers)
+    RegisterReadResponse(uint64_t value)
+      : _value(value) {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      ss << std::hex << _value;
+      return ss.str();
+    };
+
+  private:
+    uint64_t _value;
+  };
+
+  class GeneralRegistersBatchReadResponse : public GDBResponsePacket {
+  public:
+    GeneralRegistersBatchReadResponse(GDBRegisters registers)
       : _registers(registers) {}
 
   std::string to_string() const override {
@@ -189,9 +247,10 @@ namespace xd::dbg::gdbstub::pkt {
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << "S";
+      ss << "T";
       ss << std::hex << std::setfill('0') << std::setw(2);
       ss << (unsigned)_signal;
+      // ss << "thread:1"; // TODO
       return ss.str();
     };
 

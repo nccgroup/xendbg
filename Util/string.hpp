@@ -51,14 +51,21 @@ namespace xd::util::string {
   }
 
   template <typename It_t>
-  bool is_prefix(
-      It_t target_begin, It_t target_end,
-      It_t begin, It_t end)
-  {
+  bool is_prefix(It_t target_begin, It_t target_end, It_t begin, It_t end) {
     const auto target_size = (target_end - target_begin);
     auto new_end = begin + target_size;
     return ((end - begin) >= target_size &&
       std::equal(target_begin, target_end, begin, new_end));
+  }
+
+  template <typename Str1_t, typename Str2_t>
+  bool is_prefix(const Str1_t &s1, const Str2_t &s2) {
+    return is_prefix(s1.begin(), s1.end(), s2.begin(), s2.end());
+  }
+
+  template <typename It_t, typename Str_t>
+  bool is_prefix(const Str_t &target, It_t begin, It_t end) {
+    return is_prefix(target.begin(), target.end(), begin, end);
   }
 
   template <typename It_t>

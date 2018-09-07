@@ -111,8 +111,8 @@ void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
 
   std::stringstream ss;
   ss << "$" << raw_packet << "#";
-  ss << std::hex << std::setfill('0');
-  ss << std::setw(2) << (uint32_t)checksum;
+  ss << std::hex << std::setfill('0') << std::setw(2);
+  ss << (unsigned)checksum;
   const auto ss_str = ss.str();
 
   std::cout << "SEND: " << ss_str << std::endl;
@@ -139,7 +139,9 @@ GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
   switch (raw_packet[0]) {
     case 'q':
       if (raw_packet == "qfThreadInfo") {
-        return pkt::QueryThreadInfoRequest(raw_packet);
+        return pkt::QueryThreadInfoStartRequest(raw_packet);
+      } else if (raw_packet == "qsThreadInfo") {
+        return pkt::QueryThreadInfoContinuingRequest(raw_packet);
       }
       break;
     case '?':

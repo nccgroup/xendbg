@@ -6,6 +6,7 @@
 #define XENDBG_GDBRESPONSEPACKET_HPP
 
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <variant>
@@ -50,19 +51,21 @@ namespace xd::dbg::gdbstub::pkt {
   class QueryThreadInfoResponse : public GDBResponsePacket {
   public:
     QueryThreadInfoResponse(std::vector<size_t> thread_ids)
-      : _thread_ids(thread_ids) {};
+      : _thread_ids(thread_ids)
+    {
+      if (thread_ids.empty())
+        throw std::runtime_error("Must provide at least one thread ID!");
+    };
 
     std::string to_string() const override {
       std::stringstream ss;
 
       ss << "m";
-      if (!_thread_ids.empty()) {
-        ss << _thread_ids.front();
-        std::for_each(_thread_ids.begin()+1, _thread_ids.end(),
-          [&ss](const auto& tid) {
-            ss << "," << tid;
-          });
-      }
+      ss << _thread_ids.front();
+      std::for_each(_thread_ids.begin()+1, _thread_ids.end(),
+        [&ss](const auto& tid) {
+          ss << "," << tid;
+        });
       ss << "l";
 
       return ss.str();
@@ -72,6 +75,13 @@ namespace xd::dbg::gdbstub::pkt {
     const std::vector<size_t> _thread_ids;
   };
 
+  class QueryThreadInfoEndResponse : public GDBResponsePacket {
+  public:
+    std::string to_string() const override {
+      return "l";
+    };
+  };
+
   class GeneralRegisterReadResponse : public GDBResponsePacket {
   public:
     GeneralRegisterReadResponse(GDBRegisters registers)
@@ -79,30 +89,72 @@ namespace xd::dbg::gdbstub::pkt {
 
   std::string to_string() const override {
     std::stringstream ss;
-    ss << std::hex;
 
+    ss << std::hex << std::setfill('0');
     std::visit(util::overloaded {
       [this, &ss](const GDBRegisters64& regs) {
-        write_registers(ss, regs);
+        write_register(ss, regs.values.rax);
+        write_register(ss, regs.values.rbx);
+        write_register(ss, regs.values.rcx);
+        write_register(ss, regs.values.rdx);
+        write_register(ss, regs.values.rsi);
+        write_register(ss, regs.values.rdi);
+        write_register(ss, regs.values.rbp);
+        write_register(ss, regs.values.rsp);
+
+        write_register(ss, regs.values.r8);
+        write_register(ss, regs.values.r9);
+        write_register(ss, regs.values.r10);
+        write_register(ss, regs.values.r11);
+        write_register(ss, regs.values.r12);
+        write_register(ss, regs.values.r13);
+        write_register(ss, regs.values.r14);
+        write_register(ss, regs.values.r15);
+
+        write_register(ss, regs.values.rip);
+
+        // GDB wants this to be 32-bit, for some reason...
+        // Likely because the upper 32 bytes aren't used
+        // TODO: only do this for GDB --- maybe LLDB accepts 64-bit rflags?
+        uint32_t eflags = regs.values.rflags & 0xFFFFFFFF;
+        write_register(ss, eflags);
+
+        write_register(ss, regs.values.cs);
+        write_register(ss, regs.values.ss);
+        write_register(ss, regs.values.ds);
+        write_register(ss, regs.values.es);
+        write_register(ss, regs.values.fs);
+        write_register(ss, regs.values.gs);
       },
       [this, &ss](const GDBRegisters32& regs) {
-        write_registers(ss, regs);
+        write_register(ss, regs.values.eax);
+        write_register(ss, regs.values.ecx);
+        write_register(ss, regs.values.edx);
+        write_register(ss, regs.values.ebx);
+        write_register(ss, regs.values.esp);
+        write_register(ss, regs.values.ebp);
+        write_register(ss, regs.values.esi);
+        write_register(ss, regs.values.edi);
+
+        write_register(ss, regs.values.eip);
+
+        write_register(ss, regs.values.eflags);
+
+        write_register(ss, regs.values.cs);
+        write_register(ss, regs.values.ss);
+        write_register(ss, regs.values.ds);
+        write_register(ss, regs.values.es);
+        write_register(ss, regs.values.fs);
+        write_register(ss, regs.values.gs);
       },
     }, _registers);
 
     return ss.str();
   }
 
-  template <typename Regs_t>
-  void write_registers(std::stringstream &ss, const Regs_t &regs) const {
-    using Word = typename decltype(regs.values)::ValueType;
-
-    const auto num_regs = sizeof(Regs_t)/sizeof(Word);
-    Word *regs_ptr = (Word*)&regs.values;
-
-    for (size_t i = 0; i < num_regs; ++i) {
-      ss << *((Word*)(regs_ptr++));
-    }
+  template <typename Reg_t>
+  void write_register(std::stringstream &ss, const Reg_t&reg) const {
+    ss << std::setw(2*sizeof(Reg_t)) << reg;
   }
 
   private:
@@ -128,6 +180,23 @@ namespace xd::dbg::gdbstub::pkt {
 
   private:
     std::vector<char> _data;
+  };
+
+  class StopReasonSignalResponse : public GDBResponsePacket {
+  public:
+    StopReasonSignalResponse(uint8_t signal)
+      : _signal(signal) {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      ss << "S";
+      ss << std::hex << std::setfill('0') << std::setw(2);
+      ss << (unsigned)_signal;
+      return ss.str();
+    };
+
+  private:
+    uint8_t _signal;
   };
 
 }

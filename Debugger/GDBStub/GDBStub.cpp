@@ -56,36 +56,58 @@ void GDBStub::run() {
     try {
       const auto packet = io.read_packet();
       const auto visitor = util::overloaded {
-        [&io](const pkt::QueryThreadInfoRequest &req) {
+        [&io](const pkt::QueryThreadInfoStartRequest &req) {
           io.write_packet(pkt::QueryThreadInfoResponse({0}));
         },
-        [](const pkt::StopReasonRequest &req) {
+        [&io](const pkt::QueryThreadInfoContinuingRequest &req) {
+          io.write_packet(pkt::QueryThreadInfoEndResponse());
         },
-        [](const pkt::SetThreadRequest &req) {
+        [&io](const pkt::StopReasonRequest &req) {
+          io.write_packet(pkt::StopReasonSignalResponse(0x05));
         },
-        [](const pkt::GeneralRegisterReadRequest &req) {
+        [&io](const pkt::SetThreadRequest &req) {
+          io.write_packet(pkt::OKResponse());
         },
-        [](const pkt::GeneralRegisterWriteRequest &req) {
+        [&io](const pkt::GeneralRegisterReadRequest &req) {
+          GDBRegisters32 dummy_regs;
+          memset((void*)&dummy_regs, 0x00, sizeof(dummy_regs));
+          dummy_regs.values.eax = 0xEFBEADDE;//EFBEADDE;
+          dummy_regs.values.eflags = 0xEFBEADDE;
+          dummy_regs.values.gs = 0xEFBEADDE;
+          io.write_packet(pkt::GeneralRegisterReadResponse(dummy_regs));
         },
-        [](const pkt::MemoryReadRequest &req) {
+        [&io](const pkt::GeneralRegisterWriteRequest &req) {
+          io.write_packet(pkt::OKResponse());
         },
-        [](const pkt::MemoryWriteRequest &req) {
+        [&io](const pkt::MemoryReadRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::ContinueRequest &req) {
+        [&io](const pkt::MemoryWriteRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::ContinueSignalRequest &req) {
+        [&io](const pkt::ContinueRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::StepRequest &req) {
+        [&io](const pkt::ContinueSignalRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::StepSignalRequest &req) {
+        [&io](const pkt::StepRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::BreakpointInsertRequest &req) {
+        [&io](const pkt::StepSignalRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::BreakpointRemoveRequest &req) {
+        [&io](const pkt::BreakpointInsertRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::RestartRequest &req) {
+        [&io](const pkt::BreakpointRemoveRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
         },
-        [](const pkt::DetachRequest &req) {
+        [&io](const pkt::RestartRequest &req) {
+          io.write_packet(pkt::NotSupportedResponse());
+        },
+        [&io](const pkt::DetachRequest &req) {
+          io.write_packet(pkt::OKResponse());
         },
       };
 

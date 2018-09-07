@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "GDBRegisters.hpp"
+#include "../../Util/overloaded.hpp"
 
 #define DECLARE_SIMPLE_REQUEST(name, ch) \
   class name : public GDBRequestPacketBase { \
@@ -32,7 +33,7 @@
     name2(const std::string &data) \
       : GDBRequestPacketBase(data, ch2), _signal(0) \
     { \
-      expect_space(); \
+      skip_space(); \
       _signal = read_byte(); \
       expect_end(); \
     }; \
@@ -47,7 +48,7 @@
     name(const std::string &data) \
       : GDBRequestPacketBase(data, 'z') \
     { \
-      expect_space(); \
+      skip_space(); \
       _type = read_hex_number(); \
       expect_char(','); \
       _address = read_hex_number(); \
@@ -76,6 +77,12 @@ namespace xd::dbg::gdbstub::pkt {
       : _data(data), _it(_data.begin())
     {
       expect_char(header);
+    };
+    
+    GDBRequestPacketBase(const std::string &data, const std::string &header)
+      : _data(data), _it(_data.begin())
+    {
+      expect_string(header);
     };
 
     size_t get_num_remaining() {
@@ -113,8 +120,9 @@ namespace xd::dbg::gdbstub::pkt {
         throw RequestPacketParseException();
     };
 
-    void expect_space() {
-      expect_char(' ');
+    void skip_space() {
+      while (peek() == ' ')
+        get_char();
     };
 
     void expect_string(const std::string& s) {
@@ -150,11 +158,12 @@ namespace xd::dbg::gdbstub::pkt {
     };
 
     uint64_t read_hex_number() {
-      assert_char_not('-');
-
       size_t end;
-      uint64_t num = std::stoull(_data, &end, 16);
-      _it = _data.begin() + end;
+      const std::string num_str(_it, _data.end());
+      uint64_t num = std::stoull(num_str, &end, 16);
+
+      _it += end;
+
       return num;
     };
 
@@ -188,7 +197,7 @@ namespace xd::dbg::gdbstub::pkt {
     RestartRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'R')
     {
-      expect_space();
+      skip_space();
       read_byte(); // Required, but ignored
       expect_end();
     };
@@ -210,17 +219,22 @@ namespace xd::dbg::gdbstub::pkt {
     size_t _pid;
   };
 
-  class QueryThreadInfoRequest : public GDBRequestPacketBase {
+  class QueryThreadInfoStartRequest : public GDBRequestPacketBase {
   public:
-    QueryThreadInfoRequest(const std::string &data)
-      : GDBRequestPacketBase(data, 'q'), _pid(0)
+    QueryThreadInfoStartRequest(const std::string &data)
+      : GDBRequestPacketBase(data, "qfThreadInfo")
     {
-      expect_string("fThreadInfo");
       expect_end();
     };
+  };
 
-  private:
-    int _pid;
+  class QueryThreadInfoContinuingRequest : public GDBRequestPacketBase {
+  public:
+    QueryThreadInfoContinuingRequest(const std::string &data)
+      : GDBRequestPacketBase(data, "qsThreadInfo")
+    {
+      expect_end();
+    };
   };
 
   DECLARE_SIMPLE_REQUEST(StopReasonRequest, '?');
@@ -230,13 +244,13 @@ namespace xd::dbg::gdbstub::pkt {
     SetThreadRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'H')
     {
-      expect_space();
+      skip_space();
       if (check_char('c'))
         _op = Op::StepAndContinue;
       else if (check_char('g'))
         _op = Op::StepAndContinue;
 
-      expect_space();
+      skip_space();
       _thread_id = read_hex_number();
       expect_end();
     };
@@ -258,13 +272,13 @@ namespace xd::dbg::gdbstub::pkt {
     GeneralRegisterWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'g')
     {
-      expect_space();
+      skip_space();
 
-      const auto size = get_num_remaining();
-      if (size == 2*sizeof(GDBRegisters64)) {
-        _registers = read_registers<GDBRegisters64>();
-      } else if (size == 2*sizeof(GDBRegisters32)) {
-        _registers = read_registers<GDBRegisters32>();
+      const auto size = get_num_remaining()/2;
+      if (size == sizeof(GDBRegisters64Values)) {
+        _registers = read_registers_64();
+      } else if (size == sizeof(GDBRegisters32Values)) {
+        _registers = read_registers_32();
       } else {
         throw RequestPacketParseException();
       }
@@ -273,23 +287,72 @@ namespace xd::dbg::gdbstub::pkt {
     const GDBRegisters &get_registers() const { return _registers; };
 
   private:
-    template <typename Regs_t>
-    Regs_t read_registers() {
-      Regs_t regs;
-      using Word = typename decltype(regs.values)::ValueType;
-      using Flag = typename decltype(regs.flags)::ValueType;
+    GDBRegisters64 read_registers_64() {
+      GDBRegisters64 regs;
 
-      auto values_ptr = (Word*)&regs.values;
-      auto flags_ptr = (Flag*)&regs.flags;
-      const auto num_regs = sizeof(Regs_t)/sizeof(Word);
+      read_register(regs.values.rax, regs.flags.rax);
+      read_register(regs.values.rbx, regs.flags.rbx);
+      read_register(regs.values.rcx, regs.flags.rcx);
+      read_register(regs.values.rdx, regs.flags.rdx);
+      read_register(regs.values.rsi, regs.flags.rsi);
+      read_register(regs.values.rdi, regs.flags.rdi);
+      read_register(regs.values.rbp, regs.flags.rbp);
+      read_register(regs.values.rsp, regs.flags.rsp);
 
-      for (size_t i = 0; i < num_regs; ++i) {
-        const auto word_opt = read_word_unsigned_opt<Word>();
-        *values_ptr++ = word_opt ? *word_opt : 0;
-        *flags_ptr++ = word_opt.has_value();
-      }
+      read_register(regs.values.r8, regs.flags.r8);
+      read_register(regs.values.r9, regs.flags.r9);
+      read_register(regs.values.r10, regs.flags.r10);
+      read_register(regs.values.r11, regs.flags.r11);
+      read_register(regs.values.r12, regs.flags.r12);
+      read_register(regs.values.r13, regs.flags.r13);
+      read_register(regs.values.r14, regs.flags.r14);
+      read_register(regs.values.r15, regs.flags.r15);
+
+      read_register(regs.values.rip, regs.flags.rip);
+
+      read_register(regs.values.rflags, regs.flags.rflags);
+      read_register(regs.values.cs, regs.flags.cs);
+      read_register(regs.values.ss, regs.flags.ss);
+      read_register(regs.values.ds, regs.flags.ds);
+      read_register(regs.values.es, regs.flags.es);
+      read_register(regs.values.fs, regs.flags.fs);
+      read_register(regs.values.gs, regs.flags.gs);
 
       return regs;
+    }
+
+    GDBRegisters32 read_registers_32() {
+      GDBRegisters32 regs;
+
+      read_register(regs.values.eax, regs.flags.eax);
+      read_register(regs.values.eax, regs.flags.ecx);
+      read_register(regs.values.eax, regs.flags.edx);
+      read_register(regs.values.eax, regs.flags.ebx);
+      read_register(regs.values.eax, regs.flags.esp);
+      read_register(regs.values.eax, regs.flags.ebp);
+      read_register(regs.values.eax, regs.flags.esi);
+      read_register(regs.values.eax, regs.flags.edi);
+
+      read_register(regs.values.eax, regs.flags.eip);
+
+      read_register(regs.values.eax, regs.flags.eflags);
+
+      read_register(regs.values.eax, regs.flags.cs);
+      read_register(regs.values.eax, regs.flags.ss);
+      read_register(regs.values.eax, regs.flags.ds);
+      read_register(regs.values.eax, regs.flags.es);
+      read_register(regs.values.eax, regs.flags.fs);
+      read_register(regs.values.eax, regs.flags.gs);
+
+      return regs;
+    }
+
+    template <typename Reg_t, typename Flag_t>
+    void read_register(Reg_t &value, Flag_t &flag) {
+      const auto value_opt = read_word_unsigned_opt<Reg_t>();
+      if (value_opt)
+        value = *value_opt;
+      flag = value_opt.has_value();
     }
 
   private:
@@ -301,7 +364,7 @@ namespace xd::dbg::gdbstub::pkt {
     MemoryReadRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'm')
     {
-      expect_space();
+      skip_space();
       _address = read_hex_number();
       expect_char(',');
       _length = read_hex_number();
@@ -321,7 +384,7 @@ namespace xd::dbg::gdbstub::pkt {
     MemoryWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'M')
     {
-      expect_space();
+      skip_space();
       _address = read_hex_number();
       expect_char(',');
       _length = read_hex_number();
@@ -352,7 +415,8 @@ namespace xd::dbg::gdbstub::pkt {
   DECLARE_BREAKPOINT_REQUEST(BreakpointRemoveRequest, 'Z');
 
   using GDBRequestPacket = std::variant<
-    QueryThreadInfoRequest,
+    QueryThreadInfoStartRequest,
+    QueryThreadInfoContinuingRequest,
     StopReasonRequest,
     SetThreadRequest,
     GeneralRegisterReadRequest,

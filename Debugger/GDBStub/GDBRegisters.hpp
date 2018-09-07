@@ -23,8 +23,11 @@ namespace xd::dbg::gdbstub {
     ValueType ebp;
     ValueType esi;
     ValueType edi;
+
     ValueType eip;
+
     ValueType eflags;
+
     ValueType cs;
     ValueType ss;
     ValueType ds;
@@ -42,38 +45,43 @@ namespace xd::dbg::gdbstub {
   };
 
   // from gdbserver's regformats/reg-x86-64.dat
-  template <typename T>
+  template <typename T1, typename T2>
   struct _GDBRegisters64 {
-    using ValueType = T;
+    using ValueType1 = T1;
+    using ValueType2 = T2;
 
-    ValueType rax;
-    ValueType rbx;
-    ValueType rcx;
-    ValueType rdx;
-    ValueType rsi;
-    ValueType rdi;
-    ValueType rbp;
-    ValueType rsp;
-    ValueType r8;
-    ValueType r9;
-    ValueType r10;
-    ValueType r11;
-    ValueType r12;
-    ValueType r13;
-    ValueType r14;
-    ValueType r15;
-    ValueType rip;
-    ValueType rflags;
-    ValueType cs;
-    ValueType ss;
-    ValueType ds;
-    ValueType es;
-    ValueType fs;
-    ValueType gs;
+    ValueType1 rax;
+    ValueType1 rbx;
+    ValueType1 rcx;
+    ValueType1 rdx;
+    ValueType1 rsi;
+    ValueType1 rdi;
+    ValueType1 rbp;
+    ValueType1 rsp;
+
+    ValueType1 r8;
+    ValueType1 r9;
+    ValueType1 r10;
+    ValueType1 r11;
+    ValueType1 r12;
+    ValueType1 r13;
+    ValueType1 r14;
+    ValueType1 r15;
+
+    ValueType1 rip;
+
+    ValueType1 rflags; 
+
+    ValueType2 cs;
+    ValueType2 ss;
+    ValueType2 ds;
+    ValueType2 es;
+    ValueType2 fs;
+    ValueType2 gs;
   };
 
-  using GDBRegisters64Values = _GDBRegisters32<uint32_t>;
-  using GDBRegisters64Flags = _GDBRegisters32<bool>;
+  using GDBRegisters64Values = _GDBRegisters64<uint64_t, uint32_t>;
+  using GDBRegisters64Flags = _GDBRegisters64<bool, bool>;
 
   struct GDBRegisters64 {
     GDBRegisters64Values values;

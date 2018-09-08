@@ -167,8 +167,14 @@ GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
         return pkt::QueryThreadInfoContinuingRequest(raw_packet);
       else if (raw_packet == "qC")
         return pkt::QueryCurrentThreadIDRequest(raw_packet);
-      else if (is_prefix(std::string("qSupported"), raw_packet)) // TODO
+      else if (is_prefix(std::string("qSupported"), raw_packet))    // TODO
         return pkt::QuerySupportedRequest(raw_packet);
+      else if (is_prefix(std::string("qHostInfo"), raw_packet))     // TODO
+        return pkt::QueryHostInfoRequest(raw_packet);
+      else if (is_prefix(std::string("qProcessInfo"), raw_packet))  // TODO
+        return pkt::QueryProcessInfoRequest(raw_packet);
+      else if (is_prefix(std::string("qRegisterInfo"), raw_packet)) // TODO
+        return pkt::QueryRegisterInfoRequest(raw_packet);
       break;
     case 'Q':
       if (raw_packet == "QStartNoAckMode")

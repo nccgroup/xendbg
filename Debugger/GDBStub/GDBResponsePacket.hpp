@@ -40,7 +40,7 @@ namespace xd::dbg::gdbstub::pkt {
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << "E" << std::hex << std::setfill('0') << std::setw(2) << _error_code;
+      ss << "E" << std::hex << std::setfill('0') << std::setw(2) << (unsigned)_error_code;
       return ss.str();
     };
 
@@ -251,7 +251,7 @@ namespace xd::dbg::gdbstub::pkt {
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << "T";
+      ss << "T"; // NOTE: Should have a space IFF in no-ack-mode??
       ss << std::hex << std::setfill('0') << std::setw(2);
       ss << (unsigned)_signal;
       // ss << "thread:1"; // TODO
@@ -260,6 +260,81 @@ namespace xd::dbg::gdbstub::pkt {
 
   private:
     uint8_t _signal;
+  };
+
+  namespace {
+    template <typename Key_t, typename Value_t>
+    void add_list_entry(std::stringstream &ss, Key_t key, Value_t value) {
+      ss << key;
+      ss << ":";
+      ss << value;
+      ss << ";";
+    }
+  }
+
+  // See https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt#L756
+  class QueryHostInfoResponse : public GDBResponsePacket {
+  public:
+    QueryHostInfoResponse(unsigned word_size, std::string hostname)
+      : _word_size(word_size), _hostname(std::move(hostname)) 
+    {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      add_list_entry(ss, "ostype", "linux");   // TODO
+      add_list_entry(ss, "endian", "little");  // TODO
+      add_list_entry(ss, "ptrsize", _word_size);
+      add_list_entry(ss, "hostname", _hostname);
+      return ss.str();
+    };
+
+  private:
+    unsigned _word_size;
+    std::string _hostname;
+  };
+
+  class QueryProcessInfoResponse : public GDBResponsePacket {
+  public:
+    QueryProcessInfoResponse(size_t pid)
+      : _pid(pid) {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      add_list_entry(ss, "pid", _pid);
+      return ss.str();
+    };
+
+  private:
+    size_t _pid;
+  };
+
+  class QueryRegisterInfoResponse : public GDBResponsePacket {
+  public:
+    QueryRegisterInfoResponse(
+        std::string name, unsigned width, unsigned offset,
+          unsigned gcc_register_id)
+      : _name(std::move(name)), _width(width), _offset(offset),
+        _gcc_register_id(gcc_register_id)
+    {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      add_list_entry(ss, "name", _name);
+      add_list_entry(ss, "bitsize", _width);
+      add_list_entry(ss, "offset", _offset);
+      add_list_entry(ss, "encoding", "uint");
+      add_list_entry(ss, "format", "hex");
+      add_list_entry(ss, "set", "General Purpose Registers");
+      add_list_entry(ss, "gcc", _gcc_register_id);
+      add_list_entry(ss, "dwarf", _gcc_register_id); // TODO
+      return ss.str();
+    };
+
+  private:
+    std::string _name;
+    unsigned _width;
+    unsigned _offset;
+    unsigned _gcc_register_id;
   };
 
 }

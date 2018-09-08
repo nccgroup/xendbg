@@ -57,15 +57,40 @@ void GDBStub::run() {
       const auto packet = io.read_packet();
       const auto visitor = util::overloaded {
         [&io](const pkt::StartNoAckModeRequest &req) {
-          //io.write_packet(pkt::NotSupportedResponse());
-          // TODO: Turning off acks makes LLDB send much slower
-          io.write_packet(pkt::OKResponse());
-          io.set_ack_enabled(false);
+          io.write_packet(pkt::NotSupportedResponse());
+
+          /* TODO: Turning off acks is recommended to "increase throughput",
+           * but in practice makes LLDB send responses much more slowly.
+           * Not sure yet if this is an issue with xendbg, or with LLDB.
+           *
+           * See: https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt#L756
+           */
+          //io.write_packet(pkt::OKResponse());
+          //io.set_ack_enabled(false);
         },
         [&io](const pkt::QuerySupportedRequest &req) {
           io.write_packet(pkt::QuerySupportedResponse({
-            "QStartNoAckMode+"
+            //"QStartNoAckMode+"
           }));
+        },
+        [&io](const pkt::QueryHostInfoRequest &req) {
+          // TODO
+          io.write_packet(pkt::QueryHostInfoResponse(64, "guest"));
+        },
+        [&io](const pkt::QueryRegisterInfoRequest &req) {
+          // TODO
+          auto i = req.get_register_id();
+          if (i < 14) {
+            std::string name("reg");
+            name += std::to_string(i);
+            io.write_packet(pkt::QueryRegisterInfoResponse(name, 64, i, i));
+          } else {
+            io.write_packet(pkt::ErrorResponse(0x45));
+          }
+        },
+        [&io](const pkt::QueryProcessInfoRequest &req) {
+          // TODO
+          io.write_packet(pkt::QueryProcessInfoResponse(1));
         },
         [&io](const pkt::QueryCurrentThreadIDRequest &req) {
           // TODO

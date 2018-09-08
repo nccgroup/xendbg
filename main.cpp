@@ -34,12 +34,11 @@ std::string stringify_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-  /*
   GDBStub stub(std::stoi(argv[1]));
 
   stub.run();
-  */
 
+  /*
   const auto cmdline_str = stringify_args(argc, argv);
 
   const auto cmdline_cmd = make_command(Verb(argv[0], "",
@@ -63,6 +62,7 @@ int main(int argc, char **argv) {
 
   DebuggerREPL dbg_repl;
   dbg_repl.run();
+  */
 }
 
 /*

@@ -286,6 +286,21 @@ namespace xd::dbg::gdbstub::pkt {
     };
   };
 
+  class QueryRegisterInfoRequest : public GDBRequestPacketBase {
+  public:
+    QueryRegisterInfoRequest(const std::string &data)
+      : GDBRequestPacketBase(data, "qRegisterInfo")
+    {
+      _register_id = read_hex_number();
+      expect_end();
+    };
+
+    uint64_t get_register_id() const { return _register_id; };
+
+  private:
+    uint64_t _register_id;
+  };
+
   DECLARE_SIMPLE_REQUEST(StopReasonRequest, '?');
 
   class SetThreadRequest : public GDBRequestPacketBase {
@@ -499,12 +514,18 @@ namespace xd::dbg::gdbstub::pkt {
   DECLARE_BREAKPOINT_REQUEST(BreakpointInsertRequest, 'z');
   DECLARE_BREAKPOINT_REQUEST(BreakpointRemoveRequest, 'Z');
 
+  DECLARE_SIMPLE_REQUEST(QueryHostInfoRequest, "qHostInfo");
+  DECLARE_SIMPLE_REQUEST(QueryProcessInfoRequest, "qProcessInfo");
+
   using GDBRequestPacket = std::variant<
     StartNoAckModeRequest,
     QuerySupportedRequest,
     QueryCurrentThreadIDRequest,
     QueryThreadInfoStartRequest,
     QueryThreadInfoContinuingRequest,
+    QueryHostInfoRequest,
+    QueryProcessInfoRequest,
+    QueryRegisterInfoRequest,
     StopReasonRequest,
     SetThreadRequest,
     RegisterReadRequest,

@@ -686,7 +686,7 @@ void DebuggerREPL::examine(uint64_t address, size_t word_size, size_t num_words)
 
   const auto mem_handle = get_domain_or_fail().map_memory(
       address, word_size*num_words, PROT_READ);
-  auto mem = mem_handle.get();
+  char *mem = (char*)mem_handle.get();
 
   const auto newline_limit = 3*sizeof(uint64_t)/word_size;
 
@@ -694,10 +694,9 @@ void DebuggerREPL::examine(uint64_t address, size_t word_size, size_t num_words)
   std::cout << address << " to " << address + word_size*num_words << ":" << std::endl;
   std::cout << std::noshowbase << std::setfill('0');
   for (size_t i = 0; i < num_words; ++i) {
-    auto target = mem+i+word_size-1;
+    char *target = mem+(i+1)*word_size;
     for (size_t j = 0; j < word_size; ++j) {
-      std::cout << std::setw(2) << static_cast<unsigned>(*target);
-      --target;
+      std::cout << std::setw(2) << (((uint32_t)(*--target)) & 0xFF);
     }
     std::cout << " ";
 

@@ -6,7 +6,8 @@
 #ifndef XENDBG_REGISTERS_X86_HPP
 #define XENDBG_REGISTERS_X86_HPP
 
-#include "Registers.hpp"
+#include "Register.hpp"
+#include "RegisterContext.hpp"
 
 namespace reg::x86 {
 
@@ -26,6 +27,10 @@ namespace reg::x86 {
   DECLARE_REGISTER(es,     uint16_t);
   DECLARE_REGISTER(fs,     uint16_t);
   DECLARE_REGISTER(gs,     uint16_t);
+
+  using RegistersX86 = RegisterContext<
+    eax, ebx, ecx, edx, esp, ebp, esi, edi,
+    eflags, eip, fs, gs, cs, ds, ss>; 
 
 }
 

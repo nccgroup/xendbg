@@ -2,11 +2,12 @@
 // Created by Spencer Michaels on 9/10/18.
 //
 
-#ifndef XENDBG_REGISTERS_HPP
-#define XENDBG_REGISTERS_HPP
+#ifndef XENDBG_REGISTER_HPP
+#define XENDBG_REGISTER_HPP
 
 #include <cstddef>
 #include <cstdint>
+#include <variant>
 
 namespace reg {
 
@@ -28,18 +29,18 @@ namespace reg {
     _Register_impl(Value_t &value)
       : _Register_impl<Value_t, 0>(value) {};
 
-    uint8_t get8_upper() const {
+    uint8_t get8h() const {
       return (this->_value >> 0x8) & 0xFF;
     };
-    void set8_upper(uint8_t new_value) {
+    void set8h(uint8_t new_value) {
       this->_value &= ~0xFF00;
       this->_value |= (Value_t)new_value << 0x8;
     };
 
-    uint8_t get8_lower() const {
+    uint8_t get8l() const {
       return this->_value & 0xFF;
     };
-    void set8_lower(uint8_t new_value) {
+    void set8l(uint8_t new_value) {
       this->_value &= ~0xFF;
       this->_value |= (Value_t)new_value;
     };
@@ -52,10 +53,7 @@ namespace reg {
       this->_value |= new_value;
     };
 
-    operator uint8_t() const {
-      return this->get8_lower();
-    };
-    operator uint16_t() const {
+    operator Value_t() const {
       return this->get16();
     };
   };
@@ -67,14 +65,14 @@ namespace reg {
       : _Register_impl<Value_t, 2>(value), _value(value) {};
 
     uint32_t get32() const {
-      return this->_value & 0xFFFFFFFF;
+      return this->_value & 0xFFFFFFFFUL;
     };
     void set32(uint32_t new_value) {
-      this->_value &= ~0xFFFFFFFF;
+      this->_value &= ~0xFFFFFFFFUL;
       this->_value |= new_value;
     };
 
-    operator uint32_t() const {
+    operator Value_t() const {
       return this->get32();
     };
 
@@ -89,14 +87,14 @@ namespace reg {
       : _Register_impl<Value_t, 4>(value), _value(value) {};
 
     uint64_t get64() const {
-      return this->_value & 0xFFFFFFFFFFFFFFFF;
+      return this->_value & 0xFFFFFFFFFFFFFFFFUL;
     };
     void set64(uint64_t new_value) {
-      this->_value &= ~0xFFFFFFFFFFFFFFFF;
+      this->_value &= ~0xFFFFFFFFFFFFFFFFUL;
       this->_value |= new_value;
     };
 
-    operator uint64_t() const {
+    operator Value_t() const {
       return this->get64();
     };
 
@@ -140,4 +138,4 @@ namespace reg {
 #define DECLARE_REGISTER(_name, _type) \
   DECLARE_REGISTER_ALTNAME(_name, nullptr, _type)
 
-#endif //XENDBG_REGISTERS_HPP
+#endif //XENDBG_REGISTER_HPP

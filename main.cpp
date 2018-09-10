@@ -1,23 +1,25 @@
 #include <iostream>
 
 #include "Registers/RegistersX86_64.hpp"
-#include "Registers/RegisterContext.hpp"
+
+template <typename T>
+struct X;
 
 int main() {
   using namespace reg::x86_64;
-  using Regs64 = reg::RegisterContext<
-    rax, rbx, rcx, rdx, rsp, rbp, rsi, rdi,
-    r8, r9, r10, r11, r12, r13, r14, r15,
-    rflags, rip, fs, gs, cs, ds, ss>; 
-  Regs64 regs;
+  RegistersX86_64 regs;
 
-  regs.get<rax>().clear();
-  regs.get<rax>().set32(0xdead0000);
-  regs.get<rax>().set16(0xbeef);
-  std::cout << std::hex << regs.get<rax>().get64() << std::endl;
+  regs.clear();
+  regs.get<rip>().set64(0xf00dbead00000000);
+  regs.get<rip>().set32(0xdead0000);
+  regs.get<rip>().set16(0xbe00);
+  regs.get<rip>().set8l(0xef);
 
-  regs.for_each([](const auto &md, auto& reg) {
-    std::cout << md.name << "\t" << md.offset << std::endl;
+  std::cout << std::showbase << std::hex;
+
+  std::cout << "REG\tOFFSET\tVALUE" << std::endl;
+  regs.for_each([](const auto &md, auto &reg) {
+    std::cout << md.name << "\t" << md.offset << "\t" << reg << std::endl;
   });
 }
 

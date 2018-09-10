@@ -25,7 +25,7 @@ namespace xd::xen {
     MappedMemory map(const Domain& domain, Address address, size_t size, int prot) const;
     
   private:
-    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *p2m_table, WordSize word_size) const;
+    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn, xc_domain_meminfo *meminfo, WordSize word_size) const;
 
   private:
     std::shared_ptr<xenforeignmemory_handle> _xen_foreign_memory;

@@ -295,10 +295,10 @@ namespace xd::dbg::gdbstub::pkt {
       expect_end();
     };
 
-    uint64_t get_register_id() const { return _register_id; };
+    uint16_t get_register_id() const { return _register_id; };
 
   private:
-    uint64_t _register_id;
+    uint16_t _register_id;
   };
 
   DECLARE_SIMPLE_REQUEST(StopReasonRequest, '?');
@@ -335,14 +335,14 @@ namespace xd::dbg::gdbstub::pkt {
       : GDBRequestPacketBase(data, 'p')
     {
       skip_space();
-      _register = read_hex_number();
+      _register_id = read_hex_number();
       expect_end();
     };
 
-    uint8_t get_register() { return _register; };
+    uint16_t get_register_id() const { return _register_id; };
 
   private:
-    uint8_t _register;
+    uint16_t _register_id;
   };
 
   class RegisterWriteRequest : public GDBRequestPacketBase {
@@ -351,17 +351,17 @@ namespace xd::dbg::gdbstub::pkt {
       : GDBRequestPacketBase(data, 'P')
     {
       skip_space();
-      _register = read_byte();
+      _register_id = read_byte();
       expect_char('=');
       _value = read_hex_number();
       expect_end();
     };
 
-    uint8_t get_register() { return _register; };
-    uint64_t get_value() { return _value; };
+    uint16_t get_register_id() const { return _register_id; };
+    uint64_t get_value() const { return _value; };
 
   private:
-    uint8_t _register;
+    uint16_t _register_id;
     uint64_t _value;
   };
 
@@ -500,7 +500,7 @@ namespace xd::dbg::gdbstub::pkt {
 
     uint64_t get_address() const { return _address; };
     uint64_t get_length() const { return _length; };
-    const char * data() const { return &_data[0]; };
+    const char * get_data() const { return &_data[0]; };
 
   private:
     uint64_t _address;

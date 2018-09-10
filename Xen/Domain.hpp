@@ -37,7 +37,9 @@ namespace xd::xen {
     MappedMemory map_memory(Address address, size_t size, int prot) const;
 
     uint64_t read_register(const std::string &name, VCPU_ID vcpu_id = 0);
+    uint64_t read_register(const size_t register_id, VCPU_ID vcpu_id = 0);
     void write_register(const std::string &name, uint64_t value, VCPU_ID vcpu_id = 0);
+    void write_register(const size_t register_id, uint64_t value, VCPU_ID vcpu_id = 0);
 
     Registers get_cpu_context(VCPU_ID vcpu_id = 0) const;
     void set_cpu_context(Registers regs, VCPU_ID vcpu_id = 0) const;

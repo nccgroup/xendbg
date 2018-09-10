@@ -31,7 +31,7 @@ XenForeignMemory::XenForeignMemory()
 MappedMemory XenForeignMemory::map(const Domain &domain, Address address, size_t size, int prot) const {
   auto meminfo = domain.map_meminfo();
   xen_pfn_t base_mfn = pfn_to_mfn_pv(address >> XC_PAGE_SHIFT,
-      meminfo->p2m_table, domain.get_word_size());
+      meminfo.get(), domain.get_word_size());
 
   size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
@@ -66,11 +66,14 @@ MappedMemory XenForeignMemory::map(const Domain &domain, Address address, size_t
 }
 
 // See xen/tools/libxc/xc_offline_page.c:389
-xen_pfn_t XenForeignMemory::pfn_to_mfn_pv(xen_pfn_t pfn, xen_pfn_t *p2m_table, WordSize word_size) const {
+xen_pfn_t XenForeignMemory::pfn_to_mfn_pv(xen_pfn_t pfn, xc_domain_meminfo *meminfo, WordSize word_size) const {
+  if (pfn > meminfo->p2m_size)
+    throw XenException("Invalid PFN!");
+
   if (word_size == sizeof(uint64_t)) {
-    return ((uint64_t*)p2m_table)[pfn];
+    return ((uint64_t*)meminfo->p2m_table)[pfn];
   } else {
-    uint32_t mfn = ((uint32_t*)p2m_table)[pfn];
+    uint32_t mfn = ((uint32_t*)meminfo->p2m_table)[pfn];
     return (mfn == ~0U) ? INVALID_MFN : mfn;
   }
 }

@@ -12,6 +12,12 @@
 
 #include <netinet/in.h>
 
+namespace xd::dbg {
+
+  class Debugger;
+
+}
+
 namespace xd::dbg::gdbstub {
 
   class GDBStub {
@@ -19,7 +25,7 @@ namespace xd::dbg::gdbstub {
     GDBStub(int port);
     GDBStub(in_addr_t address, int port);
 
-    void run();
+    void run(xd::dbg::Debugger &dbg);
 
   private:
     int tcp_socket_open(in_addr_t addr, int port);

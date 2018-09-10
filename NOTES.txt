@@ -1,3 +1,68 @@
 NOTE: Stepping through with single_step() produces different results than
 just unpausing. May have to do with flags, as the point where I noticed this
 happening involved being trapped in a loop infinitely.
+
+Register metadata
+- name
+- alt-name
+- bitsize
+- offset
+//- encoding
+//- format
+//- set (always GP regs for now?)
+
+Needs to be compatible with g/G and p/P packets
+
+Required functionality
+- primarily access registers by ID
+  - but need to pair ID and name initially
+- get/set value by id/name
+- generate a string of bytes exactly mirroring the structure detailed in the metadata
+- auto-generate offsets?
+
+using RC = RegisterContext<
+  Register<R::RAX, uint32_t>,
+  Register<R::RBX, uint64_t>
+>;
+
+RC::offset_of<R::RBX>::value;  // --> 4
+RC::offset_of<R::RBX>::value;  // --> 4
+
+RC::id_of<R::RBX>::value;      // --> 1
+RC::name_of<1>::value;         // --> "rax" (const char *)
+
+get_cpu_context {
+  struct hvm_hw_cpu ctx = /*...*/;
+
+  RC rc;
+  rc.set<R::RAX> = ctx.rax;
+  rc.set<R::RBX> = ctx.rbx;
+  // ...
+
+  return rc;
+}
+
+send_packet {
+  rc.for_each([]());
+}
+
+enum Registers32 {
+  RAX,
+  RBX,
+  // ...
+}
+
+struct RegisterMetadata {
+  const std::string name;
+  const std::string alt_name;
+  const size_t width;
+}
+
+class RegistersMetadata {
+}
+
+rmd.add<uint64_t>("rax");
+rmd.get(0) // --> const RegisterMetadata&;
+rmd.for_each([](const auto &md) {
+  md.name << md.alt_name << md.width ...
+});

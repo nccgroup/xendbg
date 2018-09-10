@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "Debugger/Debugger.hpp"
 #include "Debugger/GDBStub/GDBStub.hpp"
 #include "Debugger/DebuggerREPL.hpp"
 #include "Parser/Parser.hpp"
@@ -13,7 +14,9 @@
 #include "REPL/Command/Verb.hpp"
 #include "REPL/Command/Verb.hpp"
 #include "Util/IndentHelper.hpp"
+#include "Xen/XenStore.hpp"
 
+using xd::dbg::Debugger;
 using xd::dbg::DebuggerREPL;
 using xd::dbg::gdbstub::GDBStub;
 using xd::repl::cmd::make_command;
@@ -21,6 +24,7 @@ using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;
 using xd::repl::cmd::Verb;
 using xd::util::IndentHelper;
+using xd::xen::XenStore;
 
 std::string stringify_args(int argc, char **argv) {
   const std::vector<std::string> args(argv, argv + argc);
@@ -34,9 +38,18 @@ std::string stringify_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-  GDBStub stub(std::stoi(argv[1]));
+  assert(argc == 3);
+  std::string name(argv[2]);
 
-  stub.run();
+  Debugger dbg;
+  XenStore xenstore;
+  const auto id = xenstore.get_domid_from_name(name);
+  dbg.attach(id);
+
+  std::cout << "Attached to guest #" << id << std::endl;
+
+  GDBStub stub(std::stoi(argv[1]));
+  stub.run(dbg);
 
   /*
   const auto cmdline_str = stringify_args(argc, argv);

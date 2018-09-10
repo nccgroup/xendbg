@@ -102,23 +102,25 @@ WordSize xd::xen::XenCtrl::get_domain_word_size(const Domain &domain) const {
 }
 
 MemInfo XenCtrl::map_domain_meminfo(const Domain &domain) const {
-  auto xenctrl = _xenctrl;
-  auto deleter = [xenctrl](xc_domain_meminfo *p) {
-    xc_unmap_domain_meminfo(xenctrl.get(), p);
+  auto xenctrl_ptr = _xenctrl.get();
+  auto deleter = [xenctrl_ptr](xc_domain_meminfo *p) {
+    xc_unmap_domain_meminfo(xenctrl_ptr, p);
   };
 
-  const auto meminfo = new struct xc_domain_meminfo;
-  std::memset(meminfo, 0, sizeof(struct xc_domain_meminfo));
+  auto meminfo =
+    std::unique_ptr<xc_domain_meminfo, decltype(deleter)>(
+      new xc_domain_meminfo, deleter);
+  std::memset(meminfo.get(), 0, sizeof(xc_domain_meminfo));
 
   int err;
-  if (err = xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo)) {
+  xc_domain_meminfo minfo;
+  if (err = xc_map_domain_meminfo(_xenctrl.get(), domain.get_domid(), meminfo.get())) {
     throw XenException(
       "Failed to map meminfo for domain " + std::to_string(domain.get_domid()),
         -err);
   }
 
-  return std::unique_ptr<xc_domain_meminfo, decltype(deleter)>(
-    meminfo, deleter);
+  return meminfo;
 }
 
 void XenCtrl::set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const {

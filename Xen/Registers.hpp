@@ -25,41 +25,46 @@ namespace xd::xen {
     uint32_t ebp;
     uint32_t esp;
     uint32_t ss;
-    uint16_t eflags;
     uint32_t eip;
+    uint16_t eflags;
     uint16_t cs;
     uint16_t ds;
     uint16_t es;
     uint16_t fs;
     uint16_t gs;
 
-    ValueType get_by_name(const std::string &name) const;
-    void set_by_name(const std::string &name, ValueType value);
+    ValueType get(const std::string &name) const;
+    ValueType get(size_t id) const;
+    void set(const std::string &name, ValueType value);
+    void set(size_t id, ValueType value);
 
     template <typename F>
     void for_each(F f) const {
-      static constexpr auto names = {
-        "eax",
-        "ebx",
-        "ecx",
-        "edx",
-        "edi",
-        "esi",
-        "ebp",
-        "esp",
-        "ss",
-        "eflags",
-        "eip",
-        "cs",
-        "ds",
-        "es",
-        "fs",
-        "gs"
-      };
-
       for (const auto &name : names) {
-        f(name, get_by_name(name));
+        f(name, get(name));
       }
+    };
+
+    static std::string get_name_by_id(size_t id);
+    static bool is_valid_id(size_t id);
+
+    static constexpr auto names = {
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "edi",
+      "esi",
+      "ebp",
+      "esp",
+      "ss",
+      "eflags",
+      "eip",
+      "cs",
+      "ds",
+      "es",
+      "fs",
+      "gs"
     };
   };
 
@@ -90,48 +95,56 @@ namespace xd::xen {
     uint64_t ds;
     uint64_t ss;
 
-    ValueType get_by_name(const std::string &name) const;
-    void set_by_name(const std::string &name, ValueType value);
+    ValueType get(const std::string &name) const;
+    ValueType get(size_t id) const;
+    void set(const std::string &name, ValueType value);
+    void set(size_t id, ValueType value);
 
     template <typename F>
     void for_each(F f) const {
-      static constexpr auto names = {
-          "rax",
-          "rbx",
-          "rcx",
-          "rdx",
-          "rsp",
-          "rbp",
-          "rsi",
-          "rdi",
-          "r8",
-          "r9",
-          "r10",
-          "r11",
-          "r12",
-          "r13",
-          "r14",
-          "r15",
-          "rflags",
-          "rip",
-          "fs",
-          "gs",
-          "cs",
-          "ds",
-          "ss"
-      };
-
       for (const auto &name : names) {
-        f(name, get_by_name(name));
+        f(name, get(name));
       }
+    };
+
+    static std::string get_name_by_id(size_t id);
+    static bool is_valid_id(size_t id);
+
+    static constexpr auto names = {
+        "rax",
+        "rbx",
+        "rcx",
+        "rdx",
+        "rsp",
+        "rbp",
+        "rsi",
+        "rdi",
+        "r8",
+        "r9",
+        "r10",
+        "r11",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rip",
+        "rflags",
+        "fs",
+        "gs",
+        "cs",
+        "ds",
+        "ss"
     };
   };
 
   using Registers = std::variant<Registers32, Registers64>;
 
-  uint64_t get_register_by_name(const Registers &regs, const std::string &name);
-  void set_register_by_name(Registers &regs, const std::string &name, uint64_t value);
   bool is_register_name(const std::string &name);
+
+  uint64_t get_register(const Registers &regs, const std::string &name);
+  uint64_t get_register(const Registers &regs, size_t id);
+  void set_register(Registers &regs, const std::string &name, uint64_t value);
+  void set_register(Registers &regs, size_t id, uint64_t value);
 
   template <typename Source_t, typename Result_t>
   Result_t convert_gp_registers_32(const Source_t& source, Result_t regs_init) {

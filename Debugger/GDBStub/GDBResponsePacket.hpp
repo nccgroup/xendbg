@@ -17,6 +17,27 @@
 
 namespace xd::dbg::gdbstub::pkt {
 
+  namespace {
+    // Writes the bytes of a value of arbitrary size in guest order
+    template <typename Value_t>
+    void write_bytes(std::stringstream &ss, Value_t value) {
+      unsigned char *p = (unsigned char*)&value;
+      unsigned char *end = p + sizeof(Value_t);
+
+      ss << std::hex << std::setfill('0');
+      while (p != end)
+        ss << std::setw(2) << (unsigned)(*p++);
+    }
+
+    template <typename Key_t, typename Value_t>
+    void add_list_entry(std::stringstream &ss, Key_t key, Value_t value) {
+      ss << key;
+      ss << ":";
+      ss << value;
+      ss << ";";
+    }
+  }
+
   class GDBResponsePacket {
   public:
     virtual ~GDBResponsePacket() = default;
@@ -131,17 +152,18 @@ namespace xd::dbg::gdbstub::pkt {
 
   class RegisterReadResponse : public GDBResponsePacket {
   public:
-    RegisterReadResponse(uint64_t value)
-      : _value(value) {};
+    RegisterReadResponse(uint64_t value, int width = sizeof(uint64_t))
+      : _value(value), _width(width) {};
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << std::hex << _value;
+      write_bytes(ss, _value);
       return ss.str();
     };
 
   private:
     uint64_t _value;
+    int _width;
   };
 
   class GeneralRegistersBatchReadResponse : public GDBResponsePacket {
@@ -251,7 +273,7 @@ namespace xd::dbg::gdbstub::pkt {
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << "T"; // NOTE: Should have a space IFF in no-ack-mode??
+      ss << "T "; // NOTE: requires a space IFF working in ACK mode
       ss << std::hex << std::setfill('0') << std::setw(2);
       ss << (unsigned)_signal;
       // ss << "thread:1"; // TODO
@@ -261,16 +283,6 @@ namespace xd::dbg::gdbstub::pkt {
   private:
     uint8_t _signal;
   };
-
-  namespace {
-    template <typename Key_t, typename Value_t>
-    void add_list_entry(std::stringstream &ss, Key_t key, Value_t value) {
-      ss << key;
-      ss << ":";
-      ss << value;
-      ss << ";";
-    }
-  }
 
   // See https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt#L756
   class QueryHostInfoResponse : public GDBResponsePacket {
@@ -282,7 +294,7 @@ namespace xd::dbg::gdbstub::pkt {
     std::string to_string() const override {
       std::stringstream ss;
       add_list_entry(ss, "ostype", "linux");   // TODO
-      add_list_entry(ss, "endian", "little");  // TODO
+      add_list_entry(ss, "endian", "little");     // TODO
       add_list_entry(ss, "ptrsize", _word_size);
       add_list_entry(ss, "hostname", _hostname);
       return ss.str();

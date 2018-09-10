@@ -1,4 +1,43 @@
 #include <iostream>
+
+#include "Registers/RegistersX86_64.hpp"
+#include "Registers/RegisterContext.hpp"
+
+int main() {
+  using Regs64 = reg::RegisterContext<
+    reg::x86_64::rax,
+    reg::x86_64::rbx,
+    reg::x86_64::rcx>;
+    /*reg::x86_64::rdx,
+    reg::x86_64::rsp,
+    reg::x86_64::rbp,
+    reg::x86_64::rsi,
+    reg::x86_64::rdi,
+    reg::x86_64::r8,
+    reg::x86_64::r9,
+    reg::x86_64::r10,
+    reg::x86_64::r11,
+    reg::x86_64::r12,
+    reg::x86_64::r13,
+    reg::x86_64::r14,
+    reg::x86_64::r15,
+    reg::x86_64::rflags,
+    reg::x86_64::rip,
+    reg::x86_64::fs,
+    reg::x86_64::gs,
+    reg::x86_64::cs,
+    reg::x86_64::ds,
+    reg::x86_64::ss>;*/
+
+  Regs64 regs;
+
+  regs.for_each([](const auto &md, auto value) {
+    std::cout << md.offset << std::endl;
+  });
+}
+
+/*
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -38,6 +77,7 @@ std::string stringify_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+
   assert(argc == 3);
   std::string name(argv[2]);
 
@@ -50,6 +90,7 @@ int main(int argc, char **argv) {
 
   GDBStub stub(std::stoi(argv[1]));
   stub.run(dbg);
+  */
 
   /*
   const auto cmdline_str = stringify_args(argc, argv);
@@ -76,7 +117,7 @@ int main(int argc, char **argv) {
   DebuggerREPL dbg_repl;
   dbg_repl.run();
   */
-}
+//}
 
 /*
 #include <cassert>

@@ -4,35 +4,20 @@
 #include "Registers/RegisterContext.hpp"
 
 int main() {
+  using namespace reg::x86_64;
   using Regs64 = reg::RegisterContext<
-    reg::x86_64::rax,
-    reg::x86_64::rbx,
-    reg::x86_64::rcx>;
-    /*reg::x86_64::rdx,
-    reg::x86_64::rsp,
-    reg::x86_64::rbp,
-    reg::x86_64::rsi,
-    reg::x86_64::rdi,
-    reg::x86_64::r8,
-    reg::x86_64::r9,
-    reg::x86_64::r10,
-    reg::x86_64::r11,
-    reg::x86_64::r12,
-    reg::x86_64::r13,
-    reg::x86_64::r14,
-    reg::x86_64::r15,
-    reg::x86_64::rflags,
-    reg::x86_64::rip,
-    reg::x86_64::fs,
-    reg::x86_64::gs,
-    reg::x86_64::cs,
-    reg::x86_64::ds,
-    reg::x86_64::ss>;*/
-
+    rax, rbx, rcx, rdx, rsp, rbp, rsi, rdi,
+    r8, r9, r10, r11, r12, r13, r14, r15,
+    rflags, rip, fs, gs, cs, ds, ss>; 
   Regs64 regs;
 
-  regs.for_each([](const auto &md, auto value) {
-    std::cout << md.offset << std::endl;
+  regs.get<rax>().clear();
+  regs.get<rax>().set32(0xdead0000);
+  regs.get<rax>().set16(0xbeef);
+  std::cout << std::hex << regs.get<rax>().get64() << std::endl;
+
+  regs.for_each([](const auto &md, auto& reg) {
+    std::cout << md.name << "\t" << md.offset << std::endl;
   });
 }
 

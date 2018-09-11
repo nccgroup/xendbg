@@ -215,11 +215,11 @@ std::optional<Debugger::Breakpoint> Debugger::check_breakpoint_hit() {
 
 xd::xen::Address Debugger::check_infinite_loop_hit() {
   const auto address = std::visit(util::overloaded {
-    [](const xen::Registers32 regs) {
-      return (uint64_t)regs.eip;
+    [](const reg::x86_32::RegistersX86_32 regs) {
+      return (uint64_t)regs.get<reg::x86_32::eip>();
     },
-    [](const xen::Registers64 regs) {
-      return (uint64_t)regs.rip;
+    [](const reg::x86_64::RegistersX86_64 regs) {
+      return (uint64_t)regs.get<reg::x86_64::rip>();
     }
   }, _domain->get_cpu_context(_current_vcpu));
 
@@ -232,22 +232,22 @@ xd::xen::Address Debugger::check_infinite_loop_hit() {
 std::pair<Address, Address> Debugger::get_address_of_next_instruction() {
   const auto read_eip_rip = [this]() {
     return std::visit(util::overloaded {
-      [](const xen::Registers32 regs) {
-        return (uint64_t)regs.eip;
-      },
-      [](const xen::Registers64 regs) {
-        return (uint64_t)regs.rip;
-      }
+    [](const reg::x86_32::RegistersX86_32 regs) {
+      return (uint64_t)regs.get<reg::x86_32::eip>();
+    },
+    [](const reg::x86_64::RegistersX86_64 regs) {
+      return (uint64_t)regs.get<reg::x86_64::rip>();
+    }
     }, _domain->get_cpu_context(_current_vcpu));
   };
   const auto read_esp_rsp = [this]() {
     return std::visit(util::overloaded {
-      [](const xen::Registers32 regs) {
-        return (uint64_t)regs.esp;
-      },
-      [](const xen::Registers64 regs) {
-        return (uint64_t)regs.rsp;
-      }
+    [](const reg::x86_32::RegistersX86_32 regs) {
+      return (uint64_t)regs.get<reg::x86_32::esp>();
+    },
+    [](const reg::x86_64::RegistersX86_64 regs) {
+      return (uint64_t)regs.get<reg::x86_64::rsp>();
+    }
     }, _domain->get_cpu_context(_current_vcpu));
   };
   const auto read_word = [this](Address addr) {
@@ -262,7 +262,9 @@ std::pair<Address, Address> Debugger::get_address_of_next_instruction() {
   {
     const auto reg_name = cs_reg_name(_capstone, cs_reg);
     assert(reg_name != nullptr);
-    return _domain->read_register(std::string(reg_name));
+    // TODO:regs
+    return 0;
+    //return _domain->read_register(std::string(reg_name));
   };
 
   const auto address = read_eip_rip();

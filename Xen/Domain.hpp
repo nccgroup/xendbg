@@ -8,8 +8,8 @@
 #include <string>
 
 #include "Common.hpp"
-#include "Registers.hpp"
 #include "XenHandle.hpp"
+#include "../Registers/RegistersX86.hpp"
 
 namespace xd::xen {
 
@@ -36,13 +36,8 @@ namespace xd::xen {
     MemInfo map_meminfo() const;
     MappedMemory map_memory(Address address, size_t size, int prot) const;
 
-    uint64_t read_register(const std::string &name, VCPU_ID vcpu_id = 0);
-    uint64_t read_register(const size_t register_id, VCPU_ID vcpu_id = 0);
-    void write_register(const std::string &name, uint64_t value, VCPU_ID vcpu_id = 0);
-    void write_register(const size_t register_id, uint64_t value, VCPU_ID vcpu_id = 0);
-
-    Registers get_cpu_context(VCPU_ID vcpu_id = 0) const;
-    void set_cpu_context(Registers regs, VCPU_ID vcpu_id = 0) const;
+    reg::RegistersX86 get_cpu_context(VCPU_ID vcpu_id = 0) const;
+    void set_cpu_context(reg::RegistersX86 regs, VCPU_ID vcpu_id = 0) const;
 
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
     void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;

@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
-#ifndef XENDBG_REGISTERS_HPP
-#define XENDBG_REGISTERS_HPP
+#ifndef XENDBG_REGISTERS_OLD_HPP
+#define XENDBG_REGISTERS_OLD_HPP
 
 #include "BridgeHeaders/xenctrl.h"
 
@@ -242,4 +242,4 @@ namespace xd::xen {
 
 }
 
-#endif //XENDBG_REGISTERS_HPP
+#endif //XENDBG_REGISTERS_OLD_HPP

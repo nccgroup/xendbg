@@ -42,9 +42,12 @@ namespace reg {
     template <typename Context_t, typename Reg_t>
     struct __get_impl<Context_t, Reg_t, true> {
     public:
-      __get_impl(Context_t &context)
+      explicit __get_impl(Context_t &context)
         : _context(context) {};
 
+      const Reg_t &get() const {
+        return _context._get();
+      }
       Reg_t &get() {
         return _context._get();
       }
@@ -56,9 +59,12 @@ namespace reg {
     template <typename Context_t, typename Reg_t>
     struct __get_impl<Context_t, Reg_t, false> {
     public:
-      __get_impl(Context_t &context)
+      explicit __get_impl(Context_t &context)
         : _context(context) {};
 
+      const Reg_t &get() const {
+        return _context.template _get_next<Reg_t>();
+      }
       Reg_t &get() {
         return _context.template _get_next<Reg_t>();
       }
@@ -67,20 +73,26 @@ namespace reg {
       Context_t &_context;
     };
 
+    template <typename A, typename B>
+    struct X;
+
     template <typename Context_t, typename Reg_t>
     struct _get_impl : public __get_impl<
       Context_t, Reg_t, std::is_same<
-        typename Context_t::Register,
+        typename std::remove_const<typename Context_t::Register>::type,
         Reg_t>::value>
     {
       using Base = __get_impl<
             Context_t, Reg_t, std::is_same<
-              typename Context_t::Register,
+              typename std::remove_const<typename Context_t::Register>::type,
               Reg_t>::value>;
 
-      _get_impl(Context_t &context)
+      explicit _get_impl(Context_t &context)
         : Base(context) {};
 
+      const Reg_t &get() const {
+        return Base::get();
+      }
       Reg_t &get() {
         return Base::get();
       }
@@ -103,9 +115,40 @@ namespace reg {
     template <typename F>
     void for_each(F) {};
 
+    template <typename F>
+    void for_each(F) const {};
+
+    template <typename Reg_t>
+    const Reg_t &get() const {
+      _get_error_impl<Reg_t> x;
+    }
+    template <typename Reg_t>
+    Reg_t &get() {
+      _get_error_impl<Reg_t> x;
+    }
+
     template <typename Reg_t>
     static constexpr auto offset_of =
       _offset_of_error_impl<Reg_t>::offset;
+
+    static bool is_valid_id(size_t id) {
+      return false;
+    }
+
+    template <typename FoundFn, typename NotFoundFn>
+    void find_by_id(size_t, FoundFn, NotFoundFn nff) const {
+      nff();
+    }
+
+    template <typename FoundFn, typename NotFoundFn>
+    void find_by_id(size_t, FoundFn, NotFoundFn nff) {
+      nff();
+    }
+
+    template <typename FoundFn, typename NotFoundFn>
+    static void find_metadata_by_id(size_t, FoundFn, NotFoundFn nff) {
+      nff();
+    }
   };
 
   template <size_t _base, typename Register_t, typename... Registers_t>
@@ -130,8 +173,16 @@ namespace reg {
           Registers_t...>;
     using Register = Register_t;
 
+    const Register_t &_get() const {
+      return _register;
+    }
     Register_t &_get() {
       return _register;
+    }
+
+    template <typename Reg_t>
+    const Reg_t &_get_next() const {
+      return Next::template get<Reg_t>();
     }
     template <typename Reg_t>
     Reg_t &_get_next() {
@@ -139,48 +190,93 @@ namespace reg {
     }
 
   public:
+    _RegisterContext() {
+      _register.clear();
+    }
+
     static constexpr auto base = _base;
 
     struct RegisterMetadataReference {
+      const size_t &width;
       const size_t &offset;
       const decltype(Register_t::name) &name;
       const decltype(Register_t::alt_name) &alt_name;
+      const size_t &gcc_id;
     };
 
     template <typename Reg_t>
     static constexpr auto offset_of =
       _offset_of_impl<This, Reg_t>::offset;
 
-    /*
     template <typename Reg_t>
-    Reg_t &get() {
-      if constexpr (std::is_same<Reg_t, Register_t>::value)
-        return _register;
-      else
-        return Next::template get<Reg_t>();
+    static constexpr RegisterMetadataReference metadata_of = {
+      sizeof(typename Reg_t::Value),
+      offset_of<Reg_t>,
+      Reg_t::name,
+      Reg_t::alt_name,
+      Reg_t::gcc_id
     };
-    */
 
+    template <typename Reg_t>
+    const Reg_t &get() const {
+      const _get_impl<const This, Reg_t> getter(*this);
+      return getter.get();
+    };
     template <typename Reg_t>
     Reg_t &get() {
       return _get_impl<This, Reg_t>(*this).get();
     };
 
     template <typename F>
-    void for_each(F f) {
-      RegisterMetadataReference metadata = {
-        offset_of<Register_t>,
-        Register_t::name,
-        Register_t::alt_name,
-      };
-
-      f(metadata, _register);
-
+    void for_each(F f) const {
+      f(metadata_of<Register_t>, _register);
       Next::template for_each(f);
     };
 
+    template <typename F>
+    void for_each(F f) {
+      f(metadata_of<Register_t>, _register);
+      Next::template for_each(f);
+    };
+
+    static bool is_valid_id(size_t id) {
+      return (id == 0)
+        ? true
+        : Next::is_valid_id(id-1);
+    }
+
+    static std::string get_name_by_id(size_t id) {
+      return (id == 0)
+        ? std::string(Register_t::name)
+        : Next::get_name_by_id(id-1);
+    }
+
+    template <typename FoundFn, typename NotFoundFn>
+    static void find_metadata_by_id(size_t id, FoundFn ff, NotFoundFn nff) {
+      if (id == 0)
+        ff(metadata_of<Register_t>);
+      else
+        Next::find_metadata_by_id(id-1, ff, nff);
+    }
+
+    template <typename FoundFn, typename NotFoundFn>
+    void find_by_id(size_t id, FoundFn ff, NotFoundFn nff) const {
+      if (id == 0)
+        ff(metadata_of<Register_t>, _register);
+      else
+        Next::find_by_id(id-1, ff, nff);
+    }
+
+    template <typename FoundFn, typename NotFoundFn>
+    void find_by_id(size_t id, FoundFn ff, NotFoundFn nff) {
+      if (id == 0)
+        ff(metadata_of<Register_t>, _register);
+      else
+        Next::find_by_id(id-1, ff, nff);
+    }
+
     void clear() {
-      for_each([](const auto &md, auto &reg) {
+      for_each([](const auto&, auto &reg) {
         reg.clear();
       });
     }

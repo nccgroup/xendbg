@@ -19,6 +19,8 @@
 #include "GDBStub.hpp"
 #include "../../Util/overloaded.hpp"
 
+using reg::x86_32::RegistersX86_32;
+using reg::x86_64::RegistersX86_64;
 using xd::dbg::gdbstub::GDBPacketIO;
 using xd::dbg::gdbstub::GDBStub;
 using xd::util::overloaded;
@@ -71,8 +73,17 @@ void GDBStub::run(Debugger &dbg) {
         },
         [&io](const pkt::QuerySupportedRequest &req) {
           io.write_packet(pkt::QuerySupportedResponse({
-            "QStartNoAckMode+"
+            "PacketSize=20000",
+            "QStartNoAckMode+",
+            "QThreadSuffixSupported+",
+            "QListThreadsInStopReplySupported+",
           }));
+        },
+        [&io](const pkt::QueryThreadSuffixSupportedRequest &req) {
+          io.write_packet(pkt::OKResponse());
+        },
+        [&io](const pkt::QueryListThreadsInStopReplySupportedRequest &req) {
+          io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::QueryHostInfoRequest &req) {
           const auto domain = dbg.get_current_domain();
@@ -85,21 +96,19 @@ void GDBStub::run(Debugger &dbg) {
           const auto word_size = dbg.get_current_domain()->get_word_size();
 
           if (word_size == sizeof(uint64_t)) {
-            if (xen::Registers64::is_valid_id(id)) {
-              const auto name = xen::Registers64::get_name_by_id(id);
+            RegistersX86_64::find_metadata_by_id(id, [&io, id](const auto &md) {
               io.write_packet(pkt::QueryRegisterInfoResponse(
-                    name, (id < 0x12 ? 64 : 32), id, id));
-            } else {
-              io.write_packet(pkt::ErrorResponse(0x45));
-            }
+                    md.name, 8*md.width, md.offset, md.gcc_id));
+              }, [&io]() {
+                io.write_packet(pkt::ErrorResponse(0x45));
+              });
           } else if (word_size == sizeof(uint32_t)) {
-            if (xen::Registers32::is_valid_id(id)) {
-              const auto name = xen::Registers32::get_name_by_id(id);
+            RegistersX86_32::find_metadata_by_id(id, [&io, id](const auto &md) {
               io.write_packet(pkt::QueryRegisterInfoResponse(
-                    name, 32, id, id));
-            } else {
-              io.write_packet(pkt::ErrorResponse(0x45));
-            }
+                    md.name, 8*md.width, md.offset, md.gcc_id));
+              }, [&io]() {
+                io.write_packet(pkt::ErrorResponse(0x45));
+              });
           } else {
             throw std::runtime_error("Unsupported word size!");
           }
@@ -120,40 +129,61 @@ void GDBStub::run(Debugger &dbg) {
         },
         [&io](const pkt::StopReasonRequest &req) {
           //io.write_packet(pkt::OKResponse());
-          io.write_packet(pkt::StopReasonSignalResponse(0x13));
+          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1)); // TODO
         },
         [&io](const pkt::SetThreadRequest &req) {
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::RegisterReadRequest &req) {
           const auto id = req.get_register_id();
-          const auto value = dbg.get_current_domain()->read_register(id);
-          io.write_packet(pkt::RegisterReadResponse(value));
+          const auto thread_id = req.get_thread_id();
+          const auto regs = dbg.get_current_domain()->get_cpu_context(thread_id-1);
+
+          std::visit(util::overloaded {
+            [&](const auto &regs) {
+              regs.find_by_id(id, [&io](const auto& md, const auto &reg) {
+                io.write_packet(pkt::RegisterReadResponse(reg));
+              }, [&io]() {
+                io.write_packet(pkt::ErrorResponse(0x45)); // TODO
+              });
+            }
+          }, regs);
         },
         [&io, &dbg](const pkt::RegisterWriteRequest &req) {
           const auto id = req.get_register_id();
           const auto value = req.get_value();
-          dbg.get_current_domain()->write_register(id, value);
-          io.write_packet(pkt::RegisterReadResponse(value));
-        },
-        [&io, &dbg](const pkt::GeneralRegistersBatchReadRequest &req) {
-          const auto regs = dbg.get_current_domain()->get_cpu_context();
+
+          auto regs = dbg.get_current_domain()->get_cpu_context();
           std::visit(util::overloaded {
-            [&io](const xen::Registers32 &regs) {
-              GDBRegisters32 gdb_regs;
-              gdb_regs.values = convert_gp_registers_32(regs, gdb_regs.values);
-              memset(&gdb_regs.flags, 0xFF, sizeof(gdb_regs.flags));
-              io.write_packet(pkt::GeneralRegistersBatchReadResponse(gdb_regs));
-            },
-            [&io](const xen::Registers64 &regs) {
-              GDBRegisters64 gdb_regs;
-              gdb_regs.values = convert_gp_registers_64(regs, gdb_regs.values);
-              memset(&gdb_regs.flags, 0xFF, sizeof(gdb_regs.flags));
-              io.write_packet(pkt::GeneralRegistersBatchReadResponse(gdb_regs));
+            [&](auto &regs) {
+              regs.find_by_id(id, [&value](const auto&, auto &reg) {
+                reg = value;
+              }, [&io]() {
+                io.write_packet(pkt::ErrorResponse(0x45)); // TODO
+              });
             }
           }, regs);
+          dbg.get_current_domain()->set_cpu_context(regs);
+          io.write_packet(pkt::OKResponse());
+        },
+        [&io, &dbg](const pkt::GeneralRegistersBatchReadRequest &req) {
+          //TODO:regs
+          /*
+          const auto regs = dbg.get_current_domain()->get_cpu_context();
+          std::visit(util::overloaded {
+            [&io](const RegistersX86_32 &regs) {
+              io.write_packet(pkt::GeneralRegistersBatchReadResponse(regs));
+            },
+            [&io](const RegistersX86_64 &regs) {
+              io.write_packet(pkt::GeneralRegistersBatchReadResponse(regs));
+            }
+          }, regs);
+          */
+          io.write_packet(pkt::NotSupportedResponse());
         },
         [&io, &dbg](const pkt::GeneralRegistersBatchWriteRequest &req) {
+          //TODO:regs
+          /*
           const auto orig_regs = dbg.get_current_domain()->get_cpu_context();
           const auto req_regs = req.get_registers();
 
@@ -172,6 +202,7 @@ void GDBStub::run(Debugger &dbg) {
               dbg.get_current_domain()->set_cpu_context(new_regs);
             }
           }, orig_regs);
+          */
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::MemoryReadRequest &req) {
@@ -280,11 +311,11 @@ int GDBStub::tcp_socket_accept(int sock_fd) {
     close(sock_fd);
     throw std::runtime_error("Failed to accept!");
   }
+  close(sock_fd);
 
   // Instruct TCP not to delay small packets. This improves interactivity.
   tmp = 1;
   setsockopt(remote_fd, IPPROTO_TCP, TCP_NODELAY, (char*)&tmp, sizeof(tmp));
-  close(sock_fd);
 
   // Don't exit automatically when the remote side does
   signal(SIGPIPE, SIG_IGN);

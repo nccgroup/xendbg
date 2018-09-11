@@ -40,8 +40,7 @@ add_executable(xendbg main.cpp Parser/Parser.cpp
   REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
   REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
   Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp
-  Debugger/Debugger.cpp Debugger/Debugger.hpp Debugger/DebuggerREPL.cpp
-  Debugger/DebuggerREPL.hpp Parser/Token/String.hpp Xen/Registers.cpp
+  Debugger/Debugger.cpp Debugger/Debugger.hpp Parser/Token/String.hpp Xen/Registers.cpp
   REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp
   Parser/Expression/Expression.hpp Debugger/GDBStub/GDBStub.cpp
   Debugger/GDBStub/GDBStub.hpp Debugger/GDBStub/GDBPacketIO.cpp

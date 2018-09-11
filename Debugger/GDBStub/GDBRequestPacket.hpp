@@ -232,6 +232,9 @@ namespace xd::dbg::gdbstub::pkt {
     std::vector<std::string> _features;
   };
 
+  DECLARE_SIMPLE_REQUEST(QueryThreadSuffixSupportedRequest, "QThreadSuffixSupported");
+  DECLARE_SIMPLE_REQUEST(QueryListThreadsInStopReplySupportedRequest, "QListThreadsInStopReply");
+
   class RestartRequest : public GDBRequestPacketBase {
   public:
     RestartRequest(const std::string &data)
@@ -336,13 +339,22 @@ namespace xd::dbg::gdbstub::pkt {
     {
       skip_space();
       _register_id = read_hex_number();
+      if (check_char(';')) {
+        expect_string("thread:");
+        _thread_id = read_hex_number();
+        expect_char(';');
+      } else {
+        _thread_id = (size_t)-1;
+      }
       expect_end();
     };
 
     uint16_t get_register_id() const { return _register_id; };
+    size_t get_thread_id() const { return _thread_id; };
 
   private:
     uint16_t _register_id;
+    size_t _thread_id;
   };
 
   class RegisterWriteRequest : public GDBRequestPacketBase {
@@ -520,6 +532,8 @@ namespace xd::dbg::gdbstub::pkt {
   using GDBRequestPacket = std::variant<
     StartNoAckModeRequest,
     QuerySupportedRequest,
+    QueryThreadSuffixSupportedRequest,
+    QueryListThreadsInStopReplySupportedRequest,
     QueryCurrentThreadIDRequest,
     QueryThreadInfoStartRequest,
     QueryThreadInfoContinuingRequest,

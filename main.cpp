@@ -1,3 +1,4 @@
+/*
 #include <iostream>
 
 #include "Registers/RegistersX86_64.hpp"
@@ -7,10 +8,9 @@ struct X;
 
 int main() {
   using namespace reg::x86_64;
-  RegistersX86_64 regs;
 
-  regs.clear();
-  regs.get<rip>().set64(0xf00dbead00000000);
+  RegistersX86_64 regs;
+  regs.get<rip>().set64(0xfeedbead00000000);
   regs.get<rip>().set32(0xdead0000);
   regs.get<rip>().set16(0xbe00);
   regs.get<rip>().set8l(0xef);
@@ -22,8 +22,8 @@ int main() {
     std::cout << md.name << "\t" << md.offset << "\t" << reg << std::endl;
   });
 }
+*/
 
-/*
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -32,7 +32,7 @@ int main() {
 
 #include "Debugger/Debugger.hpp"
 #include "Debugger/GDBStub/GDBStub.hpp"
-#include "Debugger/DebuggerREPL.hpp"
+//#include "Debugger/DebuggerREPL.hpp"
 #include "Parser/Parser.hpp"
 #include "REPL/Command/MakeCommand.hpp"
 #include "REPL/Command/Argument.hpp"
@@ -43,7 +43,7 @@ int main() {
 #include "Xen/XenStore.hpp"
 
 using xd::dbg::Debugger;
-using xd::dbg::DebuggerREPL;
+//using xd::dbg::DebuggerREPL;
 using xd::dbg::gdbstub::GDBStub;
 using xd::repl::cmd::make_command;
 using xd::repl::cmd::Argument;
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 
   GDBStub stub(std::stoi(argv[1]));
   stub.run(dbg);
-  */
+}
 
   /*
   const auto cmdline_str = stringify_args(argc, argv);
@@ -103,8 +103,9 @@ int main(int argc, char **argv) {
 
   DebuggerREPL dbg_repl;
   dbg_repl.run();
+
+}
   */
-//}
 
 /*
 #include <cassert>

@@ -12,7 +12,7 @@
 #include <variant>
 #include <vector>
 
-#include "GDBRegisters.hpp"
+#include "../../Registers/RegistersX86.hpp"
 #include "../../Util/overloaded.hpp"
 
 namespace xd::dbg::gdbstub::pkt {
@@ -134,7 +134,6 @@ namespace xd::dbg::gdbstub::pkt {
         [&ss](const auto& tid) {
           ss << "," << tid;
         });
-      ss << "l";
 
       return ss.str();
     };
@@ -168,7 +167,7 @@ namespace xd::dbg::gdbstub::pkt {
 
   class GeneralRegistersBatchReadResponse : public GDBResponsePacket {
   public:
-    GeneralRegistersBatchReadResponse(GDBRegisters registers)
+    GeneralRegistersBatchReadResponse(reg::RegistersX86 registers)
       : _registers(registers) {}
 
   std::string to_string() const override {
@@ -176,60 +175,15 @@ namespace xd::dbg::gdbstub::pkt {
 
     ss << std::hex << std::setfill('0');
     std::visit(util::overloaded {
-      [this, &ss](const GDBRegisters64& regs) {
-        write_register(ss, regs.values.rax);
-        write_register(ss, regs.values.rbx);
-        write_register(ss, regs.values.rcx);
-        write_register(ss, regs.values.rdx);
-        write_register(ss, regs.values.rsi);
-        write_register(ss, regs.values.rdi);
-        write_register(ss, regs.values.rbp);
-        write_register(ss, regs.values.rsp);
-
-        write_register(ss, regs.values.r8);
-        write_register(ss, regs.values.r9);
-        write_register(ss, regs.values.r10);
-        write_register(ss, regs.values.r11);
-        write_register(ss, regs.values.r12);
-        write_register(ss, regs.values.r13);
-        write_register(ss, regs.values.r14);
-        write_register(ss, regs.values.r15);
-
-        write_register(ss, regs.values.rip);
-
-        // GDB wants this to be 32-bit, for some reason...
-        // Likely because the upper 32 bytes aren't used
-        // TODO: only do this for GDB --- maybe LLDB accepts 64-bit rflags?
-        uint32_t eflags = regs.values.rflags & 0xFFFFFFFF;
-        write_register(ss, eflags);
-
-        write_register(ss, regs.values.cs);
-        write_register(ss, regs.values.ss);
-        write_register(ss, regs.values.ds);
-        write_register(ss, regs.values.es);
-        write_register(ss, regs.values.fs);
-        write_register(ss, regs.values.gs);
+      [&ss](const reg::x86_64::RegistersX86_64& regs) {
+        regs.for_each([&ss](const auto&, const auto &reg) {
+          write_register(ss, reg);
+        });
       },
-      [this, &ss](const GDBRegisters32& regs) {
-        write_register(ss, regs.values.eax);
-        write_register(ss, regs.values.ecx);
-        write_register(ss, regs.values.edx);
-        write_register(ss, regs.values.ebx);
-        write_register(ss, regs.values.esp);
-        write_register(ss, regs.values.ebp);
-        write_register(ss, regs.values.esi);
-        write_register(ss, regs.values.edi);
-
-        write_register(ss, regs.values.eip);
-
-        write_register(ss, regs.values.eflags);
-
-        write_register(ss, regs.values.cs);
-        write_register(ss, regs.values.ss);
-        write_register(ss, regs.values.ds);
-        write_register(ss, regs.values.es);
-        write_register(ss, regs.values.fs);
-        write_register(ss, regs.values.gs);
+      [&ss](const reg::x86_32::RegistersX86_32& regs) {
+        regs.for_each([&ss](const auto&, const auto &reg) {
+          write_register(ss, reg);
+        });
       },
     }, _registers);
 
@@ -237,12 +191,12 @@ namespace xd::dbg::gdbstub::pkt {
   }
 
   template <typename Reg_t>
-  void write_register(std::stringstream &ss, const Reg_t&reg) const {
-    ss << std::setw(2*sizeof(Reg_t)) << reg;
+  static void write_register(std::stringstream &ss, const Reg_t&reg) {
+    ss << std::setw(2*sizeof(typename Reg_t::Value)) << reg;
   }
 
   private:
-      GDBRegisters _registers;
+    reg::RegistersX86 _registers;
   };
 
   class MemoryReadResponse : public GDBResponsePacket {
@@ -268,20 +222,23 @@ namespace xd::dbg::gdbstub::pkt {
 
   class StopReasonSignalResponse : public GDBResponsePacket {
   public:
-    StopReasonSignalResponse(uint8_t signal)
-      : _signal(signal) {};
+    StopReasonSignalResponse(uint8_t signal, size_t thread_id)
+      : _signal(signal), _thread_id(thread_id) {};
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << "T "; // NOTE: requires a space IFF working in ACK mode
+      ss << "T"; // NOTE: requires a space IFF working in ACK mode
       ss << std::hex << std::setfill('0') << std::setw(2);
       ss << (unsigned)_signal;
-      // ss << "thread:1"; // TODO
+      ss << "thread:";
+      ss << _thread_id;
+      ss << ";";
       return ss.str();
     };
 
   private:
     uint8_t _signal;
+    size_t _thread_id;
   };
 
   // See https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt#L756
@@ -313,6 +270,8 @@ namespace xd::dbg::gdbstub::pkt {
     std::string to_string() const override {
       std::stringstream ss;
       add_list_entry(ss, "pid", _pid);
+      add_list_entry(ss, "ptrsize", sizeof(uint64_t));
+      add_list_entry(ss, "endian", "little");     // TODO
       return ss.str();
     };
 
@@ -323,8 +282,8 @@ namespace xd::dbg::gdbstub::pkt {
   class QueryRegisterInfoResponse : public GDBResponsePacket {
   public:
     QueryRegisterInfoResponse(
-        std::string name, unsigned width, unsigned offset,
-          unsigned gcc_register_id)
+        std::string name, size_t width, size_t offset,
+          size_t gcc_register_id)
       : _name(std::move(name)), _width(width), _offset(offset),
         _gcc_register_id(gcc_register_id)
     {};
@@ -337,16 +296,18 @@ namespace xd::dbg::gdbstub::pkt {
       add_list_entry(ss, "encoding", "uint");
       add_list_entry(ss, "format", "hex");
       add_list_entry(ss, "set", "General Purpose Registers");
-      add_list_entry(ss, "gcc", _gcc_register_id);
-      add_list_entry(ss, "dwarf", _gcc_register_id); // TODO
+      if (_gcc_register_id != (size_t)-1) {
+        add_list_entry(ss, "gcc", _gcc_register_id);
+        add_list_entry(ss, "dwarf", _gcc_register_id); // TODO
+      }
       return ss.str();
     };
 
   private:
     std::string _name;
-    unsigned _width;
-    unsigned _offset;
-    unsigned _gcc_register_id;
+    size_t _width;
+    size_t _offset;
+    size_t _gcc_register_id;
   };
 
 }

@@ -6,15 +6,13 @@
 
 #include "Domain.hpp"
 
+using reg::RegistersX86;
 using xd::xen::Domain;
 using xd::xen::DomInfo;
-using xd::xen::Registers;
 using xd::xen::MappedMemory;
 using xd::xen::MemInfo;
 using xd::xen::XenCtrl;
 using xd::xen::XenHandle;
-using xd::xen::get_register;
-using xd::xen::set_register;
 
 Domain::Domain(XenHandle& xen, DomID domid)
     : _xen(xen), _domid(domid)
@@ -90,33 +88,11 @@ MappedMemory Domain::map_memory(Address address, size_t size, int prot) const {
   return _xen.get_xen_foreign_memory().map(*this, address, size, prot);
 }
 
-uint64_t Domain::read_register(const std::string &name, VCPU_ID vcpu_id) {
-  const auto regs = get_cpu_context(vcpu_id);
-  return get_register(regs, name);
-}
-
-uint64_t Domain::read_register(size_t register_id, VCPU_ID vcpu_id) {
-  const auto regs = get_cpu_context(vcpu_id);
-  return get_register(regs, register_id);
-}
-
-void Domain::write_register(const std::string &name, uint64_t value, VCPU_ID vcpu_id) {
-  auto regs = get_cpu_context(vcpu_id);
-  set_register(regs, name, value);
-  set_cpu_context(regs, vcpu_id);
-}
-
-void Domain::write_register(size_t register_id, uint64_t value, VCPU_ID vcpu_id) {
-  auto regs = get_cpu_context(vcpu_id);
-  set_register(regs, register_id, value);
-  set_cpu_context(regs, vcpu_id);
-}
-
-Registers xd::xen::Domain::get_cpu_context(VCPU_ID vcpu_id) const {
+RegistersX86 xd::xen::Domain::get_cpu_context(VCPU_ID vcpu_id) const {
   return _xen.get_xenctrl().get_domain_cpu_context(*this, vcpu_id);
 }
 
-void xd::xen::Domain::set_cpu_context(Registers regs, VCPU_ID vcpu_id) const {
+void xd::xen::Domain::set_cpu_context(RegistersX86 regs, VCPU_ID vcpu_id) const {
   _xen.get_xenctrl().set_domain_cpu_context(*this, regs, vcpu_id);
 }
 

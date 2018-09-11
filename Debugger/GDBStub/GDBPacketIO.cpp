@@ -57,12 +57,12 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
 
     // TODO: Is there a more efficient way to do this?
     _buffer.reserve(_buffer.size() + bytes_read);
-    std::cout << "BUF:  ";
+    //std::cout << "BUF:  ";
     for (auto i = 0; i < bytes_read; ++i) {
-      std::cout << *buffer_ptr;
+      //std::cout << *buffer_ptr;
       _buffer.push_back(*buffer_ptr++);
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     static constexpr char PACKET_BEGIN = '$';
     static constexpr char CHECKSUM_START = '#';
@@ -104,7 +104,7 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
     else
       _buffer.clear();
 
-    std::cout << "REMN: " << std::string(_buffer.begin(), _buffer.end()) << std::endl;
+    //std::cout << "REMN: " << std::string(_buffer.begin(), _buffer.end()) << std::endl;
   }
 
   const auto packet = _raw_packets.front();
@@ -116,7 +116,8 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
 }
 
 void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
-  const uint8_t checksum = std::accumulate(raw_packet.begin(), raw_packet.end(), (uint8_t)0);
+  const uint8_t checksum = std::accumulate(
+      raw_packet.begin(), raw_packet.end(), (uint8_t)0);
 
   std::stringstream ss;
   ss << "$" << raw_packet << "#";
@@ -179,6 +180,10 @@ GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
     case 'Q':
       if (raw_packet == "QStartNoAckMode")
         return pkt::StartNoAckModeRequest(raw_packet);
+      else if (raw_packet == "QThreadSuffixSupported")
+        return pkt::QueryThreadSuffixSupportedRequest(raw_packet);
+      else if (raw_packet == "QListThreadsInStopReply")
+        return pkt::QueryListThreadsInStopReplySupportedRequest(raw_packet);
       break;
     case '?':
       return pkt::StopReasonRequest(raw_packet);

@@ -14,7 +14,7 @@
 #include "BridgeHeaders/xenguest.h"
 
 #include "Common.hpp"
-#include "Registers.hpp"
+#include "../Registers/RegistersX86.hpp"
 
 namespace xd::xen {
 
@@ -32,13 +32,17 @@ namespace xd::xen {
     XenVersion get_xen_version() const;
 
     DomInfo get_domain_info(const Domain &domain) const;
-    Registers get_domain_cpu_context(const Domain &domain, VCPU_ID vcpu_id = 0) const;
-    void set_domain_cpu_context(const Domain &domain, Registers regs, VCPU_ID vcpu_id = 0) const;
+    reg::RegistersX86 get_domain_cpu_context(const Domain &domain,
+        VCPU_ID vcpu_id = 0) const;
+    void set_domain_cpu_context(const Domain &domain,
+        const reg::RegistersX86& regs, VCPU_ID vcpu_id = 0) const;
     WordSize get_domain_word_size(const Domain &domain) const;
     MemInfo map_domain_meminfo(const Domain &domain) const;
 
-    void set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const;
-    void set_domain_single_step(const Domain &domain, bool enable, VCPU_ID vcpu_id) const;
+    void set_domain_debugging(const Domain &domain, bool enable,
+        VCPU_ID vcpu_id) const;
+    void set_domain_single_step(const Domain &domain, bool enable,
+        VCPU_ID vcpu_id) const;
     void pause_domain(const Domain &domain) const;
     void unpause_domain(const Domain &domain) const;
 

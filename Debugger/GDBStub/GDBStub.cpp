@@ -45,12 +45,12 @@ void GDBStub::run(Debugger &dbg) {
 
   // TODO: clean this up
   char ack;
-  const auto bytes_read = read(remote_fd, &ack, sizeof(ack));
+  const auto bytes_read = recv(remote_fd, &ack, sizeof(ack), 0);
   if (bytes_read <= 0)
     std::runtime_error("Didn't get an ack from remote!");
   if (ack != '+')
     std::runtime_error("Unexpected value.");
-  write(remote_fd, &ack, sizeof(ack));
+  //send(remote_fd, &ack, sizeof(ack), 0);
 
   GDBPacketIO io(remote_fd);
 

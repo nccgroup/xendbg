@@ -44,7 +44,7 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
   size_t remaining_space = sizeof(buffer);
 
   while (_raw_packets.empty()) {
-    const auto bytes_read = read(_remote_fd, buffer_ptr, remaining_space);
+    const auto bytes_read = recv(_remote_fd, buffer_ptr, remaining_space, 0);
 
     if (bytes_read == 0)
       throw std::runtime_error("Remote closed!");
@@ -85,12 +85,11 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
       // Otherwise, drop it and notify GDB of the failure
       if (checksum_calculated == checksum) {
         if (_ack_enabled) {
-          std::cout << "ACK" << std::endl;
-          write(_remote_fd, "+", 1);
+          send(_remote_fd, "+", 1, 0);
         }
         _raw_packets.push(RawGDBPacket{contents});
       } else if (_ack_enabled) {
-        write(_remote_fd, "-", 1);
+        send(_remote_fd, "-", 1, 0);
       }
 
       start = std::find(start+1, _buffer.end(), PACKET_BEGIN);
@@ -128,13 +127,13 @@ void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
   std::cout << "SEND: " << ss_str << std::endl;
 
   std::vector<char> data(ss_str.begin(), ss_str.end());
-  data.push_back('\0');
+  //data.push_back('\0');
 
   auto remaining = data.size();
   auto data_ptr = &data[0];
   while (remaining) {
     // TODO: if == 0 then remote has closed, do something
-    auto bytes_written = write(_remote_fd, data_ptr, remaining);
+    auto bytes_written = send(_remote_fd, data_ptr, remaining, 0);
 
     if (bytes_written < 0)
       throw std::runtime_error("Failed to write to remote FD!");

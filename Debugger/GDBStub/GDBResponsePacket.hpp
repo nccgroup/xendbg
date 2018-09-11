@@ -227,12 +227,15 @@ namespace xd::dbg::gdbstub::pkt {
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << "T"; // NOTE: requires a space IFF working in ACK mode
+      ss << "T";
       ss << std::hex << std::setfill('0') << std::setw(2);
       ss << (unsigned)_signal;
       ss << "thread:";
       ss << _thread_id;
-      ss << ";";
+      ss << ";name:test";
+      ss << ";threads:";
+      ss << _thread_id;
+      ss << ";reason:signal;";
       return ss.str();
     };
 
@@ -250,10 +253,11 @@ namespace xd::dbg::gdbstub::pkt {
 
     std::string to_string() const override {
       std::stringstream ss;
-      add_list_entry(ss, "ostype", "linux");   // TODO
-      add_list_entry(ss, "endian", "little");     // TODO
-      add_list_entry(ss, "ptrsize", _word_size);
-      add_list_entry(ss, "hostname", _hostname);
+      //add_list_entry(ss, "ostype", "linux");   // TODO
+      //add_list_entry(ss, "endian", "little");     // TODO
+      //add_list_entry(ss, "ptrsize", _word_size);
+      //add_list_entry(ss, "hostname", _hostname);
+      ss << "triple:7838365f36342d70632d6c696e75782d676e75;ptrsize:8;distribution_id:7562756e7475;watchpoint_exceptions_received:after;endian:little;os_version:4.15.0;os_build:342e31352e302d33332d67656e65726963;os_kernel:2333362d5562756e747520534d5020576564204175672031352031363a30303a3035205554432032303138;hostname:7468696e6b706164;";
       return ss.str();
     };
 
@@ -297,7 +301,7 @@ namespace xd::dbg::gdbstub::pkt {
       add_list_entry(ss, "format", "hex");
       add_list_entry(ss, "set", "General Purpose Registers");
       if (_gcc_register_id != (size_t)-1) {
-        add_list_entry(ss, "gcc", _gcc_register_id);
+        add_list_entry(ss, "ehframe", _gcc_register_id);
         add_list_entry(ss, "dwarf", _gcc_register_id); // TODO
       }
       return ss.str();

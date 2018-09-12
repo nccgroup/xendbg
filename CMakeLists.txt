@@ -50,4 +50,4 @@ add_executable(xendbg main.cpp Parser/Parser.cpp
   Registers/RegistersX86.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore
-  xenlight xlutil capstone)
+  xenlight xlutil capstone pthread)

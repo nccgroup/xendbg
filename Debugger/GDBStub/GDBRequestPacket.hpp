@@ -523,8 +523,8 @@ namespace xd::dbg::gdbstub::pkt {
   DECLARE_SIGNAL_REQUESTS(ContinueRequest, 'c', ContinueSignalRequest, 'C');
   DECLARE_SIGNAL_REQUESTS(StepRequest, 's', StepSignalRequest, 'S');
 
-  DECLARE_BREAKPOINT_REQUEST(BreakpointInsertRequest, 'z');
-  DECLARE_BREAKPOINT_REQUEST(BreakpointRemoveRequest, 'Z');
+  DECLARE_BREAKPOINT_REQUEST(BreakpointInsertRequest, 'Z');
+  DECLARE_BREAKPOINT_REQUEST(BreakpointRemoveRequest, 'z');
 
   DECLARE_SIMPLE_REQUEST(QueryHostInfoRequest, "qHostInfo");
   DECLARE_SIMPLE_REQUEST(QueryProcessInfoRequest, "qProcessInfo");

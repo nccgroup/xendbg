@@ -208,9 +208,9 @@ GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
       return pkt::StepRequest(raw_packet);
     case 'S':
       return pkt::StepSignalRequest(raw_packet);
-    case 'z':
-      return pkt::BreakpointInsertRequest(raw_packet);
     case 'Z':
+      return pkt::BreakpointInsertRequest(raw_packet);
+    case 'z':
       return pkt::BreakpointRemoveRequest(raw_packet);
     case 'R':
       return pkt::RestartRequest(raw_packet);

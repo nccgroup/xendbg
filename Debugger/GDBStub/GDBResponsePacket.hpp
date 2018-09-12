@@ -209,7 +209,7 @@ namespace xd::dbg::gdbstub::pkt {
 
       ss << std::hex << std::setfill('0');
       std::for_each(_data.begin(), _data.end(),
-        [&ss](const auto &ch) {
+        [&ss](const unsigned char &ch) {
           ss << std::setw(2) << (unsigned)ch;
         });
 

@@ -356,8 +356,11 @@ std::pair<std::optional<Address>, std::optional<Address>>
 void Debugger::insert_infinite_loop(xen::Address address) {
   if (!_domain)
     throw NoGuestAttachedException();
-  if (_infinite_loops.count(address))
+  if (_infinite_loops.count(address)) {
+    std::cout << "[!]: Tried to insert infinite loop where one already exists." << std::endl;
     return; // TODO?
+  }
+  std::cout << "Inserting infinite loop." << std::endl;
 
   const auto mem_handle = _domain->map_memory(address, 2, PROT_READ | PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
@@ -371,6 +374,8 @@ void Debugger::insert_infinite_loop(xen::Address address) {
 void Debugger::remove_infinite_loop(xen::Address address) {
   if (!_infinite_loops.count(address))
     throw NoSuchInfiniteLoopException(address);
+
+  std::cout << "Removing infinite loop." << std::endl;
 
   const auto mem_handle = _domain->map_memory(address, 2, PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();

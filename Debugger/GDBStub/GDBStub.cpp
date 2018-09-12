@@ -12,6 +12,7 @@
 #include <netinet/tcp.h>
 #include <numeric>
 #include <signal.h>
+#include <thread>
 #include <unistd.h>
 
 #include "../Debugger.hpp"
@@ -230,17 +231,17 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::ContinueRequest &req) {
-          dbg.continue_until_infinite_loop();
           io.write_packet(pkt::OKResponse());
+          dbg.continue_until_infinite_loop();
+          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1));
         },
         [&io, &dbg](const pkt::ContinueSignalRequest &req) {
-          // TODO
           dbg.continue_until_infinite_loop();
-          io.write_packet(pkt::OKResponse());
+          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1));
         },
         [&io, &dbg](const pkt::StepRequest &req) {
           dbg.single_step();
-          io.write_packet(pkt::OKResponse());
+          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1));
         },
         [&io, &dbg](const pkt::StepSignalRequest &req) {
           // TODO
@@ -254,7 +255,7 @@ void GDBStub::run(Debugger &dbg) {
         },
         [&io, &dbg](const pkt::BreakpointRemoveRequest &req) {
           const auto address = req.get_address();
-          dbg.insert_infinite_loop(address);
+          dbg.remove_infinite_loop(address);
           io.write_packet(pkt::OKResponse());
         },
         [&io](const pkt::RestartRequest &req) {

@@ -24,8 +24,8 @@ using xd::xen::XenHandle;
 
 Domain& Debugger::attach(DomID domid) {
   _current_vcpu = 0;
-  _next_breakpoint_id = 0;
   _domain.emplace(_xen, domid);
+  _domain->pause();
   _domain->set_debugging(true);
 
   const auto mode =
@@ -40,8 +40,8 @@ Domain& Debugger::attach(DomID domid) {
 }
 
 void Debugger::detach() {
-  for (const auto &bp : _breakpoints) {
-    delete_breakpoint(bp.first);
+  for (const auto &il : _infinite_loops) {
+    remove_infinite_loop(il.first);
   }
 
   cs_close(&_capstone);
@@ -82,6 +82,7 @@ void Debugger::load_symbols_from_file(const std::string &name) {
   }
 }
 
+/*
 size_t Debugger::create_breakpoint(xen::Address address) {
   _domain->pause();
   const auto bp = insert_infinite_loop(address);
@@ -121,6 +122,26 @@ Debugger::Breakpoint Debugger::continue_until_breakpoint() {
 
   return *bp;
 }
+*/
+
+Address Debugger::continue_until_infinite_loop() {
+  if (!_domain)
+    throw NoGuestAttachedException();
+
+  // Single step first to move beyond the current breakpoint;
+  // it will be removed during the step and replaced automatically.
+  if (check_infinite_loop_hit())
+    single_step();
+
+  _domain->unpause();
+
+  std::optional<Address> address;
+  while (!(address = check_infinite_loop_hit()));
+
+  _domain->pause();
+
+  return *address;
+}
 
 void Debugger::single_step() {
   if (!_domain)
@@ -129,17 +150,19 @@ void Debugger::single_step() {
   _domain->pause();
 
   // If there's already a breakpoint here, remove it temporarily so we can continue
-  std::optional<Breakpoint> bp_orig;
-  if ((bp_orig = check_breakpoint_hit()))
-    remove_infinite_loop(*bp_orig);
+  std::optional<Address> orig_addr;
+  if ((orig_addr = check_infinite_loop_hit()))
+    remove_infinite_loop(*orig_addr);
 
   // For conditional branches, we need to insert EBFEs at both potential locations.
   const auto [dest1_addr, dest2_addr] = get_address_of_next_instruction();
-  Breakpoint dest1_bp, dest2_bp;
-  if (dest1_addr)
-    dest1_bp = insert_infinite_loop(dest1_addr);
-  if (dest2_addr)
-    dest2_bp = insert_infinite_loop(dest2_addr);
+  bool dest1_had_il = dest1_addr && !!_infinite_loops.count(*dest1_addr);
+  bool dest2_had_il = dest2_addr && !!_infinite_loops.count(*dest2_addr);
+
+  if (!dest1_had_il)
+    insert_infinite_loop(*dest1_addr);
+  if (!dest2_had_il)
+    insert_infinite_loop(*dest2_addr);
 
   _domain->unpause();
   while (!(check_infinite_loop_hit()));
@@ -147,14 +170,14 @@ void Debugger::single_step() {
 
   // Remove each of our two infinite loops unless there is a
   // *manually-inserted* breakpoint at the corresponding address.
-  if (dest1_addr && !get_breakpoint_by_address(dest1_addr))
-    remove_infinite_loop(dest1_bp);
-  if (dest2_addr && !get_breakpoint_by_address(dest2_addr))
-    remove_infinite_loop(dest2_bp);
+  if (dest1_addr && !dest1_had_il)
+    remove_infinite_loop(*dest1_addr);
+  if (dest2_addr && !dest2_had_il)
+    remove_infinite_loop(*dest2_addr);
 
   // If there was a BP at the instruction we started at, put it back
-  if (bp_orig)
-    insert_infinite_loop(bp_orig->address);
+  if (orig_addr)
+    insert_infinite_loop(*orig_addr);
 }
 
 std::vector<Domain> Debugger::get_guest_domains() {
@@ -191,6 +214,7 @@ void Debugger::delete_var(const std::string &name) {
   _variables.erase(name);
 }
 
+/*
 std::optional<Debugger::Breakpoint> Debugger::get_breakpoint_by_address(
     Address address)
 {
@@ -212,8 +236,9 @@ std::optional<Debugger::Breakpoint> Debugger::check_breakpoint_hit() {
 
   return get_breakpoint_by_address(address);
 }
+*/
 
-xd::xen::Address Debugger::check_infinite_loop_hit() {
+std::optional<Address> Debugger::check_infinite_loop_hit() {
   const auto address = std::visit(util::overloaded {
     [](const reg::x86_32::RegistersX86_32 regs) {
       return (uint64_t)regs.get<reg::x86_32::eip>();
@@ -226,10 +251,13 @@ xd::xen::Address Debugger::check_infinite_loop_hit() {
   const auto mem_handle = _domain->map_memory(address, 2, PROT_READ);
   const auto mem = (uint16_t*)mem_handle.get();
 
-  return (*mem == X86_INFINITE_LOOP) ? address : 0;
+  if (*mem == X86_INFINITE_LOOP && _infinite_loops.count(address))
+    return address;
+  return std::nullopt;
 }
-
-std::pair<Address, Address> Debugger::get_address_of_next_instruction() {
+std::pair<std::optional<Address>, std::optional<Address>>
+  Debugger::get_address_of_next_instruction()
+{
   const auto read_eip_rip = [this]() {
     return std::visit(util::overloaded {
     [](const reg::x86_32::RegistersX86_32 regs) {
@@ -284,8 +312,6 @@ std::pair<Address, Address> Debugger::get_address_of_next_instruction() {
   auto cur_instr = instrs[0];
   const auto next_instr_address = instrs[1].address;
 
-  std::cout << std::showbase << std::hex << cur_instr.address << ": " << cur_instr.mnemonic << " " << cur_instr.op_str << std::endl;
-
   // JMP and CALL
   if (cs_insn_group(_capstone, &cur_instr, X86_GRP_JUMP) ||
       cs_insn_group(_capstone, &cur_instr, X86_GRP_CALL))
@@ -307,7 +333,7 @@ std::pair<Address, Address> Debugger::get_address_of_next_instruction() {
       throw std::runtime_error("JMP/CALL(MEM) not supported!");
     } else if (op.type == X86_OP_REG) {
       const auto reg_value = read_reg_cs(op.reg);
-      return std::make_pair(0, reg_value);
+      return std::make_pair(std::nullopt, reg_value);
     } else {
       throw std::runtime_error("JMP/CALL operand type not supported?");
     }
@@ -318,33 +344,37 @@ std::pair<Address, Address> Debugger::get_address_of_next_instruction() {
              cs_insn_group(_capstone, &cur_instr, X86_GRP_IRET))
   {
     const auto ret_dest = read_word(read_esp_rsp());
-    return std::make_pair(0, ret_dest);
+    return std::make_pair(std::nullopt, ret_dest);
   }
 
   // Any other instructions
   else {
-    return std::make_pair(next_instr_address, 0);
+    return std::make_pair(next_instr_address, std::nullopt);
   }
 }
 
-Debugger::Breakpoint Debugger::insert_infinite_loop(xen::Address address) {
+void Debugger::insert_infinite_loop(xen::Address address) {
   if (!_domain)
     throw NoGuestAttachedException();
+  if (_infinite_loops.count(address))
+    return; // TODO?
 
   const auto mem_handle = _domain->map_memory(address, 2, PROT_READ | PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
 
-  const auto id = _next_breakpoint_id++;
   const auto orig_bytes = *mem;
 
+  _infinite_loops[address] = orig_bytes;
   *mem = X86_INFINITE_LOOP;
-
-  return Breakpoint{ id, address, orig_bytes };
 }
 
-void Debugger::remove_infinite_loop(const Breakpoint &bp) {
-  const auto mem_handle = _domain->map_memory(bp.address, 2, PROT_WRITE);
+void Debugger::remove_infinite_loop(xen::Address address) {
+  if (!_infinite_loops.count(address))
+    throw NoSuchInfiniteLoopException(address);
+
+  const auto mem_handle = _domain->map_memory(address, 2, PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
 
-  *mem = bp.orig_bytes;
+  const auto orig_bytes = _infinite_loops[address];
+  *mem = orig_bytes;
 }

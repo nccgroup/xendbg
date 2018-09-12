@@ -230,12 +230,12 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::ContinueRequest &req) {
-          dbg.continue_until_breakpoint();
+          dbg.continue_until_infinite_loop();
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::ContinueSignalRequest &req) {
           // TODO
-          dbg.continue_until_breakpoint();
+          dbg.continue_until_infinite_loop();
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::StepRequest &req) {
@@ -247,11 +247,15 @@ void GDBStub::run(Debugger &dbg) {
           dbg.single_step();
           io.write_packet(pkt::OKResponse());
         },
-        [&io](const pkt::BreakpointInsertRequest &req) {
-          io.write_packet(pkt::NotSupportedResponse());
+        [&io, &dbg](const pkt::BreakpointInsertRequest &req) {
+          const auto address = req.get_address();
+          dbg.insert_infinite_loop(address);
+          io.write_packet(pkt::OKResponse());
         },
-        [&io](const pkt::BreakpointRemoveRequest &req) {
-          io.write_packet(pkt::NotSupportedResponse());
+        [&io, &dbg](const pkt::BreakpointRemoveRequest &req) {
+          const auto address = req.get_address();
+          dbg.insert_infinite_loop(address);
+          io.write_packet(pkt::OKResponse());
         },
         [&io](const pkt::RestartRequest &req) {
           io.write_packet(pkt::NotSupportedResponse());
@@ -267,6 +271,10 @@ void GDBStub::run(Debugger &dbg) {
       std::cout << "[!] Unrecognized packet: ";
       std::cout << e.what() << std::endl;
       io.write_packet(pkt::NotSupportedResponse());
+    } catch (const xen::XenException &e) {
+      std::cout << "[!] XenException:" << std::endl;
+      std::cout << e.what() << std::endl;
+      io.write_packet(pkt::ErrorResponse(0x45));
     }
   }
 }

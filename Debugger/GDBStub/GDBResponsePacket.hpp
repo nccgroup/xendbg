@@ -210,7 +210,7 @@ namespace xd::dbg::gdbstub::pkt {
       ss << std::hex << std::setfill('0');
       std::for_each(_data.begin(), _data.end(),
         [&ss](const auto &ch) {
-          ss << std::setw(2) << ch;
+          ss << std::setw(2) << (unsigned)ch;
         });
 
       return ss.str();
@@ -257,7 +257,7 @@ namespace xd::dbg::gdbstub::pkt {
       //add_list_entry(ss, "endian", "little");     // TODO
       //add_list_entry(ss, "ptrsize", _word_size);
       //add_list_entry(ss, "hostname", _hostname);
-      ss << "triple:7838365f36342d70632d6c696e75782d676e75;ptrsize:8;distribution_id:7562756e7475;watchpoint_exceptions_received:after;endian:little;os_version:4.15.0;os_build:342e31352e302d33332d67656e65726963;os_kernel:2333362d5562756e747520534d5020576564204175672031352031363a30303a3035205554432032303138;hostname:7468696e6b706164;";
+      ss << "triple:7838365f36342d70632d6c696e75782d676e75;ptrsize:8;endian:little;hostname:7468696e6b706164;";
       return ss.str();
     };
 

@@ -46,7 +46,7 @@
   class name : public GDBRequestPacketBase { \
   public: \
     name(const std::string &data) \
-      : GDBRequestPacketBase(data, 'z') \
+      : GDBRequestPacketBase(data, ch) \
     { \
       skip_space(); \
       _type = read_hex_number(); \

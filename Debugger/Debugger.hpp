@@ -20,6 +20,7 @@ namespace xd::dbg {
   class NoGuestAttachedException : public std::exception {
   };
 
+  /*
   class NoSuchBreakpointException : public std::exception{
   public:
     NoSuchBreakpointException(const size_t id)
@@ -29,6 +30,18 @@ namespace xd::dbg {
 
   private:
     size_t _id;
+  };
+  */
+
+  class NoSuchInfiniteLoopException : public std::exception{
+  public:
+    NoSuchInfiniteLoopException(const xen::Address address)
+      : _address(address) {};
+
+    xen::Address get_address() const { return _address; };
+
+  private:
+    xen::Address _address;
   };
 
   class NoSuchVariableException : public std::runtime_error {
@@ -48,14 +61,8 @@ namespace xd::dbg {
     struct Symbol {
       uint64_t address;
     };
-    struct Breakpoint {
-      size_t id;
-      uint64_t address;
-      uint16_t orig_bytes;
-    };
 
-
-    using BreakpointMap = std::unordered_map<size_t, Breakpoint>;
+    using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
     using SymbolMap = std::unordered_map<std::string, Symbol>;
     using VarMap = std::unordered_map<std::string, uint64_t>;
 
@@ -65,9 +72,7 @@ namespace xd::dbg {
 
     void load_symbols_from_file(const std::string &name);
 
-    size_t create_breakpoint(xen::Address address);
-    void delete_breakpoint(size_t id);
-    Breakpoint continue_until_breakpoint();
+    xen::Address continue_until_infinite_loop();
     void single_step();
 
     xen::XenHandle &get_xen_handle() { return _xen; };
@@ -75,7 +80,6 @@ namespace xd::dbg {
     std::vector<xen::Domain> get_guest_domains();
     const Symbol &lookup_symbol(const std::string &name);
 
-    const BreakpointMap get_breakpoints() { return _breakpoints; }
     const SymbolMap& get_symbols() { return _symbols; };
     const VarMap& get_vars() { return _variables; };
 
@@ -83,13 +87,12 @@ namespace xd::dbg {
     void set_var(const std::string &name, uint64_t value);
     void delete_var(const std::string &name);
 
+    void insert_infinite_loop(xen::Address address);
+    void remove_infinite_loop(xen::Address address);
   private:
-    Breakpoint insert_infinite_loop(xen::Address address);
-    void remove_infinite_loop(const Breakpoint &bp);
-    std::optional<Breakpoint> get_breakpoint_by_address(xen::Address address);
-    xen::Address check_infinite_loop_hit();
-    std::optional<Breakpoint> check_breakpoint_hit();
-    std::pair<xen::Address, xen::Address> get_address_of_next_instruction();
+    std::optional<xen::Address> check_infinite_loop_hit();
+    std::pair<std::optional<xen::Address>,
+      std::optional<xen::Address>> get_address_of_next_instruction();
 
   private:
     csh _capstone;
@@ -97,9 +100,8 @@ namespace xd::dbg {
     xen::XenHandle _xen;
     std::optional<xen::Domain> _domain;
 
-    size_t _next_breakpoint_id;
     SymbolMap _symbols;
-    BreakpointMap _breakpoints;
+    InfiniteLoopMap _infinite_loops;
     VarMap _variables;
   };
 

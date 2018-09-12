@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 
 namespace reg {
 
@@ -14,19 +15,13 @@ namespace reg {
   class _Register_impl;
 
   template <typename Value_t>
-  class _Register_impl<Value_t, 0> {
-  protected:
-    _Register_impl(Value_t &value)
-      : _value(value) {};
-
-    Value_t& _value;
-  };
+  class _Register_impl<Value_t, 0> {};
 
   template <typename Value_t>
   class _Register_impl<Value_t, 2> : public _Register_impl<Value_t, 0> {
   public:
     _Register_impl(Value_t &value)
-      : _Register_impl<Value_t, 0>(value) {};
+      : _value(value) {};
 
     uint8_t get8h() const {
       return (this->_value >> 0x8) & 0xFF;
@@ -52,9 +47,8 @@ namespace reg {
       this->_value |= new_value;
     };
 
-    operator Value_t() const {
-      return this->get16();
-    };
+  private:
+    Value_t& _value;
   };
 
   template <typename Value_t>
@@ -71,10 +65,6 @@ namespace reg {
       this->_value |= new_value;
     };
 
-    operator Value_t() const {
-      return this->get32();
-    };
-
   private:
     Value_t& _value;
   };
@@ -86,15 +76,10 @@ namespace reg {
       : _Register_impl<Value_t, 4>(value), _value(value) {};
 
     uint64_t get64() const {
-      return this->_value & 0xFFFFFFFFFFFFFFFFUL;
+      return this->_value;
     };
     void set64(uint64_t new_value) {
-      this->_value &= ~0xFFFFFFFFFFFFFFFFUL;
       this->_value |= new_value;
-    };
-
-    operator Value_t() const {
-      return this->get64();
     };
 
   private:
@@ -116,9 +101,13 @@ namespace reg {
     void clear() { _value = 0; };
 
     Register &operator=(const Register &other) {
-      _value = other;
+      _value = (Value_t)other;
       return *this;
     };
+
+    operator Value_t() const {
+      return (Value_t)_value;
+    }
 
   private:
     Value_t _value;

@@ -129,7 +129,6 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::QueryThreadInfoEndResponse());
         },
         [&io](const pkt::StopReasonRequest &req) {
-          //io.write_packet(pkt::OKResponse());
           io.write_packet(pkt::StopReasonSignalResponse(0x13, 1)); // TODO
         },
         [&io](const pkt::SetThreadRequest &req) {
@@ -168,8 +167,6 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::GeneralRegistersBatchReadRequest &req) {
-          //TODO:regs
-          /*
           const auto regs = dbg.get_current_domain()->get_cpu_context();
           std::visit(util::overloaded {
             [&io](const RegistersX86_32 &regs) {
@@ -179,55 +176,49 @@ void GDBStub::run(Debugger &dbg) {
               io.write_packet(pkt::GeneralRegistersBatchReadResponse(regs));
             }
           }, regs);
-          */
           io.write_packet(pkt::NotSupportedResponse());
         },
         [&io, &dbg](const pkt::GeneralRegistersBatchWriteRequest &req) {
-          //TODO:regs
-          /*
-          const auto orig_regs = dbg.get_current_domain()->get_cpu_context();
-          const auto req_regs = req.get_registers();
+          auto orig_regs_any = dbg.get_current_domain()->get_cpu_context();
+          auto values = req.get_values();
 
-          // TODO: set new_regs.x only if req_regs.flags.x == 1
           std::visit(util::overloaded {
-            [&](const xen::Registers32 &regs) {
-              const auto new_regs = convert_gp_registers_32(
-                  std::get<GDBRegisters32>(req_regs).values,
-                  std::get<xen::Registers32>(orig_regs));
-              dbg.get_current_domain()->set_cpu_context(new_regs);
-            },
-            [&](const xen::Registers64 &regs) {
-              const auto new_regs = convert_gp_registers_64(
-                  std::get<GDBRegisters64>(req_regs).values,
-                  std::get<xen::Registers64>(orig_regs));
-              dbg.get_current_domain()->set_cpu_context(new_regs);
+            [&values](auto &orig_regs) {
+              for (size_t id = 0; id < values.size(); ++id) {
+                const auto value_var_opt = values.at(id);
+                orig_regs.find_by_id(id, [&value_var_opt](const auto&, auto &reg) {
+                  if (value_var_opt)
+                    std::visit(util::overloaded {
+                      [&reg](const auto &value) {
+                        reg = value;
+                      }
+                    }, *value_var_opt);
+                }, []() {
+                  throw std::runtime_error("Oversized register write packet!");
+                });
+              }
             }
-          }, orig_regs);
-          */
-          io.write_packet(pkt::OKResponse());
+          }, orig_regs_any);
+
+          if (values.empty())
+            io.write_packet(pkt::OKResponse());
+          else
+            io.write_packet(pkt::ErrorResponse(0x45)); // TODO
+
         },
         [&io, &dbg](const pkt::MemoryReadRequest &req) {
           const auto address = req.get_address();
           const auto length = req.get_length();
-          const auto mem_handle = dbg.get_current_domain()->map_memory(
-              address, length, PROT_READ);
 
-          io.write_packet(pkt::MemoryReadResponse(
-                (char*)mem_handle.get(), length));
+          const auto data = dbg.read_memory_masking_infinite_loops(address, length);
+          io.write_packet(pkt::MemoryReadResponse(data.get(), length));
         },
         [&io, &dbg](const pkt::MemoryWriteRequest &req) {
           const auto address = req.get_address();
           const auto length = req.get_length();
           const auto data = req.get_data();
 
-          std::cout << std::hex << "Writing " << length << " bytes to " << address << std::endl;
-
-          const auto mem_handle = dbg.get_current_domain()->map_memory(
-              address, length, PROT_WRITE);
-
-          std::cout << "Got mem handle" << std::endl;
-
-          memcpy((void*)data, (void*)mem_handle.get(), length);
+          dbg.write_memory_retaining_infinite_loops(address, length, (void*)data);
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::ContinueRequest &req) {
@@ -261,7 +252,8 @@ void GDBStub::run(Debugger &dbg) {
         [&io](const pkt::RestartRequest &req) {
           io.write_packet(pkt::NotSupportedResponse());
         },
-        [&io](const pkt::DetachRequest &req) {
+        [&io, &dbg](const pkt::DetachRequest &req) {
+          dbg.detach();
           io.write_packet(pkt::OKResponse());
         },
       };

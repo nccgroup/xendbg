@@ -113,6 +113,9 @@ namespace reg {
     static constexpr auto base = _base;
 
     template <typename F>
+    static void for_each_metadata(F) {};
+
+    template <typename F>
     void for_each(F) {};
 
     template <typename F>
@@ -127,8 +130,10 @@ namespace reg {
       _get_error_impl<Reg_t> x;
     }
 
+    static constexpr size_t size = 0;
+
     template <typename Reg_t>
-    static constexpr auto offset_of =
+    static constexpr size_t offset_of =
       _offset_of_error_impl<Reg_t>::offset;
 
     static bool is_valid_id(size_t id) {
@@ -196,7 +201,10 @@ namespace reg {
 
     static constexpr auto base = _base;
 
+    template <typename Reg_t>
     struct RegisterMetadataReference {
+      using RegisterValue = typename Reg_t::Value;
+
       const size_t &width;
       const size_t &offset;
       const decltype(Register_t::name) &name;
@@ -204,12 +212,14 @@ namespace reg {
       const size_t &gcc_id;
     };
 
+    static constexpr size_t size = sizeof(typename Register_t::Value) + Next::size;
+
     template <typename Reg_t>
-    static constexpr auto offset_of =
+    static constexpr size_t offset_of =
       _offset_of_impl<This, Reg_t>::offset;
 
     template <typename Reg_t>
-    static constexpr RegisterMetadataReference metadata_of = {
+    static constexpr RegisterMetadataReference<Reg_t> metadata_of = {
       sizeof(typename Reg_t::Value),
       offset_of<Reg_t>,
       Reg_t::name,
@@ -225,6 +235,12 @@ namespace reg {
     template <typename Reg_t>
     Reg_t &get() {
       return _get_impl<This, Reg_t>(*this).get();
+    };
+
+    template <typename F>
+    static void for_each_metadata(F f) {
+      f(metadata_of<Register_t>);
+      Next::template for_each_metadata(f);
     };
 
     template <typename F>

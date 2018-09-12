@@ -7,13 +7,14 @@
 
 #include <iostream>
 #include <optional>
+#include <queue>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
 
-#include "GDBRegisters.hpp"
+#include "../../Registers/RegistersX86.hpp"
 #include "../../Util/overloaded.hpp"
 
 #define DECLARE_SIMPLE_REQUEST(name, ch) \
@@ -49,11 +50,11 @@
       : GDBRequestPacketBase(data, ch) \
     { \
       skip_space(); \
-      _type = read_hex_number(); \
+      _type = read_hex_number<uint8_t>(); \
       expect_char(','); \
-      _address = read_hex_number(); \
+      _address = read_hex_number<uint64_t>(); \
       expect_char(','); \
-      _kind = read_hex_number(); \
+      _kind = read_hex_number<uint8_t>(); \
       expect_end(); \
     }; \
     uint64_t get_address() const { return _address; }; \
@@ -157,15 +158,47 @@ namespace xd::dbg::gdbstub::pkt {
       return (c1 << 4) + c2;
     };
 
+    template <typename Value_t>
     uint64_t read_hex_number() {
       size_t end;
       const std::string num_str(_it, _data.end());
-      uint64_t num = std::stoull(num_str, &end, 16);
+      Value_t num = std::stoull(num_str, &end, 2*sizeof(uint64_t));
 
       _it += end;
 
       return num;
     };
+
+    template <typename Value_t>
+    Value_t read_hex_number_respecting_endianness() {
+      Value_t value;
+      uint8_t *value_ptr = (uint8_t*)&value;
+      size_t remaining = 2*sizeof(Value_t);
+
+      while (has_more() && remaining) {
+        char hex[2];
+        hex[0] = get_char();
+        hex[1] = get_char();
+
+        sscanf((const char *)&hex, "%02hhx", value_ptr++);
+        remaining -= 2;
+      }
+
+      if (remaining)
+        throw RequestPacketParseException();
+
+      return value;
+    };
+
+    std::string read_until_end() {
+      std::string s;
+      while (has_more()) {
+        s.push_back(get_char());
+      }
+      if (has_more())
+        get_char();
+      return s;
+    }
 
     std::string read_until_char_or_end(char ch) {
       std::string s;
@@ -193,7 +226,7 @@ namespace xd::dbg::gdbstub::pkt {
       if (end != SIZE)
         throw RequestPacketParseException();
 
-      _it = _data.begin() + SIZE;
+      _it += SIZE;
       return num;
     }
 
@@ -253,7 +286,7 @@ namespace xd::dbg::gdbstub::pkt {
     {
       if (has_more()) {
         expect_char(';');
-        _pid = read_hex_number();
+        _pid = read_hex_number<size_t>();
       }
       expect_end();
     };
@@ -294,7 +327,7 @@ namespace xd::dbg::gdbstub::pkt {
     QueryRegisterInfoRequest(const std::string &data)
       : GDBRequestPacketBase(data, "qRegisterInfo")
     {
-      _register_id = read_hex_number();
+      _register_id = read_hex_number<uint16_t>();
       expect_end();
     };
 
@@ -318,7 +351,7 @@ namespace xd::dbg::gdbstub::pkt {
         _op = Op::StepAndContinue;
 
       skip_space();
-      _thread_id = read_hex_number();
+      _thread_id = read_hex_number<size_t>();
       expect_end();
     };
 
@@ -338,10 +371,10 @@ namespace xd::dbg::gdbstub::pkt {
       : GDBRequestPacketBase(data, 'p')
     {
       skip_space();
-      _register_id = read_hex_number();
+      _register_id = read_hex_number<uint16_t>();
       if (check_char(';')) {
         expect_string("thread:");
-        _thread_id = read_hex_number();
+        _thread_id = read_hex_number<size_t>();
         expect_char(';');
       } else {
         _thread_id = (size_t)-1;
@@ -363,112 +396,63 @@ namespace xd::dbg::gdbstub::pkt {
       : GDBRequestPacketBase(data, 'P')
     {
       skip_space();
-      _register_id = read_byte();
+      _register_id = read_hex_number<uint16_t>();
       expect_char('=');
-      _value = read_hex_number();
+      _value = read_hex_number_respecting_endianness<uint64_t>();
+      if (check_char(';')) {
+        expect_string("thread:");
+        _thread_id = read_hex_number<size_t>();
+        expect_char(';');
+      }
       expect_end();
     };
 
     uint16_t get_register_id() const { return _register_id; };
     uint64_t get_value() const { return _value; };
+    size_t get_thread_id() const { return _thread_id; };
 
   private:
     uint16_t _register_id;
     uint64_t _value;
+    size_t _thread_id;
   };
 
   DECLARE_SIMPLE_REQUEST(GeneralRegistersBatchReadRequest, 'g');
 
   class GeneralRegistersBatchWriteRequest : public GDBRequestPacketBase {
+  private:
+    using Value = std::variant<uint64_t, uint32_t, uint16_t, uint8_t>;
+    using Values =  std::vector<std::optional<Value>>;
+
   public:
     GeneralRegistersBatchWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'g')
     {
-      skip_space();
+      using Regs64 = reg::x86_64::RegistersX86_64;
+      using Regs32 = reg::x86_32::RegistersX86_32;
 
+      skip_space();
       const auto size = get_num_remaining()/2;
-      if (size == sizeof(GDBRegisters64Values)) {
-        _registers = read_registers_64();
-      } else if (size == sizeof(GDBRegisters32Values)) {
-        _registers = read_registers_32();
+      if (size == Regs64::size) {
+        Regs64::for_each_metadata([this](const auto &md) {
+          const auto word = read_word_unsigned_opt<uint64_t>();
+          _values.push_back(word);
+        });
+      } else if (size == Regs32::size) {
+        Regs32::for_each_metadata([this](const auto &md) {
+          const auto word = read_word_unsigned_opt<uint64_t>();
+          _values.push_back(word);
+        });
       } else {
         throw RequestPacketParseException();
       }
+      expect_end();
     };
 
-    const GDBRegisters &get_registers() const { return _registers; };
+    const Values& get_values() const { return _values; };
 
   private:
-    GDBRegisters64 read_registers_64() {
-      GDBRegisters64 regs;
-
-      read_register(regs.values.rax, regs.flags.rax);
-      read_register(regs.values.rbx, regs.flags.rbx);
-      read_register(regs.values.rcx, regs.flags.rcx);
-      read_register(regs.values.rdx, regs.flags.rdx);
-      read_register(regs.values.rsi, regs.flags.rsi);
-      read_register(regs.values.rdi, regs.flags.rdi);
-      read_register(regs.values.rbp, regs.flags.rbp);
-      read_register(regs.values.rsp, regs.flags.rsp);
-
-      read_register(regs.values.r8, regs.flags.r8);
-      read_register(regs.values.r9, regs.flags.r9);
-      read_register(regs.values.r10, regs.flags.r10);
-      read_register(regs.values.r11, regs.flags.r11);
-      read_register(regs.values.r12, regs.flags.r12);
-      read_register(regs.values.r13, regs.flags.r13);
-      read_register(regs.values.r14, regs.flags.r14);
-      read_register(regs.values.r15, regs.flags.r15);
-
-      read_register(regs.values.rip, regs.flags.rip);
-
-      read_register(regs.values.rflags, regs.flags.rflags);
-      read_register(regs.values.cs, regs.flags.cs);
-      read_register(regs.values.ss, regs.flags.ss);
-      read_register(regs.values.ds, regs.flags.ds);
-      read_register(regs.values.es, regs.flags.es);
-      read_register(regs.values.fs, regs.flags.fs);
-      read_register(regs.values.gs, regs.flags.gs);
-
-      return regs;
-    }
-
-    GDBRegisters32 read_registers_32() {
-      GDBRegisters32 regs;
-
-      read_register(regs.values.eax, regs.flags.eax);
-      read_register(regs.values.eax, regs.flags.ecx);
-      read_register(regs.values.eax, regs.flags.edx);
-      read_register(regs.values.eax, regs.flags.ebx);
-      read_register(regs.values.eax, regs.flags.esp);
-      read_register(regs.values.eax, regs.flags.ebp);
-      read_register(regs.values.eax, regs.flags.esi);
-      read_register(regs.values.eax, regs.flags.edi);
-
-      read_register(regs.values.eax, regs.flags.eip);
-
-      read_register(regs.values.eax, regs.flags.eflags);
-
-      read_register(regs.values.eax, regs.flags.cs);
-      read_register(regs.values.eax, regs.flags.ss);
-      read_register(regs.values.eax, regs.flags.ds);
-      read_register(regs.values.eax, regs.flags.es);
-      read_register(regs.values.eax, regs.flags.fs);
-      read_register(regs.values.eax, regs.flags.gs);
-
-      return regs;
-    }
-
-    template <typename Reg_t, typename Flag_t>
-    void read_register(Reg_t &value, Flag_t &flag) {
-      const auto value_opt = read_word_unsigned_opt<Reg_t>();
-      if (value_opt)
-        value = *value_opt;
-      flag = value_opt.has_value();
-    }
-
-  private:
-    GDBRegisters _registers;
+    std::vector<std::optional<Value>> _values;
   };
 
   class MemoryReadRequest : public GDBRequestPacketBase {
@@ -477,9 +461,9 @@ namespace xd::dbg::gdbstub::pkt {
       : GDBRequestPacketBase(data, 'm')
     {
       skip_space();
-      _address = read_hex_number();
+      _address = read_hex_number<uint64_t>();
       expect_char(',');
-      _length = read_hex_number();
+      _length = read_hex_number<uint64_t>();
       expect_end();
     };
 
@@ -497,9 +481,9 @@ namespace xd::dbg::gdbstub::pkt {
       : GDBRequestPacketBase(data, 'M')
     {
       skip_space();
-      _address = read_hex_number();
+      _address = read_hex_number<uint64_t>();
       expect_char(',');
-      _length = read_hex_number();
+      _length = read_hex_number<uint64_t>();
       expect_char(':');
 
       _data.reserve(_length);

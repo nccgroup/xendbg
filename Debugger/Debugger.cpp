@@ -382,4 +382,64 @@ void Debugger::remove_infinite_loop(xen::Address address) {
 
   const auto orig_bytes = _infinite_loops[address];
   *mem = orig_bytes;
+
+  _infinite_loops.erase(_infinite_loops.find(address));
+}
+
+Debugger::MaskedMemory Debugger::read_memory_masking_infinite_loops(
+    xen::Address address, size_t length)
+{
+  const auto mem_handle = get_current_domain()->map_memory(
+      address, length, PROT_READ);
+
+  const auto mem_masked = (unsigned char*)malloc(length);
+  memcpy(mem_masked, mem_handle.get(), length);
+
+  const auto address_end = address + length;
+  for (const auto [il_address, il_orig_bytes] : _infinite_loops) {
+    if (il_address >= address && il_address < address_end) {
+      const auto dist = il_address - address;
+      *((uint16_t*)(mem_masked + dist)) = il_orig_bytes;
+    }
+  }
+
+  return MaskedMemory(mem_masked);
+}
+
+/* TODO: There is still an edge case where one or both ends of the mapped
+ * region contain one --- but not both --- bytes of an infinite loop.
+ * I think the best fix for this is to expand the range by 1 in both directions,
+ * remove all ILs within the new range (thus replacing the original memory
+ * values), write the new memory, and then re-insert the ILs (thus getting the
+ * new orig_bytes values).
+ */
+void Debugger::write_memory_retaining_infinite_loops(
+    xen::Address address, size_t length, void *data)
+{
+  const auto half_overlap_start_address = address-1;
+  const auto half_overlap_end_address = address+length-1;
+
+  const auto length_orig = length;
+  if (_infinite_loops.count(half_overlap_start_address)) {
+    address -= 1;
+    length += 1;
+  }
+  if (_infinite_loops.count(half_overlap_end_address))
+    length += 1;
+
+  std::vector<Address> il_addresses;
+  const auto address_end = address + length_orig;
+  for (const auto [il_address, _] : _infinite_loops) {
+    if (il_address >= address && il_address < address_end) {
+      remove_infinite_loop(il_address);
+      il_addresses.push_back(il_address);
+    }
+  }
+
+  const auto mem_handle = _domain->map_memory(address, length, PROT_WRITE);
+  const auto mem_orig = (char*)mem_handle.get() + (length - length_orig);
+  memcpy((void*)mem_orig, data, length_orig);
+
+  for (const auto &il_address : il_addresses)
+    insert_infinite_loop(il_address);
 }

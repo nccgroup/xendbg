@@ -126,11 +126,8 @@ void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
 
   std::cout << "SEND: " << ss_str << std::endl;
 
-  std::vector<char> data(ss_str.begin(), ss_str.end());
-  //data.push_back('\0');
-
-  auto remaining = data.size();
-  auto data_ptr = &data[0];
+  auto remaining = ss_str.size();
+  auto data_ptr = ss_str.c_str();
   while (remaining) {
     // TODO: if == 0 then remote has closed, do something
     auto bytes_written = send(_remote_fd, data_ptr, remaining, 0);

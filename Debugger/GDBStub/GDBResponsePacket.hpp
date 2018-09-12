@@ -29,6 +29,14 @@ namespace xd::dbg::gdbstub::pkt {
         ss << std::setw(2) << (unsigned)(*p++);
     }
 
+    std::string hexify(const std::string& s) {
+      std::stringstream ss;
+      ss << std::hex << std::setfill('0');
+      for (const unsigned char &c : s)
+        ss << std::setw(2) << (unsigned)c;
+      return ss.str();
+    }
+
     template <typename Key_t, typename Value_t>
     void add_list_entry(std::stringstream &ss, Key_t key, Value_t value) {
       ss << key;
@@ -201,7 +209,7 @@ namespace xd::dbg::gdbstub::pkt {
 
   class MemoryReadResponse : public GDBResponsePacket {
   public:
-    MemoryReadResponse(const char * const data, size_t length)
+    MemoryReadResponse(const unsigned char * const data, size_t length)
       : _data(data, data + length) {};
 
     std::string to_string() const override {
@@ -217,7 +225,7 @@ namespace xd::dbg::gdbstub::pkt {
     };
 
   private:
-    std::vector<char> _data;
+    std::vector<unsigned char> _data;
   };
 
   class StopReasonSignalResponse : public GDBResponsePacket {
@@ -253,15 +261,32 @@ namespace xd::dbg::gdbstub::pkt {
 
     std::string to_string() const override {
       std::stringstream ss;
-      //add_list_entry(ss, "ostype", "linux");   // TODO
-      //add_list_entry(ss, "endian", "little");     // TODO
-      //add_list_entry(ss, "ptrsize", _word_size);
-      //add_list_entry(ss, "hostname", _hostname);
+
+
       ss << "triple:7838365f36342d70632d6c696e75782d676e75;ptrsize:8;endian:little;hostname:7468696e6b706164;";
+      //add_list_entry(ss, "triple", hexify(make_triple()));
+      add_list_entry(ss, "endian", "little"); // TODO can this ever be big?
+      add_list_entry(ss, "ptrsize", _word_size);
+      add_list_entry(ss, "hostname", hexify(_hostname));
       return ss.str();
     };
 
   private:
+    std::string make_triple() const {
+      const auto arch = (_word_size == sizeof(uint64_t)) ? "x86_64" : "x86";
+      const auto vendor = "pc";
+      const auto os_type = "nacl";
+
+      std::string triple;
+      triple += arch;
+      triple += "-";
+      triple += vendor;
+      triple += "-";
+      triple += os_type;
+
+      return triple;
+    }
+
     unsigned _word_size;
     std::string _hostname;
   };

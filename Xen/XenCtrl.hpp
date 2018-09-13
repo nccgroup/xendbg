@@ -14,6 +14,7 @@
 #include "BridgeHeaders/xenguest.h"
 
 #include "Common.hpp"
+#include "XenMemoryPermissions.hpp"
 #include "../Registers/RegistersX86.hpp"
 
 namespace xd::xen {
@@ -37,7 +38,10 @@ namespace xd::xen {
     void set_domain_cpu_context(const Domain &domain,
         const reg::RegistersX86& regs, VCPU_ID vcpu_id = 0) const;
     WordSize get_domain_word_size(const Domain &domain) const;
+
     MemInfo map_domain_meminfo(const Domain &domain) const;
+    XenMemoryPermissions get_domain_memory_permissions(
+        const Domain &domain, Address address) const;
 
     void set_domain_debugging(const Domain &domain, bool enable,
         VCPU_ID vcpu_id) const;

@@ -271,8 +271,9 @@ void GDBStub::run(Debugger &dbg) {
         [&io](const pkt::RestartRequest &req) {
           io.write_packet(pkt::NotSupportedResponse());
         },
-        [&io, &dbg](const pkt::DetachRequest &req) {
+        [&io, &dbg, &running](const pkt::DetachRequest &req) {
           dbg.detach();
+          running = false;
           io.write_packet(pkt::OKResponse());
         },
       };

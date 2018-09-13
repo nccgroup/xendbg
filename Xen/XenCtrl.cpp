@@ -21,6 +21,7 @@ using xd::xen::MemInfo;
 using xd::xen::WordSize;
 using xd::xen::XenCtrl;
 using xd::xen::XenException;
+using xd::xen::XenMemoryPermissions;
 
 #define GET_HVM(_regs, _hvm, _reg) \
   _regs.get<_reg>() = _hvm._reg;
@@ -324,6 +325,22 @@ MemInfo XenCtrl::map_domain_meminfo(const Domain &domain) const {
   }
 
   return meminfo;
+}
+
+XenMemoryPermissions XenCtrl::get_domain_memory_permissions(
+    const Domain &domain, Address address) const
+{
+  int err;
+  xenmem_access_t permissions;
+  xen_pfn_t pfn = address >> XC_PAGE_SHIFT;
+
+  if ((err = xc_get_mem_access(_xenctrl.get(), domain.get_domid(), pfn, &permissions))) {
+    throw XenException(
+      "Failed to map meminfo for domain " + std::to_string(domain.get_domid()),
+        -err);
+  }
+
+  return permissions;
 }
 
 void XenCtrl::set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const {

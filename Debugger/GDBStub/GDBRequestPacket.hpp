@@ -60,15 +60,19 @@
     uint64_t get_address() const { return _address; }; \
     uint8_t get_type() const { return _type; }; \
     uint8_t get_kind() const { return _kind; }; \
-    const char * data() const { return &_data[0]; }; \
   private: \
     uint64_t _address; \
     uint8_t _type, _kind; \
-    std::vector<char> _data; \
   }
 
 namespace xd::dbg::gdbstub::pkt {
 
+  /*
+  class RequestPacketParseException : public std::runtime_error {
+  public:
+    RequestPacketParseException(const std::string &msg);
+  };
+  */
   class RequestPacketParseException : public std::exception {
   };
 
@@ -153,8 +157,20 @@ namespace xd::dbg::gdbstub::pkt {
     };
 
     uint8_t read_byte() {
-      uint8_t c1 = get_char();
-      uint8_t c2 = get_char();
+      const auto from_hex = [](const auto c) {
+        if (c >= '0' && c <= '9')
+          return c - '0';
+
+        auto cl = std::tolower(c);
+        if (cl >= 'a' && cl <= 'f')
+          return 0xa + (cl - 'a');
+
+        throw RequestPacketParseException();
+      };
+
+      uint8_t c1 = from_hex(get_char());
+      uint8_t c2 = from_hex(get_char());
+
       return (c1 << 4) + c2;
     };
 
@@ -176,11 +192,7 @@ namespace xd::dbg::gdbstub::pkt {
       size_t remaining = 2*sizeof(Value_t);
 
       while (has_more() && remaining) {
-        char hex[2];
-        hex[0] = get_char();
-        hex[1] = get_char();
-
-        sscanf((const char *)&hex, "%02hhx", value_ptr++);
+        *value_ptr++ = read_byte();
         remaining -= 2;
       }
 
@@ -253,7 +265,6 @@ namespace xd::dbg::gdbstub::pkt {
       expect_char(':');
       while (has_more()) {
         const auto feature = read_until_char_or_end(';');
-        std::cout << feature << std::endl;
         _features.push_back(feature);
       }
       expect_end();
@@ -422,26 +433,33 @@ namespace xd::dbg::gdbstub::pkt {
   class GeneralRegistersBatchWriteRequest : public GDBRequestPacketBase {
   private:
     using Value = std::variant<uint64_t, uint32_t, uint16_t, uint8_t>;
-    using Values =  std::vector<std::optional<Value>>;
+    using Values =  std::vector<std::pair<size_t, Value>>;
 
   public:
     GeneralRegistersBatchWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'g')
     {
+      skip_space();
+
       using Regs64 = reg::x86_64::RegistersX86_64;
       using Regs32 = reg::x86_32::RegistersX86_32;
 
-      skip_space();
+      size_t index = 0;
       const auto size = get_num_remaining()/2;
+
       if (size == Regs64::size) {
-        Regs64::for_each_metadata([this](const auto &md) {
-          const auto word = read_word_unsigned_opt<uint64_t>();
-          _values.push_back(word);
+        Regs64::for_each_metadata([this, &index](const auto md) {
+          const auto word = read_word(md);
+          if (word)
+            _values.push_back(std::make_pair(index, *word));
+          ++index;
         });
       } else if (size == Regs32::size) {
-        Regs32::for_each_metadata([this](const auto &md) {
-          const auto word = read_word_unsigned_opt<uint64_t>();
-          _values.push_back(word);
+        Regs32::for_each_metadata([this, &index](const auto md) {
+          const auto word = read_word(md);
+          if (word)
+            _values.push_back(std::make_pair(index, *word));
+          ++index;
         });
       } else {
         throw RequestPacketParseException();
@@ -452,7 +470,15 @@ namespace xd::dbg::gdbstub::pkt {
     const Values& get_values() const { return _values; };
 
   private:
-    std::vector<std::optional<Value>> _values;
+    Values _values;
+
+    template <typename Metadata_t>
+    std::optional<typename Metadata_t::RegisterValue> read_word(
+        const Metadata_t&)
+    {
+      using RegisterValue = typename Metadata_t::RegisterValue;
+      return read_word_unsigned_opt<RegisterValue>();
+    }
   };
 
   class MemoryReadRequest : public GDBRequestPacketBase {
@@ -487,21 +513,20 @@ namespace xd::dbg::gdbstub::pkt {
       expect_char(':');
 
       _data.reserve(_length);
-      for (size_t i = 0; i < _length; ++i) {
+      for (size_t i = 0; i < _length; ++i)
         _data.push_back(read_byte());
-      }
 
       expect_end();
     };
 
     uint64_t get_address() const { return _address; };
     uint64_t get_length() const { return _length; };
-    const char * get_data() const { return &_data[0]; };
+    const std::vector<unsigned char>& get_data() const { return _data; };
 
   private:
     uint64_t _address;
     uint64_t _length;
-    std::vector<char> _data;
+    std::vector<unsigned char> _data;
   };
 
   DECLARE_SIGNAL_REQUESTS(ContinueRequest, 'c', ContinueSignalRequest, 'C');

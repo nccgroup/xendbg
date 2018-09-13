@@ -184,6 +184,29 @@ void GDBStub::run(Debugger &dbg) {
 
           std::visit(util::overloaded {
             [&values](auto &orig_regs) {
+              const auto pair = values.back();
+              values.pop_back();
+
+              // For some reason, if I do [id, value] = values.back(),
+              // 'value' isn't available for the lambda capture below
+              const auto id = pair.first;
+              const auto value = pair.second;
+
+              orig_regs.find_by_id(id, [value](const auto&, auto &reg) {
+                std::visit(util::overloaded {
+                  [&reg](const auto &value) {
+                    reg = value;
+                  }
+                }, value);
+              }, []() {
+                throw std::runtime_error("Oversized register write packet!");
+              });
+            }
+          }, orig_regs_any);
+
+          /*
+          std::visit(util::overloaded {
+            [&values](auto &orig_regs) {
               for (size_t id = 0; id < values.size(); ++id) {
                 const auto value_var_opt = values.at(id);
                 orig_regs.find_by_id(id, [&value_var_opt](const auto&, auto &reg) {
@@ -199,12 +222,7 @@ void GDBStub::run(Debugger &dbg) {
               }
             }
           }, orig_regs_any);
-
-          if (values.empty())
-            io.write_packet(pkt::OKResponse());
-          else
-            io.write_packet(pkt::ErrorResponse(0x45)); // TODO
-
+          */
         },
         [&io, &dbg](const pkt::MemoryReadRequest &req) {
           const auto address = req.get_address();
@@ -218,7 +236,8 @@ void GDBStub::run(Debugger &dbg) {
           const auto length = req.get_length();
           const auto data = req.get_data();
 
-          dbg.write_memory_retaining_infinite_loops(address, length, (void*)data);
+          dbg.write_memory_retaining_infinite_loops(
+              address, length, (void*)&data[0]);
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::ContinueRequest &req) {

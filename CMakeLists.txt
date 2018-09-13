@@ -27,7 +27,7 @@ add_executable(xendbg main.cpp Parser/Parser.cpp
   REPL/REPL.cpp REPL/REPL.hpp Xen/Domain.cpp Xen/Domain.hpp
   Xen/XenException.hpp Xen/XenStore.cpp Xen/XenStore.hpp Xen/XenCtrl.cpp
   Xen/XenCtrl.hpp Xen/XenForeignMemory.cpp Xen/XenForeignMemory.hpp
-  Xen/Common.hpp Xen/Registers.hpp Xen/BridgeHeaders/xenctrl.h
+  Xen/Common.hpp Xen/BridgeHeaders/xenctrl.h
   Xen/BridgeHeaders/xenstore.h Xen/BridgeHeaders/xenforeignmemory.h
   Xen/BridgeHeaders/xenguest.h Xen/BridgeHeaders/domctl.h Xen/PrivCmd.cpp
   Xen/PrivCmd.hpp REPL/Command/Action.hpp REPL/Command/Command.cpp
@@ -40,7 +40,7 @@ add_executable(xendbg main.cpp Parser/Parser.cpp
   REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
   REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
   Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp
-  Debugger/Debugger.cpp Debugger/Debugger.hpp Parser/Token/String.hpp Xen/Registers.cpp
+  Debugger/Debugger.cpp Debugger/Debugger.hpp Parser/Token/String.hpp
   REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp
   Parser/Expression/Expression.hpp Debugger/GDBStub/GDBStub.cpp
   Debugger/GDBStub/GDBStub.hpp Debugger/GDBStub/GDBPacketIO.cpp

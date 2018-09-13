@@ -136,7 +136,8 @@ Address Debugger::continue_until_infinite_loop() {
   _domain->unpause();
 
   std::optional<Address> address;
-  while (!(address = check_infinite_loop_hit()));
+  while (!(address = check_infinite_loop_hit()) &&
+         !_domain->get_info().paused); // TODO hack for now
 
   _domain->pause();
 
@@ -439,6 +440,8 @@ void Debugger::write_memory_retaining_infinite_loops(
   const auto mem_handle = _domain->map_memory(address, length, PROT_WRITE);
   const auto mem_orig = (char*)mem_handle.get() + (length - length_orig);
   memcpy((void*)mem_orig, data, length_orig);
+
+  std::cout << std::hex << "wrote " << length_orig << " bytes to " << address << std::endl;
 
   for (const auto &il_address : il_addresses)
     insert_infinite_loop(il_address);

@@ -154,8 +154,7 @@ void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
   */
 }
 
-GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
-{
+GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet) {
   switch (raw_packet[0]) {
     case 'q':
       if (raw_packet == "qfThreadInfo")
@@ -164,14 +163,16 @@ GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
         return pkt::QueryThreadInfoContinuingRequest(raw_packet);
       else if (raw_packet == "qC")
         return pkt::QueryCurrentThreadIDRequest(raw_packet);
-      else if (is_prefix(std::string("qSupported"), raw_packet))    // TODO
+      else if (is_prefix(std::string("qSupported"), raw_packet))        // TODO
         return pkt::QuerySupportedRequest(raw_packet);
-      else if (is_prefix(std::string("qHostInfo"), raw_packet))     // TODO
+      else if ("qHostInfo" == raw_packet)
         return pkt::QueryHostInfoRequest(raw_packet);
-      else if (is_prefix(std::string("qProcessInfo"), raw_packet))  // TODO
+      else if ("qProcessInfo" == raw_packet)
         return pkt::QueryProcessInfoRequest(raw_packet);
-      else if (is_prefix(std::string("qRegisterInfo"), raw_packet)) // TODO
+      else if (is_prefix(std::string("qRegisterInfo"), raw_packet))     // TODO
         return pkt::QueryRegisterInfoRequest(raw_packet);
+      else if (is_prefix(std::string("qMemoryRegionInfo"), raw_packet)) // TODO
+        return pkt::QueryMemoryRegionInfoRequest(raw_packet);
       break;
     case 'Q':
       if (raw_packet == "QStartNoAckMode")
@@ -183,6 +184,8 @@ GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet)
       break;
     case '?':
       return pkt::StopReasonRequest(raw_packet);
+    case 'k':
+      return pkt::KillRequest(raw_packet);
     case 'H':
       return pkt::SetThreadRequest(raw_packet);
     case 'p':

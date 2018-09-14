@@ -17,6 +17,8 @@
 using xd::dbg::Debugger;
 using xd::dbg::NoSuchSymbolException;
 using xd::dbg::NoSuchVariableException;
+using xd::reg::x86_32::RegistersX86_32;
+using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::Address;
 using xd::xen::Domain;
 using xd::xen::DomID;
@@ -43,6 +45,7 @@ void Debugger::detach() {
   for (const auto &il : _infinite_loops) {
     remove_infinite_loop(il.first);
   }
+  _domain->unpause();
 
   cs_close(&_capstone);
 
@@ -241,10 +244,10 @@ std::optional<Debugger::Breakpoint> Debugger::check_breakpoint_hit() {
 
 std::optional<Address> Debugger::check_infinite_loop_hit() {
   const auto address = std::visit(util::overloaded {
-    [](const reg::x86_32::RegistersX86_32 regs) {
+    [](const RegistersX86_32 regs) {
       return (uint64_t)regs.get<reg::x86_32::eip>();
     },
-    [](const reg::x86_64::RegistersX86_64 regs) {
+    [](const RegistersX86_64 regs) {
       return (uint64_t)regs.get<reg::x86_64::rip>();
     }
   }, _domain->get_cpu_context(_current_vcpu));
@@ -261,20 +264,20 @@ std::pair<std::optional<Address>, std::optional<Address>>
 {
   const auto read_eip_rip = [this]() {
     return std::visit(util::overloaded {
-    [](const reg::x86_32::RegistersX86_32 regs) {
+    [](const RegistersX86_32 regs) {
       return (uint64_t)regs.get<reg::x86_32::eip>();
     },
-    [](const reg::x86_64::RegistersX86_64 regs) {
+    [](const RegistersX86_64 regs) {
       return (uint64_t)regs.get<reg::x86_64::rip>();
     }
     }, _domain->get_cpu_context(_current_vcpu));
   };
   const auto read_esp_rsp = [this]() {
     return std::visit(util::overloaded {
-    [](const reg::x86_32::RegistersX86_32 regs) {
+    [](const RegistersX86_32 regs) {
       return (uint64_t)regs.get<reg::x86_32::esp>();
     },
-    [](const reg::x86_64::RegistersX86_64 regs) {
+    [](const RegistersX86_64 regs) {
       return (uint64_t)regs.get<reg::x86_64::rsp>();
     }
     }, _domain->get_cpu_context(_current_vcpu));

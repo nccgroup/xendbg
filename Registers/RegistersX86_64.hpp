@@ -9,7 +9,7 @@
 #include "Register.hpp"
 #include "RegisterContext.hpp"
 
-namespace reg::x86_64 {
+namespace xd::reg::x86_64 {
 
   DECLARE_REGISTER(rax,    uint64_t, 0);
   DECLARE_REGISTER(rdx,    uint64_t, 1);

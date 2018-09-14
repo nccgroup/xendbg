@@ -10,6 +10,7 @@
 #include "Common.hpp"
 #include "XenHandle.hpp"
 #include "../Registers/RegistersX86.hpp"
+#include "MemoryPermissions.hpp"
 
 namespace xd::xen {
 
@@ -23,27 +24,32 @@ namespace xd::xen {
     DomInfo get_info() const;
     int get_word_size() const;
 
-    void reboot() const;
+    //void reboot() const;
 
     template<typename InitFn_t, typename CleanupFn_t>
     void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) const {
       _xen.get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
     }
 
+    /*
     void read_memory(Address address, void *data, size_t size);
     void write_memory(Address address, void *data, size_t size);
+    */
 
     MemInfo map_meminfo() const;
     MappedMemory map_memory(Address address, size_t size, int prot) const;
+    MemoryPermissions get_memory_permissions(Address address) const;
 
-    reg::RegistersX86 get_cpu_context(VCPU_ID vcpu_id = 0) const;
-    void set_cpu_context(reg::RegistersX86 regs, VCPU_ID vcpu_id = 0) const;
+    xd::reg::RegistersX86 get_cpu_context(VCPU_ID vcpu_id = 0) const;
+    void set_cpu_context(xd::reg::RegistersX86 regs, VCPU_ID vcpu_id = 0) const;
 
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
     void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;
 
     void pause() const;
     void unpause() const;
+    void shutdown(int reason) const;
+    void destroy() const;
 
   private:
     XenHandle& _xen;

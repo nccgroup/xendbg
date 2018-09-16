@@ -16,14 +16,14 @@ if (APPLE)
     include_directories("/usr/local/opt/xen/xen/include/public")
 endif()
 
-add_executable(xendbg main.cpp Parser/Parser.cpp
-  Parser/Expression/ExpressionGeneric.hpp
-  Parser/Expression/Operator/BinaryOperator.hpp
-  Parser/Expression/Operator/Precedence.hpp
-  Parser/Expression/Operator/UnaryOperator.hpp Parser/ParserException.hpp
-  Parser/Sentinel.hpp Parser/Tokenizer.hpp Parser/Token/Variable.hpp
-  Parser/Token/Label.hpp Parser/Token/Symbol.hpp Parser/Token/Match.hpp
-  Parser/Predicate.hpp Util/overloaded.hpp Util/pop_ret.hpp Util/clear.hpp
+add_executable(xendbg main.cpp REPL/Parser/Parser.cpp
+        REPL/Parser/Expression/ExpressionGeneric.hpp
+        REPL/Parser/Expression/Operator/BinaryOperator.hpp
+        REPL/Parser/Expression/Operator/Precedence.hpp
+        REPL/Parser/Expression/Operator/UnaryOperator.hpp REPL/Parser/ParserException.hpp
+        REPL/Parser/Sentinel.hpp REPL/Parser/Tokenizer.hpp REPL/Parser/Token/Variable.hpp
+        REPL/Parser/Token/Label.hpp REPL/Parser/Token/Symbol.hpp REPL/Parser/Token/Match.hpp
+        REPL/Parser/Predicate.hpp Util/overloaded.hpp Util/pop_ret.hpp Util/clear.hpp
   REPL/REPL.cpp REPL/REPL.hpp Xen/Domain.cpp Xen/Domain.hpp
   Xen/XenException.hpp Xen/XenStore.cpp Xen/XenStore.hpp Xen/XenCtrl.cpp
   Xen/XenCtrl.hpp Xen/XenForeignMemory.cpp Xen/XenForeignMemory.hpp
@@ -40,14 +40,14 @@ add_executable(xendbg main.cpp Parser/Parser.cpp
   REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
   REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
   Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp
-  Debugger/Debugger.cpp Debugger/Debugger.hpp Parser/Token/String.hpp
+  Debugger/Debugger.cpp Debugger/Debugger.hpp REPL/Parser/Token/String.hpp
   REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp
-  Parser/Expression/Expression.hpp GDBStub/GDBStub.cpp
+        REPL/Parser/Expression/Expression.hpp GDBStub/GDBStub.cpp
         GDBStub/GDBStub.hpp GDBStub/GDBPacketIO.cpp
         GDBStub/GDBPacketIO.hpp GDBStub/GDBResponsePacket.hpp
         GDBStub/GDBRequestPacket.hpp Registers/RegisterContext.hpp
   Registers/Register.hpp Registers/RegistersX86_64.hpp
-  Registers/RegistersX86.hpp)
+  Registers/RegistersX86.hpp Registers/RegisterContextIterator.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore
   xenlight xlutil capstone pthread)

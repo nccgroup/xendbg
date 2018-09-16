@@ -151,6 +151,11 @@ namespace reg {
     static void find_metadata_by_id(size_t, FoundFn, NotFoundFn nff) {
       nff();
     }
+
+    template <typename Reg_t>
+    Reg_t operator[](size_t i) {
+      throw std::runtime_error("No such register!");
+    }
   };
 
   template <size_t _base, typename Register_t, typename... Registers_t>
@@ -251,6 +256,13 @@ namespace reg {
       f(metadata_of<Register_t>, _register);
       Next::template for_each(f);
     };
+
+    template <typename Reg_t>
+    Reg_t operator[](size_t i) {
+      if (i == 0)
+        return _register;
+      return Next::operator[](i-1);
+    }
 
     static bool is_valid_id(size_t id) {
       return (id == 0)

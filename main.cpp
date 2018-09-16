@@ -31,9 +31,8 @@ int main() {
 #include <vector>
 
 #include "Debugger/Debugger.hpp"
-#include "Debugger/GDBStub/GDBStub.hpp"
+#include "GDBStub/GDBStub.hpp"
 //#include "Debugger/DebuggerREPL.hpp"
-#include "Parser/Parser.hpp"
 #include "REPL/Command/MakeCommand.hpp"
 #include "REPL/Command/Argument.hpp"
 #include "REPL/Command/Flag.hpp"
@@ -64,7 +63,6 @@ std::string stringify_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-
   assert(argc == 3);
   std::string name(argv[2]);
 

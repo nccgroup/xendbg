@@ -14,8 +14,8 @@
 #include "Predicate.hpp"
 #include "Token/Symbol.hpp"
 #include "Token/Variable.hpp"
-#include "../Util/clear.hpp"
-#include "../Util/pop_ret.hpp"
+#include "../../Util/clear.hpp"
+#include "../../Util/pop_ret.hpp"
 
 using xd::parser::Parser;
 using xd::parser::except::MissingExpressionException;

@@ -73,9 +73,6 @@ namespace reg {
       Context_t &_context;
     };
 
-    template <typename A, typename B>
-    struct X;
-
     template <typename Context_t, typename Reg_t>
     struct _get_impl : public __get_impl<
       Context_t, Reg_t, std::is_same<

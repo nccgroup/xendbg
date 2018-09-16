@@ -150,7 +150,7 @@ std::pair<std::optional<Address>, std::optional<Address>>
   {
     const auto reg_name = cs_reg_name(_capstone, cs_reg);
     assert(reg_name != nullptr);
-    // TODO:regs
+    // TODO:regs --- should implement register context iterator for this
     return 0;
     //return _domain->read_register(std::string(reg_name));
   };

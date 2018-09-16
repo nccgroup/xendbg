@@ -29,10 +29,7 @@ XenForeignMemory::XenForeignMemory()
  * NOTE: the p2m table doesn't seem to contain a mapping for the null page.
  */
 MappedMemory XenForeignMemory::map(const Domain &domain, Address address, size_t size, int prot) const {
-  auto meminfo = domain.map_meminfo();
-  xen_pfn_t base_mfn = pfn_to_mfn_pv(address >> XC_PAGE_SHIFT,
-      meminfo.get(), domain.get_word_size());
-
+  xen_pfn_t base_mfn = pfn_to_mfn_pv(domain, address >> XC_PAGE_SHIFT);
   size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
   auto pages = (xen_pfn_t*)malloc(num_pages * sizeof(xen_pfn_t));
@@ -66,7 +63,10 @@ MappedMemory XenForeignMemory::map(const Domain &domain, Address address, size_t
 }
 
 // See xen/tools/libxc/xc_offline_page.c:389
-xen_pfn_t XenForeignMemory::pfn_to_mfn_pv(xen_pfn_t pfn, xc_domain_meminfo *meminfo, WordSize word_size) const {
+xen_pfn_t XenForeignMemory::pfn_to_mfn_pv(const Domain &domain, xen_pfn_t pfn) {
+  const auto meminfo = domain.map_meminfo();
+  const auto word_size = domain.get_word_size();
+
   if (pfn > meminfo->p2m_size)
     throw XenException("Invalid PFN!");
 

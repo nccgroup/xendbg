@@ -12,15 +12,16 @@
 
 #include <sys/mman.h>
 
-using reg::RegistersX86;
-using reg::x86_32::RegistersX86_32;
-using reg::x86_64::RegistersX86_64;
+using xd::reg::RegistersX86;
+using xd::reg::x86_32::RegistersX86_32;
+using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::DomInfo;
 using xd::xen::Domain;
 using xd::xen::MemInfo;
 using xd::xen::WordSize;
 using xd::xen::XenCtrl;
 using xd::xen::XenException;
+using xd::xen::MemoryPermissions;
 
 #define GET_HVM(_regs, _hvm, _reg) \
   _regs.get<_reg>() = _hvm._reg;
@@ -40,7 +41,7 @@ using xd::xen::XenException;
   _pv.user_regs._reg = _regs.get<_reg>();
 
 static RegistersX86 convert_from_hvm(const struct hvm_hw_cpu &hvm) {
-  using namespace reg::x86_64;
+  using namespace xd::reg::x86_64;
 
   RegistersX86_64 regs;
 
@@ -72,7 +73,7 @@ static RegistersX86 convert_from_hvm(const struct hvm_hw_cpu &hvm) {
 }
 
 static hvm_hw_cpu convert_to_hvm(const RegistersX86_64 &regs) {
-  using namespace reg::x86_64;
+  using namespace xd::reg::x86_64;
 
   struct hvm_hw_cpu hvm;
   memset(&hvm, 0x00, sizeof(struct hvm_hw_cpu));
@@ -105,7 +106,7 @@ static hvm_hw_cpu convert_to_hvm(const RegistersX86_64 &regs) {
 }
 
 static RegistersX86_64 convert_from_pv64(const vcpu_guest_context_x86_64_t &pv) {
-  using namespace reg::x86_64;
+  using namespace xd::reg::x86_64;
 
   RegistersX86_64 regs;
 
@@ -137,7 +138,7 @@ static RegistersX86_64 convert_from_pv64(const vcpu_guest_context_x86_64_t &pv) 
 }
 
 static vcpu_guest_context_x86_64_t convert_to_pv64(const RegistersX86_64 &regs) {
-  using namespace reg::x86_64;
+  using namespace xd::reg::x86_64;
 
   vcpu_guest_context_x86_64_t pv;
   memset(&pv, 0x00, sizeof(vcpu_guest_context_x86_64_t));
@@ -170,7 +171,7 @@ static vcpu_guest_context_x86_64_t convert_to_pv64(const RegistersX86_64 &regs) 
 }
 
 static RegistersX86_32 convert_from_pv32(const vcpu_guest_context_x86_32_t &pv) {
-  using namespace reg::x86_32;
+  using namespace xd::reg::x86_32;
 
   RegistersX86_32 regs;
 
@@ -195,7 +196,7 @@ static RegistersX86_32 convert_from_pv32(const vcpu_guest_context_x86_32_t &pv) 
 }
 
 static vcpu_guest_context_x86_32_t convert_to_pv32(const RegistersX86_32 &regs) {
-  using namespace reg::x86_32;
+  using namespace xd::reg::x86_32;
 
   vcpu_guest_context_x86_32_t pv;
   memset(&pv, 0x00, sizeof(vcpu_guest_context_x86_32_t));
@@ -326,6 +327,22 @@ MemInfo XenCtrl::map_domain_meminfo(const Domain &domain) const {
   return meminfo;
 }
 
+MemoryPermissions XenCtrl::get_domain_memory_permissions(
+    const Domain &domain, Address address) const
+{
+  int err;
+  xenmem_access_t permissions;
+  xen_pfn_t pfn = address >> XC_PAGE_SHIFT;
+
+  memset(&permissions, 0, sizeof(xenmem_access_t));
+  if ((err = xc_get_mem_access(_xenctrl.get(), domain.get_domid(), pfn, &permissions))) {
+    throw XenException("Failed to get memory permissions for PFN " +
+        std::to_string(pfn) + " of domain " + std::to_string(domain.get_domid()), -err);
+  }
+
+  return permissions;
+}
+
 void XenCtrl::set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const {
   if (vcpu_id > domain.get_info().max_vcpu_id)
     throw XenException(
@@ -381,6 +398,23 @@ void XenCtrl::unpause_domain(const Domain &domain) const {
   if ((err = xc_domain_unpause(_xenctrl.get(), domain.get_domid())))
     throw XenException(
         "Failed to unpause domain " + std::to_string(domain.get_domid()), -err);
+}
+
+void XenCtrl::destroy_domain(const Domain &domain) const {
+  // Need to send the domain a SHUTDOWN request first to free up resources
+  shutdown_domain(domain, SHUTDOWN_poweroff);
+
+  int err;
+  if ((err = xc_domain_destroy(_xenctrl.get(), domain.get_domid())))
+    throw XenException(
+        "Failed to destroy domain " + std::to_string(domain.get_domid()), -err);
+}
+
+void XenCtrl::shutdown_domain(const Domain &domain, int reason) const {
+  int err;
+  if ((err = xc_domain_shutdown(_xenctrl.get(), domain.get_domid(), reason)))
+    throw XenException(
+        "Failed to shutdown domain " + std::to_string(domain.get_domid()), -err);
 }
 
 struct hvm_hw_cpu XenCtrl::get_domain_cpu_context_hvm(const Domain &domain, VCPU_ID vcpu_id) const {

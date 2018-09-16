@@ -34,7 +34,6 @@
     name2(const std::string &data) \
       : GDBRequestPacketBase(data, ch2), _signal(0) \
     { \
-      skip_space(); \
       _signal = read_byte(); \
       expect_end(); \
     }; \
@@ -49,7 +48,6 @@
     name(const std::string &data) \
       : GDBRequestPacketBase(data, ch) \
     { \
-      skip_space(); \
       _type = read_hex_number<uint8_t>(); \
       expect_char(','); \
       _address = read_hex_number<uint64_t>(); \
@@ -261,7 +259,6 @@ namespace xd::dbg::gdbstub::pkt {
     QuerySupportedRequest(const std::string &data)
       : GDBRequestPacketBase(data, "qSupported")
     {
-      skip_space();
       expect_char(':');
       while (has_more()) {
         const auto feature = read_until_char_or_end(';');
@@ -284,7 +281,6 @@ namespace xd::dbg::gdbstub::pkt {
     RestartRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'R')
     {
-      skip_space();
       read_byte(); // Required, but ignored
       expect_end();
     };
@@ -349,19 +345,18 @@ namespace xd::dbg::gdbstub::pkt {
   };
 
   DECLARE_SIMPLE_REQUEST(StopReasonRequest, '?');
+  DECLARE_SIMPLE_REQUEST(KillRequest, 'k');
 
   class SetThreadRequest : public GDBRequestPacketBase {
   public:
     SetThreadRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'H')
     {
-      skip_space();
       if (check_char('c'))
         _op = Op::StepAndContinue;
       else if (check_char('g'))
         _op = Op::StepAndContinue;
 
-      skip_space();
       _thread_id = read_hex_number<size_t>();
       expect_end();
     };
@@ -381,7 +376,6 @@ namespace xd::dbg::gdbstub::pkt {
     RegisterReadRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'p')
     {
-      skip_space();
       _register_id = read_hex_number<uint16_t>();
       if (check_char(';')) {
         expect_string("thread:");
@@ -406,7 +400,6 @@ namespace xd::dbg::gdbstub::pkt {
     RegisterWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'P')
     {
-      skip_space();
       _register_id = read_hex_number<uint16_t>();
       expect_char('=');
       _value = read_hex_number_respecting_endianness<uint64_t>();
@@ -439,10 +432,8 @@ namespace xd::dbg::gdbstub::pkt {
     GeneralRegistersBatchWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'g')
     {
-      skip_space();
-
-      using Regs64 = reg::x86_64::RegistersX86_64;
-      using Regs32 = reg::x86_32::RegistersX86_32;
+      using Regs64 = xd::reg::x86_64::RegistersX86_64;
+      using Regs32 = xd::reg::x86_32::RegistersX86_32;
 
       size_t index = 0;
       const auto size = get_num_remaining()/2;
@@ -486,7 +477,6 @@ namespace xd::dbg::gdbstub::pkt {
     MemoryReadRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'm')
     {
-      skip_space();
       _address = read_hex_number<uint64_t>();
       expect_char(',');
       _length = read_hex_number<uint64_t>();
@@ -506,7 +496,6 @@ namespace xd::dbg::gdbstub::pkt {
     MemoryWriteRequest(const std::string &data)
       : GDBRequestPacketBase(data, 'M')
     {
-      skip_space();
       _address = read_hex_number<uint64_t>();
       expect_char(',');
       _length = read_hex_number<uint64_t>();
@@ -538,6 +527,22 @@ namespace xd::dbg::gdbstub::pkt {
   DECLARE_SIMPLE_REQUEST(QueryHostInfoRequest, "qHostInfo");
   DECLARE_SIMPLE_REQUEST(QueryProcessInfoRequest, "qProcessInfo");
 
+  class QueryMemoryRegionInfoRequest : public GDBRequestPacketBase {
+  public:
+    QueryMemoryRegionInfoRequest(const std::string &data)
+      : GDBRequestPacketBase(data, "qMemoryRegionInfo")
+    {
+      expect_char(':');
+      _address = read_hex_number<uint64_t>();
+      expect_end();
+    };
+
+    uint64_t get_address() const { return _address; };
+
+  private:
+    uint64_t _address;
+  };
+
   using GDBRequestPacket = std::variant<
     StartNoAckModeRequest,
     QuerySupportedRequest,
@@ -549,7 +554,9 @@ namespace xd::dbg::gdbstub::pkt {
     QueryHostInfoRequest,
     QueryProcessInfoRequest,
     QueryRegisterInfoRequest,
+    QueryMemoryRegionInfoRequest,
     StopReasonRequest,
+    KillRequest,
     SetThreadRequest,
     RegisterReadRequest,
     RegisterWriteRequest,

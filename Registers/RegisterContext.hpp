@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace reg {
+namespace xd::reg {
   namespace {
     template <typename Context_t, typename Reg_t, bool matches>
     struct __offset_of_impl;

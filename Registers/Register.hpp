@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <iostream>
 
-namespace reg {
+namespace xd::reg {
 
   template <typename Value_t, size_t width>
   class _Register_impl;
@@ -116,9 +116,9 @@ namespace reg {
 }
 
 #define DECLARE_REGISTER_ALTNAME(_name, _alt_name, _type, _gcc_id) \
-  struct _name : public reg::Register<_type> { \
-    _name() : reg::Register<_type>() {}; \
-    _name(_type value) : reg::Register<_type>(value) {}; \
+  struct _name : public xd::reg::Register<_type> { \
+    _name() : xd::reg::Register<_type>() {}; \
+    _name(_type value) : xd::reg::Register<_type>(value) {}; \
     static constexpr auto name = #_name; \
     static constexpr auto alt_name = #_alt_name; \
     static constexpr size_t gcc_id = _gcc_id; \

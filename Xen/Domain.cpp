@@ -6,13 +6,14 @@
 
 #include "Domain.hpp"
 
-using reg::RegistersX86;
+using xd::reg::RegistersX86;
 using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::MappedMemory;
 using xd::xen::MemInfo;
 using xd::xen::XenCtrl;
 using xd::xen::XenHandle;
+using xd::xen::MemoryPermissions;
 
 Domain::Domain(XenHandle& xen, DomID domid)
     : _xen(xen), _domid(domid)
@@ -45,13 +46,16 @@ MemInfo Domain::map_meminfo() const {
 }
 
 // TODO: This doesn't seem to have any effect.
+/*
 void Domain::reboot() const {
   libxl_ctx *ctx;
   libxl_ctx_alloc(&ctx, LIBXL_VERSION, 0, nullptr);
   libxl_domain_reboot(ctx, _domid);
   libxl_ctx_free(ctx);
 }
+*/
 
+/*
 void Domain::read_memory(Address address, void *data, size_t size) {
   hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio, [address, data, size](auto u) {
     auto& memio = u->gdbsx_guest_memio;
@@ -83,31 +87,44 @@ void Domain::write_memory(Address address, void *data, size_t size) {
     munlock(data, size);
   });
 }
+*/
 
 MappedMemory Domain::map_memory(Address address, size_t size, int prot) const {
   return _xen.get_xen_foreign_memory().map(*this, address, size, prot);
 }
 
-RegistersX86 xd::xen::Domain::get_cpu_context(VCPU_ID vcpu_id) const {
+MemoryPermissions Domain::get_memory_permissions(Address address) const {
+  return _xen.get_xenctrl().get_domain_memory_permissions(*this, address);
+}
+
+RegistersX86 Domain::get_cpu_context(VCPU_ID vcpu_id) const {
   return _xen.get_xenctrl().get_domain_cpu_context(*this, vcpu_id);
 }
 
-void xd::xen::Domain::set_cpu_context(RegistersX86 regs, VCPU_ID vcpu_id) const {
+void Domain::set_cpu_context(RegistersX86 regs, VCPU_ID vcpu_id) const {
   _xen.get_xenctrl().set_domain_cpu_context(*this, regs, vcpu_id);
 }
 
-void xd::xen::Domain::set_debugging(bool enabled, VCPU_ID vcpu_id) const {
+void Domain::set_debugging(bool enabled, VCPU_ID vcpu_id) const {
   _xen.get_xenctrl().set_domain_debugging(*this, enabled, vcpu_id);
 }
 
-void xd::xen::Domain::set_single_step(bool enabled, VCPU_ID vcpu_id) const {
+void Domain::set_single_step(bool enabled, VCPU_ID vcpu_id) const {
   _xen.get_xenctrl().set_domain_single_step(*this, enabled, vcpu_id);
 }
 
-void xd::xen::Domain::pause() const {
+void Domain::pause() const {
   _xen.get_xenctrl().pause_domain(*this);
 }
 
-void xd::xen::Domain::unpause() const {
+void Domain::unpause() const {
   _xen.get_xenctrl().unpause_domain(*this);
+}
+
+void Domain::shutdown(int reason) const {
+  _xen.get_xenctrl().shutdown_domain(*this, reason);
+}
+
+void Domain::destroy() const {
+  _xen.get_xenctrl().destroy_domain(*this);
 }

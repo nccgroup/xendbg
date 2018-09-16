@@ -20,11 +20,12 @@
 #include "GDBStub.hpp"
 #include "../Util/overloaded.hpp"
 
-using reg::x86_32::RegistersX86_32;
-using reg::x86_64::RegistersX86_64;
+using xd::reg::x86_32::RegistersX86_32;
+using xd::reg::x86_64::RegistersX86_64;
 using xd::dbg::gdbstub::GDBPacketIO;
 using xd::dbg::gdbstub::GDBStub;
 using xd::util::overloaded;
+using xd::xen::XenException;
 
 int tcp_socket_open(in_addr_t addr, int port);
 int tcp_socket_accept(int sock_fd);
@@ -118,6 +119,21 @@ void GDBStub::run(Debugger &dbg) {
           // TODO
           io.write_packet(pkt::QueryProcessInfoResponse(1));
         },
+        [&io, &dbg](const pkt::QueryMemoryRegionInfoRequest &req) {
+          const auto address = req.get_address();
+
+          try {
+            const auto start = address & XC_PAGE_MASK;
+            const auto size = XC_PAGE_SIZE;
+            const auto perms = dbg.get_current_domain()->get_memory_permissions(address);
+
+            io.write_packet(pkt::QueryMemoryRegionInfoResponse(start, size, perms));
+          } catch (const XenException &e) {
+            std::string error(e.what());
+            error += std::string(": ") + std::strerror(errno);
+            io.write_packet(pkt::QueryMemoryRegionInfoErrorResponse(error));
+          }
+        },
         [&io](const pkt::QueryCurrentThreadIDRequest &req) {
           // TODO
           io.write_packet(pkt::QueryCurrentThreadIDResponse(1));
@@ -129,7 +145,12 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::QueryThreadInfoEndResponse());
         },
         [&io](const pkt::StopReasonRequest &req) {
-          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1)); // TODO
+          io.write_packet(pkt::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
+        },
+        [&io, &dbg, &running](const pkt::KillRequest &req) {
+          dbg.get_current_domain()->destroy();
+          io.write_packet(pkt::TerminatedResponse(SIGKILL));
+          running = false;
         },
         [&io](const pkt::SetThreadRequest &req) {
           io.write_packet(pkt::OKResponse());
@@ -243,20 +264,17 @@ void GDBStub::run(Debugger &dbg) {
         [&io, &dbg](const pkt::ContinueRequest &req) {
           io.write_packet(pkt::OKResponse());
           dbg.continue_until_infinite_loop();
-          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1));
+          io.write_packet(pkt::StopReasonSignalResponse(SIGTRAP, 1));
         },
         [&io, &dbg](const pkt::ContinueSignalRequest &req) {
-          dbg.continue_until_infinite_loop();
-          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1));
+          io.write_packet(pkt::NotSupportedResponse());
         },
         [&io, &dbg](const pkt::StepRequest &req) {
           dbg.single_step();
-          io.write_packet(pkt::StopReasonSignalResponse(0x13, 1));
+          io.write_packet(pkt::StopReasonSignalResponse(SIGTRAP, 1));
         },
         [&io, &dbg](const pkt::StepSignalRequest &req) {
-          // TODO
-          dbg.single_step();
-          io.write_packet(pkt::OKResponse());
+          io.write_packet(pkt::NotSupportedResponse());
         },
         [&io, &dbg](const pkt::BreakpointInsertRequest &req) {
           const auto address = req.get_address();
@@ -271,8 +289,9 @@ void GDBStub::run(Debugger &dbg) {
         [&io](const pkt::RestartRequest &req) {
           io.write_packet(pkt::NotSupportedResponse());
         },
-        [&io, &dbg](const pkt::DetachRequest &req) {
+        [&io, &dbg, &running](const pkt::DetachRequest &req) {
           dbg.detach();
+          running = false;
           io.write_packet(pkt::OKResponse());
         },
       };
@@ -283,7 +302,7 @@ void GDBStub::run(Debugger &dbg) {
       std::cout << "[!] Unrecognized packet: ";
       std::cout << e.what() << std::endl;
       io.write_packet(pkt::NotSupportedResponse());
-    } catch (const xen::XenException &e) {
+    } catch (const XenException &e) {
       std::cout << "[!] XenException:" << std::endl;
       std::cout << e.what() << std::endl;
       io.write_packet(pkt::ErrorResponse(0x45));

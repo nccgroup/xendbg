@@ -10,11 +10,11 @@
 #include "RegistersX86_32.hpp"
 #include "RegistersX86_64.hpp"
 
-namespace reg {
+namespace xd::reg {
 
   using RegistersX86 = std::variant<
-    reg::x86_32::RegistersX86_32,
-    reg::x86_64::RegistersX86_64>;
+    x86_32::RegistersX86_32,
+    x86_64::RegistersX86_64>;
 
 }
 

@@ -14,6 +14,7 @@
 #include "BridgeHeaders/xenguest.h"
 
 #include "Common.hpp"
+#include "MemoryPermissions.hpp"
 #include "../Registers/RegistersX86.hpp"
 
 namespace xd::xen {
@@ -32,19 +33,26 @@ namespace xd::xen {
     XenVersion get_xen_version() const;
 
     DomInfo get_domain_info(const Domain &domain) const;
-    reg::RegistersX86 get_domain_cpu_context(const Domain &domain,
+    xd::reg::RegistersX86 get_domain_cpu_context(const Domain &domain,
         VCPU_ID vcpu_id = 0) const;
     void set_domain_cpu_context(const Domain &domain,
-        const reg::RegistersX86& regs, VCPU_ID vcpu_id = 0) const;
+        const xd::reg::RegistersX86& regs, VCPU_ID vcpu_id = 0) const;
     WordSize get_domain_word_size(const Domain &domain) const;
+
     MemInfo map_domain_meminfo(const Domain &domain) const;
+    MemoryPermissions get_domain_memory_permissions(
+        const Domain &domain, Address address) const;
 
     void set_domain_debugging(const Domain &domain, bool enable,
         VCPU_ID vcpu_id) const;
     void set_domain_single_step(const Domain &domain, bool enable,
         VCPU_ID vcpu_id) const;
+
     void pause_domain(const Domain &domain) const;
     void unpause_domain(const Domain &domain) const;
+
+    void destroy_domain(const Domain &domain) const;
+    void shutdown_domain(const Domain &domain, int reason) const;
 
   private:
     struct hvm_hw_cpu get_domain_cpu_context_hvm(const Domain &domain, VCPU_ID vcpu_id) const;

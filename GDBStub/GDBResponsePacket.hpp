@@ -12,6 +12,8 @@
 #include <variant>
 #include <vector>
 
+#include "../Xen/Common.hpp"
+#include "../Xen/MemoryPermissions.hpp"
 #include "../Registers/RegistersX86.hpp"
 #include "../Util/overloaded.hpp"
 
@@ -27,6 +29,11 @@ namespace xd::dbg::gdbstub::pkt {
       ss << std::hex << std::setfill('0');
       while (p != end)
         ss << std::setw(2) << (unsigned)(*p++);
+    }
+
+    void write_byte(std::stringstream &ss, uint8_t byte) {
+      ss << std::hex << std::setfill('0');
+      ss << std::setw(2) << (unsigned)byte;
     }
 
     std::string hexify(const std::string& s) {
@@ -175,7 +182,7 @@ namespace xd::dbg::gdbstub::pkt {
 
   class GeneralRegistersBatchReadResponse : public GDBResponsePacket {
   public:
-    GeneralRegistersBatchReadResponse(reg::RegistersX86 registers)
+    GeneralRegistersBatchReadResponse(xd::reg::RegistersX86 registers)
       : _registers(registers) {}
 
   std::string to_string() const override {
@@ -183,12 +190,12 @@ namespace xd::dbg::gdbstub::pkt {
 
     ss << std::hex << std::setfill('0');
     std::visit(util::overloaded {
-      [&ss](const reg::x86_64::RegistersX86_64& regs) {
+      [&ss](const xd::reg::x86_64::RegistersX86_64& regs) {
         regs.for_each([&ss](const auto&, const auto &reg) {
           write_register(ss, reg);
         });
       },
-      [&ss](const reg::x86_32::RegistersX86_32& regs) {
+      [&ss](const xd::reg::x86_32::RegistersX86_32& regs) {
         regs.for_each([&ss](const auto&, const auto &reg) {
           write_register(ss, reg);
         });
@@ -204,7 +211,7 @@ namespace xd::dbg::gdbstub::pkt {
   }
 
   private:
-    reg::RegistersX86 _registers;
+  xd::reg::RegistersX86 _registers;
   };
 
   class MemoryReadResponse : public GDBResponsePacket {
@@ -244,6 +251,23 @@ namespace xd::dbg::gdbstub::pkt {
       ss << ";threads:";
       ss << _thread_id;
       ss << ";reason:signal;";
+      return ss.str();
+    };
+
+  private:
+    uint8_t _signal;
+    size_t _thread_id;
+  };
+
+  class TerminatedResponse : public GDBResponsePacket {
+  public:
+    TerminatedResponse(uint8_t signal)
+      : _signal(signal) {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      ss << "X";
+      write_byte(ss, _signal);
       return ss.str();
     };
 
@@ -306,6 +330,57 @@ namespace xd::dbg::gdbstub::pkt {
 
   private:
     size_t _pid;
+  };
+
+  class QueryMemoryRegionInfoResponse : public GDBResponsePacket {
+  public:
+    QueryMemoryRegionInfoResponse(xd::xen::Address start_address, size_t size,
+        xd::xen::MemoryPermissions permissions, std::string name = "")
+      : _start_address(start_address), _size(size),
+        _permissions(permissions), _name(std::move(name))
+    {};
+
+    std::string to_string() const override {
+      std::stringstream ss;
+      ss << std::hex;
+      add_list_entry(ss, "start", _start_address);
+      add_list_entry(ss, "size", _size);
+      add_list_entry(ss, "permissions", make_permissions_string(_permissions));
+      if (!_name.empty())
+        add_list_entry(ss, "name", _start_address);
+      return ss.str();
+    };
+
+  private:
+    static std::string make_permissions_string(xd::xen::MemoryPermissions permissions) {
+      std::string s;
+      if (permissions.read)
+        s += "r";
+      if (permissions.write)
+        s += "w";
+      if (permissions.execute)
+        s += "e";
+      return s;
+    }
+
+    xd::xen::Address _start_address;
+    size_t _size;
+    xd::xen::MemoryPermissions _permissions;
+    std::string _name;
+  };
+
+  class QueryMemoryRegionInfoErrorResponse : public GDBResponsePacket {
+  public:
+    QueryMemoryRegionInfoErrorResponse(std::string error)
+      : _error(std::string(error))
+    {};
+
+    std::string to_string() const override {
+      return "error:" + _error;
+    };
+
+  private:
+    std::string _error;
   };
 
   class QueryRegisterInfoResponse : public GDBResponsePacket {

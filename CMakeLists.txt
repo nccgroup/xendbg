@@ -48,6 +48,7 @@ add_executable(xendbg main.cpp REPL/Parser/Parser.cpp
         GDBStub/GDBRequestPacket.hpp Registers/RegisterContext.hpp
   Registers/Register.hpp Registers/RegistersX86_64.hpp
   Registers/RegistersX86.hpp Registers/RegisterContextIterator.hpp)
+  Xen/MemoryPermissions.cpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore
   xenlight xlutil capstone pthread)

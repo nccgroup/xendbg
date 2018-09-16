@@ -42,12 +42,12 @@ add_executable(xendbg main.cpp Parser/Parser.cpp
   Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp
   Debugger/Debugger.cpp Debugger/Debugger.hpp Parser/Token/String.hpp
   REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp
-  Parser/Expression/Expression.hpp Debugger/GDBStub/GDBStub.cpp
-  Debugger/GDBStub/GDBStub.hpp Debugger/GDBStub/GDBPacketIO.cpp
-  Debugger/GDBStub/GDBPacketIO.hpp Debugger/GDBStub/GDBResponsePacket.hpp
-  Debugger/GDBStub/GDBRequestPacket.hpp Registers/RegisterContext.hpp
+  Parser/Expression/Expression.hpp GDBStub/GDBStub.cpp
+        GDBStub/GDBStub.hpp GDBStub/GDBPacketIO.cpp
+        GDBStub/GDBPacketIO.hpp GDBStub/GDBResponsePacket.hpp
+        GDBStub/GDBRequestPacket.hpp Registers/RegisterContext.hpp
   Registers/Register.hpp Registers/RegistersX86_64.hpp
-  Registers/RegistersX86.hpp)
+  Registers/RegistersX86.hpp Registers/RegisterIterator.hpp)
 
 target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore
   xenlight xlutil capstone pthread)

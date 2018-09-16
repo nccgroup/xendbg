@@ -8,9 +8,9 @@
 #include <stdexcept>
 #include <string>
 
-#include "Debugger.hpp"
+#include "../Debugger/Debugger.hpp"
 #include "../Parser/Expression/Expression.hpp"
-#include "../REPL/REPL.hpp"
+#include "REPL.hpp"
 
 namespace xd::dbg {
 
@@ -18,6 +18,12 @@ namespace xd::dbg {
   public:
     InvalidInputException(const std::string &what)
       : std::runtime_error(what.c_str()) {};
+  };
+
+  class NoSuchVariableException : public std::runtime_error {
+  public:
+    explicit NoSuchVariableException(const std::string &name)
+      : std::runtime_error(name) {};
   };
 
   class DebuggerREPL {
@@ -29,6 +35,9 @@ namespace xd::dbg {
     void run();
 
   private:
+    using SymbolMap = std::unordered_map<std::string, Symbol>;
+    using VarMap = std::unordered_map<std::string, uint64_t>;
+
     xen::Domain& get_domain_or_fail();
     void setup_repl();
     static void print_domain_info(const xen::Domain& domain);
@@ -38,9 +47,19 @@ namespace xd::dbg {
     void evaluate_set_expression(const parser::expr::Expression& expr, size_t word_size);
     void examine(uint64_t address, size_t word_size, size_t num_words);
 
+    void load_symbols_from_file(const std::string &name);
+    const Symbol &lookup_symbol(const std::string &name);
+
+    uint64_t get_var(const std::string &name);
+    void set_var(const std::string &name, uint64_t value);
+    void delete_var(const std::string &name);
+
   private:
     Debugger _debugger;
     repl::REPL _repl;
+
+    VarMap _variables;
+    SymbolMap _symbols;
   };
 
 }

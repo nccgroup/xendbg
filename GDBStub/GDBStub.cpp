@@ -15,10 +15,10 @@
 #include <thread>
 #include <unistd.h>
 
-#include "../Debugger.hpp"
+#include "../Debugger/Debugger.hpp"
 #include "GDBPacketIO.hpp"
 #include "GDBStub.hpp"
-#include "../../Util/overloaded.hpp"
+#include "../Util/overloaded.hpp"
 
 using reg::x86_32::RegistersX86_32;
 using reg::x86_64::RegistersX86_64;

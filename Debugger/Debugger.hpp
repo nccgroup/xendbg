@@ -14,6 +14,7 @@
 #include <capstone/capstone.h>
 
 #include "../Xen/Domain.hpp"
+#include "../Util/overloaded.hpp"
 
 namespace xd::dbg {
 
@@ -22,7 +23,7 @@ namespace xd::dbg {
 
   class NoSuchInfiniteLoopException : public std::exception{
   public:
-    NoSuchInfiniteLoopException(const xen::Address address)
+    explicit NoSuchInfiniteLoopException(const xen::Address address)
       : _address(address) {};
 
     xen::Address get_address() const { return _address; };
@@ -31,15 +32,9 @@ namespace xd::dbg {
     xen::Address _address;
   };
 
-  class NoSuchVariableException : public std::runtime_error {
-  public:
-    NoSuchVariableException(const std::string &name)
-      : std::runtime_error(name) {};
-  };
-
   class NoSuchSymbolException : public std::runtime_error {
   public:
-    NoSuchSymbolException(const std::string &name)
+    explicit NoSuchSymbolException(const std::string &name)
       : std::runtime_error(name) {};
   };
 
@@ -50,15 +45,11 @@ namespace xd::dbg {
     };
 
     using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
-    using SymbolMap = std::unordered_map<std::string, Symbol>;
-    using VarMap = std::unordered_map<std::string, uint64_t>;
     using MaskedMemory = std::unique_ptr<unsigned char>;
 
   public:
     xen::Domain& attach(xen::DomID domid);
     void detach();
-
-    void load_symbols_from_file(const std::string &name);
 
     xen::Address continue_until_infinite_loop();
     void single_step();
@@ -66,15 +57,8 @@ namespace xd::dbg {
     xen::XenHandle &get_xen_handle() { return _xen; };
     std::optional<xen::Domain>& get_current_domain() { return _domain; };
     std::vector<xen::Domain> get_guest_domains();
-    const Symbol &lookup_symbol(const std::string &name);
 
     const InfiniteLoopMap& get_infinite_loops() { return _infinite_loops; };
-    const SymbolMap& get_symbols() { return _symbols; };
-    const VarMap& get_vars() { return _variables; };
-
-    uint64_t get_var(const std::string &name);
-    void set_var(const std::string &name, uint64_t value);
-    void delete_var(const std::string &name);
 
     void insert_infinite_loop(xen::Address address);
     void remove_infinite_loop(xen::Address address);
@@ -84,6 +68,18 @@ namespace xd::dbg {
     void write_memory_retaining_infinite_loops(
         xen::Address address, size_t length, void *data);
 
+    template <typename Reg32_t, typename Reg64_t>
+    uint64_t read_register() {
+      return std::visit(util::overloaded {
+          [](const reg::x86_32::RegistersX86_32 regs) {
+            return (uint64_t)regs.get<Reg32_t>();
+          },
+          [](const reg::x86_64::RegistersX86_64 regs) {
+            return (uint64_t)regs.get<Reg64_t>();
+          }
+      }, _domain->get_cpu_context(_current_vcpu));
+    }
+
   private:
     std::optional<xen::Address> check_infinite_loop_hit();
     std::pair<std::optional<xen::Address>,
@@ -91,13 +87,11 @@ namespace xd::dbg {
 
   private:
     csh _capstone;
-    size_t _current_vcpu;
+    xen::VCPU_ID _current_vcpu;
     xen::XenHandle _xen;
     std::optional<xen::Domain> _domain;
 
-    SymbolMap _symbols;
     InfiniteLoopMap _infinite_loops;
-    VarMap _variables;
   };
 
 }

@@ -6,7 +6,6 @@
 #include <stdexcept>
 
 #include <capstone/capstone.h>
-#include <elfio/elfio.hpp>
 
 #include "Debugger.hpp"
 #include "../Util/overloaded.hpp"
@@ -46,83 +45,8 @@ void Debugger::detach() {
 
   cs_close(&_capstone);
 
-  _symbols.clear();
-  _variables.clear();
   _domain.reset();
 }
-
-void Debugger::load_symbols_from_file(const std::string &name) {
-  ELFIO::elfio reader;
-
-  if (!reader.load(name))
-    throw std::runtime_error("Failed to read file!");
-
-  _symbols.clear();
-
-  for (const auto section : reader.sections) {
-    if (section->get_type() == SHT_SYMTAB) {
-      const ELFIO::symbol_section_accessor symbols(reader, section);
-      const size_t num_symbols = symbols.get_symbols_num();
-      for (size_t i = 0; i < num_symbols; ++i) {
-        std::string       name;
-        ELFIO::Elf64_Addr address;
-        ELFIO::Elf_Xword  size;
-        unsigned char     bind;
-        unsigned char     type;
-        ELFIO::Elf_Half   section_index;
-        unsigned char     other;
-
-        symbols.get_symbol(i, name, address, size, bind, type, section_index, other);
-
-        // TODO: very basic for now
-        if (type == STT_FUNC && address > 0)
-          _symbols[name] = Symbol{address};
-      }
-    }
-  }
-}
-
-/*
-size_t Debugger::create_breakpoint(xen::Address address) {
-  _domain->pause();
-  const auto bp = insert_infinite_loop(address);
-  _domain->unpause();
-  _breakpoints[bp.id] = bp;
-  return bp.id;
-}
-
-void Debugger::delete_breakpoint(size_t id) {
-  if (!_domain)
-    throw NoGuestAttachedException();
-
-  if (_breakpoints.count(id) == 0)
-    throw NoSuchBreakpointException(id);
-
-  const auto &bp = _breakpoints.at(id);
-  _domain->pause();
-  remove_infinite_loop(bp);
-  _domain->unpause();
-  _breakpoints.erase(_breakpoints.find(id));
-}
-
-Debugger::Breakpoint Debugger::continue_until_breakpoint() {
-  if (!_domain)
-    throw NoGuestAttachedException();
-
-  // Single step first to move beyond the current breakpoint;
-  // it will be removed during the step and replaced automatically.
-  single_step();
-
-  _domain->unpause();
-
-  std::optional<Breakpoint> bp;
-  while (!(bp = check_breakpoint_hit()));
-
-  _domain->pause();
-
-  return *bp;
-}
-*/
 
 Address Debugger::continue_until_infinite_loop() {
   if (!_domain)
@@ -193,52 +117,6 @@ std::vector<Domain> Debugger::get_guest_domains() {
   return domains;
 }
 
-const Debugger::Symbol &Debugger::lookup_symbol(const std::string &name) {
-  if (!_symbols.count(name))
-    throw NoSuchSymbolException(name);
-  return _symbols.at(name);
-}
-
-uint64_t Debugger::get_var(const std::string &name) {
-  if (!_variables.count(name))
-    throw NoSuchSymbolException(name);
-  return _variables.at(name);
-}
-
-void Debugger::set_var(const std::string &name, uint64_t value) {
-  _variables[name] = value;
-}
-
-void Debugger::delete_var(const std::string &name) {
-  if (!_variables.count(name))
-    throw NoSuchVariableException("No such variable!");
-  _variables.erase(name);
-}
-
-/*
-std::optional<Debugger::Breakpoint> Debugger::get_breakpoint_by_address(
-    Address address)
-{
-  const auto found = std::find_if(_breakpoints.begin(), _breakpoints.end(),
-    [address](const auto &pair) {
-      return pair.second.address == address;
-    });
-
-  if (found == _breakpoints.end())
-    return std::nullopt;
-
-  return found->second;
-}
-
-std::optional<Debugger::Breakpoint> Debugger::check_breakpoint_hit() {
-  const auto address = check_infinite_loop_hit();
-  if (!address)
-    return std::nullopt;
-
-  return get_breakpoint_by_address(address);
-}
-*/
-
 std::optional<Address> Debugger::check_infinite_loop_hit() {
   const auto address = std::visit(util::overloaded {
     [](const reg::x86_32::RegistersX86_32 regs) {
@@ -256,29 +134,10 @@ std::optional<Address> Debugger::check_infinite_loop_hit() {
     return address;
   return std::nullopt;
 }
+
 std::pair<std::optional<Address>, std::optional<Address>>
   Debugger::get_address_of_next_instruction()
 {
-  const auto read_eip_rip = [this]() {
-    return std::visit(util::overloaded {
-    [](const reg::x86_32::RegistersX86_32 regs) {
-      return (uint64_t)regs.get<reg::x86_32::eip>();
-    },
-    [](const reg::x86_64::RegistersX86_64 regs) {
-      return (uint64_t)regs.get<reg::x86_64::rip>();
-    }
-    }, _domain->get_cpu_context(_current_vcpu));
-  };
-  const auto read_esp_rsp = [this]() {
-    return std::visit(util::overloaded {
-    [](const reg::x86_32::RegistersX86_32 regs) {
-      return (uint64_t)regs.get<reg::x86_32::esp>();
-    },
-    [](const reg::x86_64::RegistersX86_64 regs) {
-      return (uint64_t)regs.get<reg::x86_64::rsp>();
-    }
-    }, _domain->get_cpu_context(_current_vcpu));
-  };
   const auto read_word = [this](Address addr) {
     const auto mem_handle = _domain->map_memory(addr, sizeof(uint64_t), PROT_READ);
     if (_domain->get_word_size() == sizeof(uint64_t)) {
@@ -296,7 +155,7 @@ std::pair<std::optional<Address>, std::optional<Address>>
     //return _domain->read_register(std::string(reg_name));
   };
 
-  const auto address = read_eip_rip();
+  const auto address = read_register<reg::x86_32::eip, reg::x86_64::rip>();
 
   const auto read_size = (2*X86_MAX_INSTRUCTION_SIZE);
   const auto mem_handle = _domain->map_memory(address, read_size, PROT_READ);
@@ -344,6 +203,7 @@ std::pair<std::optional<Address>, std::optional<Address>>
   else if (cs_insn_group(_capstone, &cur_instr, X86_GRP_RET) ||
              cs_insn_group(_capstone, &cur_instr, X86_GRP_IRET))
   {
+    const auto stack_ptr = read_register<reg::x86_32::esp, reg::x86_64::rsp>();
     const auto ret_dest = read_word(read_esp_rsp());
     return std::make_pair(std::nullopt, ret_dest);
   }

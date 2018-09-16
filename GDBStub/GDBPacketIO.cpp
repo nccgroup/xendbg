@@ -8,8 +8,8 @@
 #include "GDBPacketIO.hpp"
 #include "GDBResponsePacket.hpp"
 #include "GDBRequestPacket.hpp"
-#include "../../Util/pop_ret.hpp"
-#include "../../Util/string.hpp"
+#include "../Util/pop_ret.hpp"
+#include "../Util/string.hpp"
 
 #define PACKET_BUFFER_MAX_SIZE 0x400
 

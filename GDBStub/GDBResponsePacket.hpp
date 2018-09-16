@@ -12,8 +12,8 @@
 #include <variant>
 #include <vector>
 
-#include "../../Registers/RegistersX86.hpp"
-#include "../../Util/overloaded.hpp"
+#include "../Registers/RegistersX86.hpp"
+#include "../Util/overloaded.hpp"
 
 namespace xd::dbg::gdbstub::pkt {
 

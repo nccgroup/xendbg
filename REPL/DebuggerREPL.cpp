@@ -6,15 +6,17 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <elfio/elfio.hpp>
+
 #include "DebuggerREPL.hpp"
 #include "../Xen/XenException.hpp"
 #include "../Parser/Parser.hpp"
-#include "../REPL/Command/Argument.hpp"
-#include "../REPL/Command/Flag.hpp"
-#include "../REPL/Command/MakeCommand.hpp"
-#include "../REPL/Command/Match.hpp"
-#include "../REPL/Command/MatchHelper.hpp"
-#include "../REPL/Command/Verb.hpp"
+#include "Command/Argument.hpp"
+#include "Command/Flag.hpp"
+#include "Command/MakeCommand.hpp"
+#include "Command/Match.hpp"
+#include "Command/MatchHelper.hpp"
+#include "Command/Verb.hpp"
 #include "../Util/string.hpp"
 
 using xd::dbg::Debugger;
@@ -271,9 +273,7 @@ void DebuggerREPL::setup_repl() {
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
-            const auto& vars = _debugger.get_vars();
-
-            for (const auto& var : vars) {
+            for (const auto& var : _variables) {
               std::cout << var.first << "\t" << var.second << std::endl;
             }
           };
@@ -601,7 +601,7 @@ void xd::dbg::DebuggerREPL::evaluate_set_expression(const Expression &expr, size
     if (xd::xen::is_register_name(var_name))
       get_domain_or_fail().write_register(var_name, value);
     else
-      _debugger.set_var(var_name, value);
+      set_var(var_name, value);
 
   } else /*if (lhs_is_deref)*/ {
     const auto address = evaluate_expression(ex.x.as_unex().x);
@@ -628,7 +628,7 @@ uint64_t DebuggerREPL::evaluate_expression(const Expression& expr) {
       if (xd::xen::is_register_name(var_name))
         return get_domain_or_fail().read_register(var_name);
       else
-        return _debugger.get_var(var_name); 
+        return get_var(var_name);
     },
     [this](const Expression::UnaryExpressionPtr& ex) {
       const auto& op = ex->op;
@@ -704,4 +704,57 @@ void DebuggerREPL::examine(uint64_t address, size_t word_size, size_t num_words)
       std::cout << std::endl;
   }
   std::cout << std::dec << std::endl;
+}
+
+uint64_t DebuggerREPL::get_var(const std::string &name) {
+  if (!_variables.count(name))
+    throw NoSuchSymbolException(name);
+  return _variables.at(name);
+}
+
+void DebuggerREPL::set_var(const std::string &name, uint64_t value) {
+  _variables[name] = value;
+}
+
+void DebuggerREPL::delete_var(const std::string &name) {
+  if (!_variables.count(name))
+    throw NoSuchVariableException("No such variable!");
+  _variables.erase(name);
+}
+
+void Debugger::load_symbols_from_file(const std::string &name) {
+  ELFIO::elfio reader;
+
+  if (!reader.load(name))
+    throw std::runtime_error("Failed to read file!");
+
+  _symbols.clear();
+
+  for (const auto section : reader.sections) {
+    if (section->get_type() == SHT_SYMTAB) {
+      const ELFIO::symbol_section_accessor symbols(reader, section);
+      const size_t num_symbols = symbols.get_symbols_num();
+      for (size_t i = 0; i < num_symbols; ++i) {
+        std::string       name;
+        ELFIO::Elf64_Addr address;
+        ELFIO::Elf_Xword  size;
+        unsigned char     bind;
+        unsigned char     type;
+        ELFIO::Elf_Half   section_index;
+        unsigned char     other;
+
+        symbols.get_symbol(i, name, address, size, bind, type, section_index, other);
+
+        // TODO: very basic for now
+        if (type == STT_FUNC && address > 0)
+          _symbols[name] = Symbol{address};
+      }
+    }
+  }
+}
+
+const Debugger::Symbol &Debugger::lookup_symbol(const std::string &name) {
+  if (!_symbols.count(name))
+    throw NoSuchSymbolException(name);
+  return _symbols.at(name);
 }

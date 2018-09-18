@@ -7,48 +7,101 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
 # Apple clang doesn't actually support all C++17 features...
 # Assume xen has been cloned into /opt
-if (APPLE)
-    set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
-    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
-    include_directories("/usr/local/opt/xen/tools/xenstore/include")
-    include_directories("/usr/local/opt/xen/tools/libxc/include")
-    include_directories("/usr/local/opt/xen/tools/libs/foreignmemory/include")
-    include_directories("/usr/local/opt/xen/xen/include/public")
-endif()
+#if (APPLE)
+#  set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
+#  set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
+#  include_directories("/usr/local/opt/xen/tools/xenstore/include")
+#  include_directories("/usr/local/opt/xen/tools/libxc/include")
+#  include_directories("/usr/local/opt/xen/tools/libs/foreignmemory/include")
+#  include_directories("/usr/local/opt/xen/xen/include/public")
+#endif()
 
-add_executable(xendbg main.cpp REPL/Parser/Parser.cpp
-        REPL/Parser/Expression/ExpressionGeneric.hpp
-        REPL/Parser/Expression/Operator/BinaryOperator.hpp
-        REPL/Parser/Expression/Operator/Precedence.hpp
-        REPL/Parser/Expression/Operator/UnaryOperator.hpp REPL/Parser/ParserException.hpp
-        REPL/Parser/Sentinel.hpp REPL/Parser/Tokenizer.hpp REPL/Parser/Token/Variable.hpp
-        REPL/Parser/Token/Label.hpp REPL/Parser/Token/Symbol.hpp REPL/Parser/Token/Match.hpp
-        REPL/Parser/Predicate.hpp Util/overloaded.hpp Util/pop_ret.hpp Util/clear.hpp
-  REPL/REPL.cpp REPL/REPL.hpp Xen/Domain.cpp Xen/Domain.hpp
-  Xen/XenException.hpp Xen/XenStore.cpp Xen/XenStore.hpp Xen/XenCtrl.cpp
-  Xen/XenCtrl.hpp Xen/XenForeignMemory.cpp Xen/XenForeignMemory.hpp
-  Xen/Common.hpp Xen/BridgeHeaders/xenctrl.h
-  Xen/BridgeHeaders/xenstore.h Xen/BridgeHeaders/xenforeignmemory.h
-  Xen/BridgeHeaders/xenguest.h Xen/BridgeHeaders/domctl.h Xen/PrivCmd.cpp
-  Xen/PrivCmd.hpp REPL/Command/Action.hpp REPL/Command/Command.cpp
-  REPL/Command/Command.hpp Util/string.hpp Util/string.cpp
-  REPL/Command/Verb.cpp REPL/Command/Verb.hpp REPL/Command/Argument.cpp
-  REPL/Command/Argument.hpp REPL/Command/Flag.cpp REPL/Command/Flag.hpp
-  REPL/Command/ArgsHandle.cpp REPL/Command/ArgsHandle.hpp
-  REPL/Command/FlagsHandle.cpp REPL/Command/FlagsHandle.hpp
-  REPL/Command/Match.hpp REPL/Command/Match.cpp REPL/Command/CommandBase.hpp
-  REPL/Command/CommandVerb.cpp REPL/Command/CommandVerb.hpp
-  REPL/Command/MakeCommand.hpp REPL/Command/MakeCommand.cpp
-  Util/IndentHelper.hpp Util/IndentHelper.cpp Xen/XenHandle.hpp
-  Debugger/Debugger.cpp Debugger/Debugger.hpp REPL/Parser/Token/String.hpp
-  REPL/Command/MatchHelper.hpp REPL/Command/MatchHelper.cpp
-        REPL/Parser/Expression/Expression.hpp GDBStub/GDBStub.cpp
-        GDBStub/GDBStub.hpp GDBStub/GDBPacketIO.cpp
-        GDBStub/GDBPacketIO.hpp GDBStub/GDBResponsePacket.hpp
-        GDBStub/GDBRequestPacket.hpp Registers/RegisterContext.hpp
-  Registers/Register.hpp Registers/RegistersX86_64.hpp
-  Registers/RegistersX86.hpp Registers/RegisterContextIterator.hpp)
-  Xen/MemoryPermissions.cpp)
+add_executable(xendbg
+  src/Debugger/Debugger.cpp
+  src/Debugger/Debugger.hpp
+  src/GDBStub/GDBPacketIO.cpp
+  src/GDBStub/GDBPacketIO.hpp
+  src/GDBStub/GDBRequestPacket.hpp
+  src/GDBStub/GDBResponsePacket.hpp
+  src/GDBStub/GDBStub.cpp
+  src/GDBStub/GDBStub.hpp
+  src/REPL/Command/Action.hpp
+  src/REPL/Command/ArgsHandle.cpp
+  src/REPL/Command/ArgsHandle.hpp
+  src/REPL/Command/Argument.cpp
+  src/REPL/Command/Argument.hpp
+  src/REPL/Command/Command.cpp
+  src/REPL/Command/Command.hpp
+  src/REPL/Command/CommandBase.hpp
+  src/REPL/Command/CommandVerb.cpp
+  src/REPL/Command/CommandVerb.hpp
+  src/REPL/Command/Flag.cpp
+  src/REPL/Command/Flag.hpp
+  src/REPL/Command/FlagsHandle.cpp
+  src/REPL/Command/FlagsHandle.hpp
+  src/REPL/Command/MakeCommand.cpp
+  src/REPL/Command/MakeCommand.hpp
+  src/REPL/Command/Match.cpp
+  src/REPL/Command/Match.hpp
+  src/REPL/Command/MatchHelper.hpp
+  src/REPL/Command/Verb.cpp
+  src/REPL/Command/Verb.hpp
+  src/REPL/Parser/Expression/Expression.hpp
+  src/REPL/Parser/Expression/ExpressionGeneric.hpp
+  src/REPL/Parser/Expression/Operator/BinaryOperator.hpp
+  src/REPL/Parser/Expression/Operator/Precedence.hpp
+  src/REPL/Parser/Expression/Operator/UnaryOperator.hpp
+  src/REPL/Parser/Parser.cpp
+  src/REPL/Parser/ParserException.hpp
+  src/REPL/Parser/Predicate.hpp
+  src/REPL/Parser/Sentinel.hpp
+  src/REPL/Parser/Token/Label.hpp
+  src/REPL/Parser/Token/Match.hpp
+  src/REPL/Parser/Token/String.hpp
+  src/REPL/Parser/Token/Symbol.hpp
+  src/REPL/Parser/Token/Variable.hpp
+  src/REPL/Parser/Tokenizer.hpp
+  src/REPL/REPL.cpp
+  src/REPL/REPL.hpp
+  src/Registers/Register.hpp
+  src/Registers/RegisterContext.hpp
+  src/Registers/RegisterContextIterator.hpp
+  src/Registers/RegistersX86.hpp
+  src/Registers/RegistersX86_64.hpp
+  src/Util/IndentHelper.cpp
+  src/Util/IndentHelper.hpp
+  src/Util/clear.hpp
+  src/Util/overloaded.hpp
+  src/Util/pop_ret.hpp
+  src/Util/string.cpp
+  src/Util/string.hpp
+  src/Xen/BridgeHeaders/domctl.h
+  src/Xen/BridgeHeaders/xenctrl.h
+  src/Xen/BridgeHeaders/xenforeignmemory.h
+  src/Xen/BridgeHeaders/xenguest.h
+  src/Xen/BridgeHeaders/xenstore.h
+  src/Xen/Common.hpp
+  src/Xen/Domain.cpp
+  src/Xen/Domain.hpp
+  src/Xen/MemoryPermissions.cpp
+  src/Xen/PrivCmd.cpp
+  src/Xen/PrivCmd.hpp
+  src/Xen/XenCtrl.cpp
+  src/Xen/XenCtrl.hpp
+  src/Xen/XenException.hpp
+  src/Xen/XenForeignMemory.cpp
+  src/Xen/XenForeignMemory.hpp
+  src/Xen/XenHandle.hpp
+  src/Xen/XenStore.cpp
+  src/Xen/XenStore.hpp
+  src/main.cpp)
 
-target_link_libraries(xendbg readline xenctrl xenforeignmemory xenstore
-  xenlight xlutil capstone pthread)
+target_link_libraries(xendbg
+  capstone
+  pthread
+  readline
+  xenctrl
+  xenforeignmemory
+  xenlight
+  xenstore
+  xlutil)

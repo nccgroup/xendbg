@@ -5,16 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CLANG_DEFAULT_CXX_STDLIB "libc++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
-# Apple clang doesn't actually support all C++17 features...
-# Assume xen has been cloned into /opt
-#if (APPLE)
-#  set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
-#  set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
-#  include_directories("/usr/local/opt/xen/tools/xenstore/include")
-#  include_directories("/usr/local/opt/xen/tools/libxc/include")
-#  include_directories("/usr/local/opt/xen/tools/libs/foreignmemory/include")
-#  include_directories("/usr/local/opt/xen/xen/include/public")
-#endif()
+include_directories(
+  third_party/CLI11/include
+  third_party/ELFIO/include)
 
 add_executable(xendbg
   src/Debugger/Debugger.cpp

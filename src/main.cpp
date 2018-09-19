@@ -27,8 +27,8 @@ public:
 
     port->needs(attach);
 
-    _app.callback([this] {
-      if (_port) {
+    _app.callback([this, port] {
+      if (port->count()) {
         DomID domid;
         try {
           XenStore xenstore;
@@ -37,7 +37,7 @@ public:
           domid = std::stoul(_domain);
         }
 
-        start_gdb_server(domid, _port);
+        CommandLine::start_gdb_server(domid, _port);
       }
     });
   };
@@ -58,7 +58,7 @@ private:
   std::string _domain;
 
 private:
-  void start_gdb_server(DomID domid, uint16_t port) {
+  static void start_gdb_server(DomID domid, uint16_t port) {
     Debugger dbg;
     dbg.attach(domid);
     std::cout << "Attached to guest #" << domid << std::endl;

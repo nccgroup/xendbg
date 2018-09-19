@@ -17,9 +17,9 @@ BASE_FLAGS = [
         '-stdlib=libc++',
         '-xc++',
         '-I/usr/lib/',
-        '-I/usr/include/'
-        '-I./third_party/CLI11/include'
-        '-I./third_party/ELFIO/include'
+        '-I/usr/include/',
+        '-I../third_party/CLI11/include/',
+        '-I../third_party/ELFIO/include/'
         ]
 
 SOURCE_EXTENSIONS = [
@@ -44,8 +44,8 @@ HEADER_EXTENSIONS = [
         ]
 
 HEADER_DIRECTORIES = [
-        'include'
-        'third_party/CLI11/include'
+        'include',
+        'third_party/CLI11/include',
         'third_party/ELFIO/include'
         ]
 

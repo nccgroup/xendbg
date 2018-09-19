@@ -1,0 +1,187 @@
+\hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base}{}\section{xd\+:\+:dbg\+:\+:gdbstub\+:\+:pkt\+:\+:G\+D\+B\+Request\+Packet\+Base Class Reference}
+\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base}\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+
+
+{\ttfamily \#include $<$G\+D\+B\+Request\+Packet.\+hpp$>$}
+
+
+
+Inheritance diagram for xd\+:\+:dbg\+:\+:gdbstub\+:\+:pkt\+:\+:G\+D\+B\+Request\+Packet\+Base\+:
+% FIG 0
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ae91027b9e0fa4845ddd377e981d8c959}{G\+D\+B\+Request\+Packet\+Base}} (const std\+::string \&data, char header)
+\item 
+\mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a52bfefeb64180e1ce450bc9a476d79a3}{G\+D\+B\+Request\+Packet\+Base}} (const std\+::string \&data, const std\+::string \&header)
+\item 
+size\+\_\+t \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ad691a1ad410208fa75361abd5de19d7a}{get\+\_\+num\+\_\+remaining}} ()
+\item 
+bool \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a384062ad2fc3555a5daa916648ee997c}{has\+\_\+more}} (size\+\_\+t n=1)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a2a4be68e98b1f24b82ea8f665a32a271}{assert\+\_\+char\+\_\+not}} (char ch)
+\item 
+bool \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a245c693152f9c87b79614931f91da08c}{check\+\_\+char}} (char ch)
+\item 
+bool \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a94d43cd3e182e2d146f48d2a68e5ce01}{check\+\_\+string}} (const std\+::string \&s)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a171e70d7acee1595cd3455bac8cf0877}{expect\+\_\+char}} (char ch)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a40dc176fb6bcf5843a8a2108d6060199}{skip\+\_\+space}} ()
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_abcd0e8c883c9b5d93f859ea62b40b2cf}{expect\+\_\+string}} (const std\+::string \&s)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a0e23e088ee8e9eaca62ff6593edebfbd}{expect\+\_\+more}} (size\+\_\+t n=1)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5a55f0e2b425221912465c966827179b}{expect\+\_\+end}} ()
+\item 
+char \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a6b649362a56beb8097504824f1ae8274}{peek}} ()
+\item 
+char \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5c6c384a330f51cc2c32bcb624f9d961}{get\+\_\+char}} ()
+\item 
+uint8\+\_\+t \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ad2280af91e15d1fb1a0acbf8be70960d}{read\+\_\+byte}} ()
+\item 
+{\footnotesize template$<$typename Value\+\_\+t $>$ }\\uint64\+\_\+t \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ac923208cd61bdc18e54c47fafbdc6c5c}{read\+\_\+hex\+\_\+number}} ()
+\item 
+{\footnotesize template$<$typename Value\+\_\+t $>$ }\\Value\+\_\+t \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5b1aac6673dd65e936c54121ffc0b325}{read\+\_\+hex\+\_\+number\+\_\+respecting\+\_\+endianness}} ()
+\item 
+std\+::string \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ab179b1bbbfbbb5d1578a2f46c44d6a9a}{read\+\_\+until\+\_\+end}} ()
+\item 
+std\+::string \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ada655ac04bf9f4dc291a2b8228f1a937}{read\+\_\+until\+\_\+char\+\_\+or\+\_\+end}} (char ch)
+\item 
+{\footnotesize template$<$typename Word\+\_\+t $>$ }\\std\+::optional$<$ Word\+\_\+t $>$ \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a1897d26c66dec2bf61585a675ca3a99d}{read\+\_\+word\+\_\+unsigned\+\_\+opt}} ()
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ae91027b9e0fa4845ddd377e981d8c959}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ae91027b9e0fa4845ddd377e981d8c959}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!G\+D\+B\+Request\+Packet\+Base@{G\+D\+B\+Request\+Packet\+Base}}
+\index{G\+D\+B\+Request\+Packet\+Base@{G\+D\+B\+Request\+Packet\+Base}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{G\+D\+B\+Request\+Packet\+Base()}{GDBRequestPacketBase()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::\+G\+D\+B\+Request\+Packet\+Base (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{data,  }\item[{char}]{header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a52bfefeb64180e1ce450bc9a476d79a3}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a52bfefeb64180e1ce450bc9a476d79a3}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!G\+D\+B\+Request\+Packet\+Base@{G\+D\+B\+Request\+Packet\+Base}}
+\index{G\+D\+B\+Request\+Packet\+Base@{G\+D\+B\+Request\+Packet\+Base}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{G\+D\+B\+Request\+Packet\+Base()}{GDBRequestPacketBase()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::\+G\+D\+B\+Request\+Packet\+Base (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{data,  }\item[{const std\+::string \&}]{header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a2a4be68e98b1f24b82ea8f665a32a271}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a2a4be68e98b1f24b82ea8f665a32a271}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!assert\+\_\+char\+\_\+not@{assert\+\_\+char\+\_\+not}}
+\index{assert\+\_\+char\+\_\+not@{assert\+\_\+char\+\_\+not}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{assert\+\_\+char\+\_\+not()}{assert\_char\_not()}}
+{\footnotesize\ttfamily void xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::assert\+\_\+char\+\_\+not (\begin{DoxyParamCaption}\item[{char}]{ch }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a245c693152f9c87b79614931f91da08c}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a245c693152f9c87b79614931f91da08c}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!check\+\_\+char@{check\+\_\+char}}
+\index{check\+\_\+char@{check\+\_\+char}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{check\+\_\+char()}{check\_char()}}
+{\footnotesize\ttfamily bool xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::check\+\_\+char (\begin{DoxyParamCaption}\item[{char}]{ch }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a94d43cd3e182e2d146f48d2a68e5ce01}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a94d43cd3e182e2d146f48d2a68e5ce01}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!check\+\_\+string@{check\+\_\+string}}
+\index{check\+\_\+string@{check\+\_\+string}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{check\+\_\+string()}{check\_string()}}
+{\footnotesize\ttfamily bool xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::check\+\_\+string (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{s }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a171e70d7acee1595cd3455bac8cf0877}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a171e70d7acee1595cd3455bac8cf0877}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!expect\+\_\+char@{expect\+\_\+char}}
+\index{expect\+\_\+char@{expect\+\_\+char}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{expect\+\_\+char()}{expect\_char()}}
+{\footnotesize\ttfamily void xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::expect\+\_\+char (\begin{DoxyParamCaption}\item[{char}]{ch }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5a55f0e2b425221912465c966827179b}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5a55f0e2b425221912465c966827179b}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!expect\+\_\+end@{expect\+\_\+end}}
+\index{expect\+\_\+end@{expect\+\_\+end}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{expect\+\_\+end()}{expect\_end()}}
+{\footnotesize\ttfamily void xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::expect\+\_\+end (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a0e23e088ee8e9eaca62ff6593edebfbd}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a0e23e088ee8e9eaca62ff6593edebfbd}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!expect\+\_\+more@{expect\+\_\+more}}
+\index{expect\+\_\+more@{expect\+\_\+more}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{expect\+\_\+more()}{expect\_more()}}
+{\footnotesize\ttfamily void xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::expect\+\_\+more (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{n = {\ttfamily 1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_abcd0e8c883c9b5d93f859ea62b40b2cf}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_abcd0e8c883c9b5d93f859ea62b40b2cf}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!expect\+\_\+string@{expect\+\_\+string}}
+\index{expect\+\_\+string@{expect\+\_\+string}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{expect\+\_\+string()}{expect\_string()}}
+{\footnotesize\ttfamily void xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::expect\+\_\+string (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{s }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5c6c384a330f51cc2c32bcb624f9d961}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5c6c384a330f51cc2c32bcb624f9d961}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!get\+\_\+char@{get\+\_\+char}}
+\index{get\+\_\+char@{get\+\_\+char}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{get\+\_\+char()}{get\_char()}}
+{\footnotesize\ttfamily char xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::get\+\_\+char (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ad691a1ad410208fa75361abd5de19d7a}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ad691a1ad410208fa75361abd5de19d7a}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!get\+\_\+num\+\_\+remaining@{get\+\_\+num\+\_\+remaining}}
+\index{get\+\_\+num\+\_\+remaining@{get\+\_\+num\+\_\+remaining}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+remaining()}{get\_num\_remaining()}}
+{\footnotesize\ttfamily size\+\_\+t xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::get\+\_\+num\+\_\+remaining (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a384062ad2fc3555a5daa916648ee997c}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a384062ad2fc3555a5daa916648ee997c}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!has\+\_\+more@{has\+\_\+more}}
+\index{has\+\_\+more@{has\+\_\+more}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{has\+\_\+more()}{has\_more()}}
+{\footnotesize\ttfamily bool xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::has\+\_\+more (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{n = {\ttfamily 1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a6b649362a56beb8097504824f1ae8274}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a6b649362a56beb8097504824f1ae8274}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!peek@{peek}}
+\index{peek@{peek}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{peek()}{peek()}}
+{\footnotesize\ttfamily char xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::peek (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ad2280af91e15d1fb1a0acbf8be70960d}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ad2280af91e15d1fb1a0acbf8be70960d}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!read\+\_\+byte@{read\+\_\+byte}}
+\index{read\+\_\+byte@{read\+\_\+byte}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{read\+\_\+byte()}{read\_byte()}}
+{\footnotesize\ttfamily uint8\+\_\+t xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::read\+\_\+byte (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ac923208cd61bdc18e54c47fafbdc6c5c}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ac923208cd61bdc18e54c47fafbdc6c5c}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!read\+\_\+hex\+\_\+number@{read\+\_\+hex\+\_\+number}}
+\index{read\+\_\+hex\+\_\+number@{read\+\_\+hex\+\_\+number}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{read\+\_\+hex\+\_\+number()}{read\_hex\_number()}}
+{\footnotesize\ttfamily template$<$typename Value\+\_\+t $>$ \\
+uint64\+\_\+t xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::read\+\_\+hex\+\_\+number (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5b1aac6673dd65e936c54121ffc0b325}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a5b1aac6673dd65e936c54121ffc0b325}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!read\+\_\+hex\+\_\+number\+\_\+respecting\+\_\+endianness@{read\+\_\+hex\+\_\+number\+\_\+respecting\+\_\+endianness}}
+\index{read\+\_\+hex\+\_\+number\+\_\+respecting\+\_\+endianness@{read\+\_\+hex\+\_\+number\+\_\+respecting\+\_\+endianness}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{read\+\_\+hex\+\_\+number\+\_\+respecting\+\_\+endianness()}{read\_hex\_number\_respecting\_endianness()}}
+{\footnotesize\ttfamily template$<$typename Value\+\_\+t $>$ \\
+Value\+\_\+t xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::read\+\_\+hex\+\_\+number\+\_\+respecting\+\_\+endianness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ada655ac04bf9f4dc291a2b8228f1a937}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ada655ac04bf9f4dc291a2b8228f1a937}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!read\+\_\+until\+\_\+char\+\_\+or\+\_\+end@{read\+\_\+until\+\_\+char\+\_\+or\+\_\+end}}
+\index{read\+\_\+until\+\_\+char\+\_\+or\+\_\+end@{read\+\_\+until\+\_\+char\+\_\+or\+\_\+end}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{read\+\_\+until\+\_\+char\+\_\+or\+\_\+end()}{read\_until\_char\_or\_end()}}
+{\footnotesize\ttfamily std\+::string xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::read\+\_\+until\+\_\+char\+\_\+or\+\_\+end (\begin{DoxyParamCaption}\item[{char}]{ch }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ab179b1bbbfbbb5d1578a2f46c44d6a9a}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_ab179b1bbbfbbb5d1578a2f46c44d6a9a}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!read\+\_\+until\+\_\+end@{read\+\_\+until\+\_\+end}}
+\index{read\+\_\+until\+\_\+end@{read\+\_\+until\+\_\+end}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{read\+\_\+until\+\_\+end()}{read\_until\_end()}}
+{\footnotesize\ttfamily std\+::string xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::read\+\_\+until\+\_\+end (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a1897d26c66dec2bf61585a675ca3a99d}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a1897d26c66dec2bf61585a675ca3a99d}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!read\+\_\+word\+\_\+unsigned\+\_\+opt@{read\+\_\+word\+\_\+unsigned\+\_\+opt}}
+\index{read\+\_\+word\+\_\+unsigned\+\_\+opt@{read\+\_\+word\+\_\+unsigned\+\_\+opt}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{read\+\_\+word\+\_\+unsigned\+\_\+opt()}{read\_word\_unsigned\_opt()}}
+{\footnotesize\ttfamily template$<$typename Word\+\_\+t $>$ \\
+std\+::optional$<$Word\+\_\+t$>$ xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::read\+\_\+word\+\_\+unsigned\+\_\+opt (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a40dc176fb6bcf5843a8a2108d6060199}\label{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base_a40dc176fb6bcf5843a8a2108d6060199}} 
+\index{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}!skip\+\_\+space@{skip\+\_\+space}}
+\index{skip\+\_\+space@{skip\+\_\+space}!xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base@{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\subsubsection{\texorpdfstring{skip\+\_\+space()}{skip\_space()}}
+{\footnotesize\ttfamily void xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base\+::skip\+\_\+space (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+src/\+G\+D\+B\+Stub/\mbox{\hyperlink{_g_d_b_request_packet_8hpp}{G\+D\+B\+Request\+Packet.\+hpp}}\end{DoxyCompactItemize}

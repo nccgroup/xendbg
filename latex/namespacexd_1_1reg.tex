@@ -1,0 +1,73 @@
+\hypertarget{namespacexd_1_1reg}{}\section{xd\+:\+:reg Namespace Reference}
+\label{namespacexd_1_1reg}\index{xd\+::reg@{xd\+::reg}}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespacexd_1_1reg_1_1x86__32}{x86\+\_\+32}}
+\item 
+ \mbox{\hyperlink{namespacexd_1_1reg_1_1x86__64}{x86\+\_\+64}}
+\end{DoxyCompactItemize}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register__impl}{\+\_\+\+Register\+\_\+impl}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register__impl_3_01_value__t_00_010_01_4}{\+\_\+\+Register\+\_\+impl$<$ Value\+\_\+t, 0 $>$}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register__impl_3_01_value__t_00_012_01_4}{\+\_\+\+Register\+\_\+impl$<$ Value\+\_\+t, 2 $>$}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register__impl_3_01_value__t_00_014_01_4}{\+\_\+\+Register\+\_\+impl$<$ Value\+\_\+t, 4 $>$}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register__impl_3_01_value__t_00_018_01_4}{\+\_\+\+Register\+\_\+impl$<$ Value\+\_\+t, 8 $>$}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register_context}{\+\_\+\+Register\+Context}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register_context_3_01__base_01_4}{\+\_\+\+Register\+Context$<$ \+\_\+base $>$}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register_context_3_01__base_00_01_register__t_00_01_registers__t_8_8_8_01_4}{\+\_\+\+Register\+Context$<$ \+\_\+base, Register\+\_\+t, Registers\+\_\+t... $>$}}
+\item 
+class \mbox{\hyperlink{classxd_1_1reg_1_1___register_context_iterator}{\+\_\+\+Register\+Context\+Iterator}}
+\item 
+struct \mbox{\hyperlink{structxd_1_1reg_1_1_register}{Register}}
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+{\footnotesize template$<$typename... Registers\+\_\+t$>$ }\\using \mbox{\hyperlink{namespacexd_1_1reg_ab6608c02ef554f7a9a48519600fb6707}{Register\+Context}} = \mbox{\hyperlink{classxd_1_1reg_1_1___register_context}{\+\_\+\+Register\+Context}}$<$ 0, Registers\+\_\+t... $>$
+\item 
+{\footnotesize template$<$typename Register\+Context\+\_\+t $>$ }\\using \mbox{\hyperlink{namespacexd_1_1reg_a6cf4cf0ab5273eb69f6aa3fd40dcc1de}{Register\+Context\+Iterator}} = \mbox{\hyperlink{classxd_1_1reg_1_1___register_context_iterator}{\+\_\+\+Register\+Context\+Iterator}}$<$ Register\+Context\+\_\+t, false $>$
+\item 
+{\footnotesize template$<$typename Register\+Context\+\_\+t $>$ }\\using \mbox{\hyperlink{namespacexd_1_1reg_a2af91c639cf4f8e0907c20f2ac534965}{Register\+Context\+Const\+Iterator}} = \mbox{\hyperlink{classxd_1_1reg_1_1___register_context_iterator}{\+\_\+\+Register\+Context\+Iterator}}$<$ Register\+Context\+\_\+t, true $>$
+\item 
+using \mbox{\hyperlink{namespacexd_1_1reg_a0c10a4d10e689bc16f6f1a8feb4fb9b8}{Registers\+X86}} = std\+::variant$<$ \mbox{\hyperlink{namespacexd_1_1reg_1_1x86__32_a28d948c5cde56fbf4f6ea71cea3d595b}{x86\+\_\+32\+::\+Registers\+X86\+\_\+32}}, \mbox{\hyperlink{namespacexd_1_1reg_1_1x86__64_a3a7f77ab982b8a5833111da7ceccafeb}{x86\+\_\+64\+::\+Registers\+X86\+\_\+64}} $>$
+\end{DoxyCompactItemize}
+
+
+\subsection{Typedef Documentation}
+\mbox{\Hypertarget{namespacexd_1_1reg_ab6608c02ef554f7a9a48519600fb6707}\label{namespacexd_1_1reg_ab6608c02ef554f7a9a48519600fb6707}} 
+\index{xd\+::reg@{xd\+::reg}!Register\+Context@{Register\+Context}}
+\index{Register\+Context@{Register\+Context}!xd\+::reg@{xd\+::reg}}
+\subsubsection{\texorpdfstring{Register\+Context}{RegisterContext}}
+{\footnotesize\ttfamily template$<$typename... Registers\+\_\+t$>$ \\
+using \mbox{\hyperlink{namespacexd_1_1reg_ab6608c02ef554f7a9a48519600fb6707}{xd\+::reg\+::\+Register\+Context}} = typedef \mbox{\hyperlink{classxd_1_1reg_1_1___register_context}{\+\_\+\+Register\+Context}}$<$0, Registers\+\_\+t...$>$}
+
+\mbox{\Hypertarget{namespacexd_1_1reg_a2af91c639cf4f8e0907c20f2ac534965}\label{namespacexd_1_1reg_a2af91c639cf4f8e0907c20f2ac534965}} 
+\index{xd\+::reg@{xd\+::reg}!Register\+Context\+Const\+Iterator@{Register\+Context\+Const\+Iterator}}
+\index{Register\+Context\+Const\+Iterator@{Register\+Context\+Const\+Iterator}!xd\+::reg@{xd\+::reg}}
+\subsubsection{\texorpdfstring{Register\+Context\+Const\+Iterator}{RegisterContextConstIterator}}
+{\footnotesize\ttfamily template$<$typename Register\+Context\+\_\+t $>$ \\
+using \mbox{\hyperlink{namespacexd_1_1reg_a2af91c639cf4f8e0907c20f2ac534965}{xd\+::reg\+::\+Register\+Context\+Const\+Iterator}} = typedef \mbox{\hyperlink{classxd_1_1reg_1_1___register_context_iterator}{\+\_\+\+Register\+Context\+Iterator}}$<$Register\+Context\+\_\+t, true$>$}
+
+\mbox{\Hypertarget{namespacexd_1_1reg_a6cf4cf0ab5273eb69f6aa3fd40dcc1de}\label{namespacexd_1_1reg_a6cf4cf0ab5273eb69f6aa3fd40dcc1de}} 
+\index{xd\+::reg@{xd\+::reg}!Register\+Context\+Iterator@{Register\+Context\+Iterator}}
+\index{Register\+Context\+Iterator@{Register\+Context\+Iterator}!xd\+::reg@{xd\+::reg}}
+\subsubsection{\texorpdfstring{Register\+Context\+Iterator}{RegisterContextIterator}}
+{\footnotesize\ttfamily template$<$typename Register\+Context\+\_\+t $>$ \\
+using \mbox{\hyperlink{namespacexd_1_1reg_a6cf4cf0ab5273eb69f6aa3fd40dcc1de}{xd\+::reg\+::\+Register\+Context\+Iterator}} = typedef \mbox{\hyperlink{classxd_1_1reg_1_1___register_context_iterator}{\+\_\+\+Register\+Context\+Iterator}}$<$Register\+Context\+\_\+t, false$>$}
+
+\mbox{\Hypertarget{namespacexd_1_1reg_a0c10a4d10e689bc16f6f1a8feb4fb9b8}\label{namespacexd_1_1reg_a0c10a4d10e689bc16f6f1a8feb4fb9b8}} 
+\index{xd\+::reg@{xd\+::reg}!Registers\+X86@{Registers\+X86}}
+\index{Registers\+X86@{Registers\+X86}!xd\+::reg@{xd\+::reg}}
+\subsubsection{\texorpdfstring{Registers\+X86}{RegistersX86}}
+{\footnotesize\ttfamily using \mbox{\hyperlink{namespacexd_1_1reg_a0c10a4d10e689bc16f6f1a8feb4fb9b8}{xd\+::reg\+::\+Registers\+X86}} = typedef std\+::variant$<$ \mbox{\hyperlink{namespacexd_1_1reg_1_1x86__32_a28d948c5cde56fbf4f6ea71cea3d595b}{x86\+\_\+32\+::\+Registers\+X86\+\_\+32}}, \mbox{\hyperlink{namespacexd_1_1reg_1_1x86__64_a3a7f77ab982b8a5833111da7ceccafeb}{x86\+\_\+64\+::\+Registers\+X86\+\_\+64}}$>$}
+

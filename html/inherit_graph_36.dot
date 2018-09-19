@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="xd::parser::token::\l_match_tokens_impl\<\l Token_t \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structxd_1_1parser_1_1token_1_1__match__tokens__impl_3_01_token__t_01_4.html"];
+}

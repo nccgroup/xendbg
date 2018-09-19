@@ -107,18 +107,6 @@ void Debugger::single_step() {
     insert_infinite_loop(*orig_addr);
 }
 
-std::vector<Domain> Debugger::get_guest_domains() {
-  const auto domids = _xen.get_xenstore().get_guest_domids();
-
-  std::vector<Domain> domains;
-  domains.reserve(domids.size());
-  std::transform(domids.begin(), domids.end(), std::back_inserter(domains),
-    [this](const auto& domid) {
-      return Domain(_xen, domid);
-    });
-  return domains;
-}
-
 std::optional<Address> Debugger::check_infinite_loop_hit() {
   const auto address = std::visit(util::overloaded {
     [](const RegistersX86_32 regs) {

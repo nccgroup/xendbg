@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="xd::parser::token::\lVariable",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1parser_1_1token_1_1_variable.html"];
+}

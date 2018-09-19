@@ -1,0 +1,81 @@
+\hypertarget{_xen_ctrl_8cpp}{}\section{src/\+Xen/\+Xen\+Ctrl.cpp File Reference}
+\label{_xen_ctrl_8cpp}\index{src/\+Xen/\+Xen\+Ctrl.\+cpp@{src/\+Xen/\+Xen\+Ctrl.\+cpp}}
+{\ttfamily \#include $<$cstring$>$}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include \char`\"{}Domain.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Xen\+Ctrl.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Xen\+Exception.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}../\+Util/overloaded.\+hpp\char`\"{}}\newline
+{\ttfamily \#include $<$sys/mman.\+h$>$}\newline
+Include dependency graph for Xen\+Ctrl.\+cpp\+:
+% FIG 0
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_a56cfa0c3e0c2278e45f9f083459b502a}{G\+E\+T\+\_\+\+H\+VM}}(\+\_\+regs,  \+\_\+hvm,  \+\_\+reg)~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+hvm.\+\_\+reg;
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_aa0137f40c720ad195a0f0a56f8976618}{G\+E\+T\+\_\+\+H\+V\+M2}}(\+\_\+regs,  \+\_\+hvm,  \+\_\+reg,  \+\_\+hvm\+\_\+reg)~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+hvm.\+\_\+hvm\+\_\+reg;
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_a22546d7c280541b69b40fb557438d291}{S\+E\+T\+\_\+\+H\+VM}}(\+\_\+regs,  \+\_\+hvm,  \+\_\+reg)~\+\_\+hvm.\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_afe589c31ef4f12801138b7fc43bfc5bf}{S\+E\+T\+\_\+\+H\+V\+M2}}(\+\_\+regs,  \+\_\+hvm,  \+\_\+reg,  \+\_\+hvm\+\_\+reg)~\+\_\+hvm.\+\_\+hvm\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_a4a86633c2a6ecbda184423f2fdcf9899}{G\+E\+T\+\_\+\+PV}}(\+\_\+regs,  \+\_\+pv,  \+\_\+reg)~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+pv.\+\_\+reg;
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_a395ef67ac169bdf67d22da119b7db91b}{G\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}}(\+\_\+regs,  \+\_\+pv,  \+\_\+reg)~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+pv.\+user\+\_\+regs.\+\_\+reg;
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_a09eee1c08f212c7fdc4ff93aaa79052f}{S\+E\+T\+\_\+\+PV}}(\+\_\+regs,  \+\_\+pv,  \+\_\+reg)~\+\_\+pv.\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();
+\item 
+\#define \mbox{\hyperlink{_xen_ctrl_8cpp_a734df9cdeace536cb6e2e91cf6ecb512}{S\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}}(\+\_\+regs,  \+\_\+pv,  \+\_\+reg)~\+\_\+pv.\+user\+\_\+regs.\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();
+\end{DoxyCompactItemize}
+
+
+\subsection{Macro Definition Documentation}
+\mbox{\Hypertarget{_xen_ctrl_8cpp_a56cfa0c3e0c2278e45f9f083459b502a}\label{_xen_ctrl_8cpp_a56cfa0c3e0c2278e45f9f083459b502a}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!G\+E\+T\+\_\+\+H\+VM@{G\+E\+T\+\_\+\+H\+VM}}
+\index{G\+E\+T\+\_\+\+H\+VM@{G\+E\+T\+\_\+\+H\+VM}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{G\+E\+T\+\_\+\+H\+VM}{GET\_HVM}}
+{\footnotesize\ttfamily \#define G\+E\+T\+\_\+\+H\+VM(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+hvm,  }\item[{}]{\+\_\+reg }\end{DoxyParamCaption})~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+hvm.\+\_\+reg;}
+
+\mbox{\Hypertarget{_xen_ctrl_8cpp_aa0137f40c720ad195a0f0a56f8976618}\label{_xen_ctrl_8cpp_aa0137f40c720ad195a0f0a56f8976618}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!G\+E\+T\+\_\+\+H\+V\+M2@{G\+E\+T\+\_\+\+H\+V\+M2}}
+\index{G\+E\+T\+\_\+\+H\+V\+M2@{G\+E\+T\+\_\+\+H\+V\+M2}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{G\+E\+T\+\_\+\+H\+V\+M2}{GET\_HVM2}}
+{\footnotesize\ttfamily \#define G\+E\+T\+\_\+\+H\+V\+M2(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+hvm,  }\item[{}]{\+\_\+reg,  }\item[{}]{\+\_\+hvm\+\_\+reg }\end{DoxyParamCaption})~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+hvm.\+\_\+hvm\+\_\+reg;}
+
+\mbox{\Hypertarget{_xen_ctrl_8cpp_a4a86633c2a6ecbda184423f2fdcf9899}\label{_xen_ctrl_8cpp_a4a86633c2a6ecbda184423f2fdcf9899}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!G\+E\+T\+\_\+\+PV@{G\+E\+T\+\_\+\+PV}}
+\index{G\+E\+T\+\_\+\+PV@{G\+E\+T\+\_\+\+PV}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{G\+E\+T\+\_\+\+PV}{GET\_PV}}
+{\footnotesize\ttfamily \#define G\+E\+T\+\_\+\+PV(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+pv,  }\item[{}]{\+\_\+reg }\end{DoxyParamCaption})~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+pv.\+\_\+reg;}
+
+\mbox{\Hypertarget{_xen_ctrl_8cpp_a395ef67ac169bdf67d22da119b7db91b}\label{_xen_ctrl_8cpp_a395ef67ac169bdf67d22da119b7db91b}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!G\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER@{G\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}}
+\index{G\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER@{G\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{G\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}{GET\_PV\_USER}}
+{\footnotesize\ttfamily \#define G\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+pv,  }\item[{}]{\+\_\+reg }\end{DoxyParamCaption})~\+\_\+regs.\+get$<$\+\_\+reg$>$() = \+\_\+pv.\+user\+\_\+regs.\+\_\+reg;}
+
+\mbox{\Hypertarget{_xen_ctrl_8cpp_a22546d7c280541b69b40fb557438d291}\label{_xen_ctrl_8cpp_a22546d7c280541b69b40fb557438d291}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!S\+E\+T\+\_\+\+H\+VM@{S\+E\+T\+\_\+\+H\+VM}}
+\index{S\+E\+T\+\_\+\+H\+VM@{S\+E\+T\+\_\+\+H\+VM}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{S\+E\+T\+\_\+\+H\+VM}{SET\_HVM}}
+{\footnotesize\ttfamily \#define S\+E\+T\+\_\+\+H\+VM(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+hvm,  }\item[{}]{\+\_\+reg }\end{DoxyParamCaption})~\+\_\+hvm.\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();}
+
+\mbox{\Hypertarget{_xen_ctrl_8cpp_afe589c31ef4f12801138b7fc43bfc5bf}\label{_xen_ctrl_8cpp_afe589c31ef4f12801138b7fc43bfc5bf}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!S\+E\+T\+\_\+\+H\+V\+M2@{S\+E\+T\+\_\+\+H\+V\+M2}}
+\index{S\+E\+T\+\_\+\+H\+V\+M2@{S\+E\+T\+\_\+\+H\+V\+M2}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{S\+E\+T\+\_\+\+H\+V\+M2}{SET\_HVM2}}
+{\footnotesize\ttfamily \#define S\+E\+T\+\_\+\+H\+V\+M2(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+hvm,  }\item[{}]{\+\_\+reg,  }\item[{}]{\+\_\+hvm\+\_\+reg }\end{DoxyParamCaption})~\+\_\+hvm.\+\_\+hvm\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();}
+
+\mbox{\Hypertarget{_xen_ctrl_8cpp_a09eee1c08f212c7fdc4ff93aaa79052f}\label{_xen_ctrl_8cpp_a09eee1c08f212c7fdc4ff93aaa79052f}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!S\+E\+T\+\_\+\+PV@{S\+E\+T\+\_\+\+PV}}
+\index{S\+E\+T\+\_\+\+PV@{S\+E\+T\+\_\+\+PV}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{S\+E\+T\+\_\+\+PV}{SET\_PV}}
+{\footnotesize\ttfamily \#define S\+E\+T\+\_\+\+PV(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+pv,  }\item[{}]{\+\_\+reg }\end{DoxyParamCaption})~\+\_\+pv.\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();}
+
+\mbox{\Hypertarget{_xen_ctrl_8cpp_a734df9cdeace536cb6e2e91cf6ecb512}\label{_xen_ctrl_8cpp_a734df9cdeace536cb6e2e91cf6ecb512}} 
+\index{Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}!S\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER@{S\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}}
+\index{S\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER@{S\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}!Xen\+Ctrl.\+cpp@{Xen\+Ctrl.\+cpp}}
+\subsubsection{\texorpdfstring{S\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER}{SET\_PV\_USER}}
+{\footnotesize\ttfamily \#define S\+E\+T\+\_\+\+P\+V\+\_\+\+U\+S\+ER(\begin{DoxyParamCaption}\item[{}]{\+\_\+regs,  }\item[{}]{\+\_\+pv,  }\item[{}]{\+\_\+reg }\end{DoxyParamCaption})~\+\_\+pv.\+user\+\_\+regs.\+\_\+reg = \+\_\+regs.\+get$<$\+\_\+reg$>$();}
+

@@ -24,10 +24,11 @@ namespace xd::xen {
 
     MappedMemory map(const Domain& domain, Address address, size_t size, int prot) const;
 
-    static xen_pfn_t pfn_to_mfn_pv(const Domain &domain, xen_pfn_t pfn);
-    
   private:
     std::shared_ptr<xenforeignmemory_handle> _xen_foreign_memory;
+
+  private:
+    static xen_pfn_t pfn_to_mfn_pv(const Domain &domain, xen_pfn_t pfn);
   };
 
 }

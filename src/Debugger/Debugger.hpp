@@ -56,7 +56,6 @@ namespace xd::dbg {
 
     xen::XenHandle &get_xen_handle() { return _xen; };
     std::optional<xen::Domain>& get_current_domain() { return _domain; };
-    std::vector<xen::Domain> get_guest_domains();
 
     const InfiniteLoopMap& get_infinite_loops() { return _infinite_loops; };
 

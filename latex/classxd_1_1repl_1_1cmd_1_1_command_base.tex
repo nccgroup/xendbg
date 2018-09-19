@@ -1,0 +1,92 @@
+\hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base}{}\section{xd\+:\+:repl\+:\+:cmd\+:\+:Command\+Base Class Reference}
+\label{classxd_1_1repl_1_1cmd_1_1_command_base}\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+
+
+{\ttfamily \#include $<$Command\+Base.\+hpp$>$}
+
+
+
+Inheritance diagram for xd\+:\+:repl\+:\+:cmd\+:\+:Command\+Base\+:
+% FIG 0
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_base_abfcd0bbac615a492543d1298dac40c03}{Command\+Base}} (std\+::string name, std\+::string description)
+\item 
+virtual \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_base_a63bfd93b6973b7459695ad353f37670a}{$\sim$\+Command\+Base}} ()
+\item 
+std\+::string \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_base_a50ad757813a5fce8d3eba7ece771ba78}{get\+\_\+name}} () const
+\item 
+std\+::string \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_base_a5f7ed2376a2c46d5ef72bbcd7609ce52}{get\+\_\+description}} () const
+\item 
+virtual void \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_base_acb731ef346c5c1eccce3c88749fed8e8}{print}} (std\+::ostream \&out, \mbox{\hyperlink{classxd_1_1util_1_1_indent_helper}{xd\+::util\+::\+Indent\+Helper}} \&indent) const =0
+\item 
+virtual std\+::optional$<$ \mbox{\hyperlink{namespacexd_1_1repl_1_1cmd_a7274841bd02a9c5da0ba48ae204ab3d5}{Action}} $>$ \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_base_adc60ebee9e6b13fd4e9305bd436555ee}{match}} (std\+::string\+::const\+\_\+iterator begin, std\+::string\+::const\+\_\+iterator end) const =0
+\item 
+virtual std\+::optional$<$ std\+::vector$<$ std\+::string $>$ $>$ \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_base_a38bae861ceff52dfd3efa19aefbc3971}{complete}} (std\+::string\+::const\+\_\+iterator begin, std\+::string\+::const\+\_\+iterator end) const =0
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base_abfcd0bbac615a492543d1298dac40c03}\label{classxd_1_1repl_1_1cmd_1_1_command_base_abfcd0bbac615a492543d1298dac40c03}} 
+\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}!Command\+Base@{Command\+Base}}
+\index{Command\+Base@{Command\+Base}!xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+\subsubsection{\texorpdfstring{Command\+Base()}{CommandBase()}}
+{\footnotesize\ttfamily xd\+::repl\+::cmd\+::\+Command\+Base\+::\+Command\+Base (\begin{DoxyParamCaption}\item[{std\+::string}]{name,  }\item[{std\+::string}]{description }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base_a63bfd93b6973b7459695ad353f37670a}\label{classxd_1_1repl_1_1cmd_1_1_command_base_a63bfd93b6973b7459695ad353f37670a}} 
+\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}!````~Command\+Base@{$\sim$\+Command\+Base}}
+\index{````~Command\+Base@{$\sim$\+Command\+Base}!xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+\subsubsection{\texorpdfstring{$\sim$\+Command\+Base()}{~CommandBase()}}
+{\footnotesize\ttfamily virtual xd\+::repl\+::cmd\+::\+Command\+Base\+::$\sim$\+Command\+Base (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base_a38bae861ceff52dfd3efa19aefbc3971}\label{classxd_1_1repl_1_1cmd_1_1_command_base_a38bae861ceff52dfd3efa19aefbc3971}} 
+\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}!complete@{complete}}
+\index{complete@{complete}!xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+\subsubsection{\texorpdfstring{complete()}{complete()}}
+{\footnotesize\ttfamily virtual std\+::optional$<$std\+::vector$<$std\+::string$>$ $>$ xd\+::repl\+::cmd\+::\+Command\+Base\+::complete (\begin{DoxyParamCaption}\item[{std\+::string\+::const\+\_\+iterator}]{begin,  }\item[{std\+::string\+::const\+\_\+iterator}]{end }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Implemented in \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_a5bb19b12a99fe48052c346db999942de}{xd\+::repl\+::cmd\+::\+Command}}, and \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_verb_a4e9a0a2ba602a7d7e3802822a6063dff}{xd\+::repl\+::cmd\+::\+Command\+Verb}}.
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base_a5f7ed2376a2c46d5ef72bbcd7609ce52}\label{classxd_1_1repl_1_1cmd_1_1_command_base_a5f7ed2376a2c46d5ef72bbcd7609ce52}} 
+\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string xd\+::repl\+::cmd\+::\+Command\+Base\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base_a50ad757813a5fce8d3eba7ece771ba78}\label{classxd_1_1repl_1_1cmd_1_1_command_base_a50ad757813a5fce8d3eba7ece771ba78}} 
+\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}!get\+\_\+name@{get\+\_\+name}}
+\index{get\+\_\+name@{get\+\_\+name}!xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+\subsubsection{\texorpdfstring{get\+\_\+name()}{get\_name()}}
+{\footnotesize\ttfamily std\+::string xd\+::repl\+::cmd\+::\+Command\+Base\+::get\+\_\+name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base_adc60ebee9e6b13fd4e9305bd436555ee}\label{classxd_1_1repl_1_1cmd_1_1_command_base_adc60ebee9e6b13fd4e9305bd436555ee}} 
+\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}!match@{match}}
+\index{match@{match}!xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+\subsubsection{\texorpdfstring{match()}{match()}}
+{\footnotesize\ttfamily virtual std\+::optional$<$\mbox{\hyperlink{namespacexd_1_1repl_1_1cmd_a7274841bd02a9c5da0ba48ae204ab3d5}{Action}}$>$ xd\+::repl\+::cmd\+::\+Command\+Base\+::match (\begin{DoxyParamCaption}\item[{std\+::string\+::const\+\_\+iterator}]{begin,  }\item[{std\+::string\+::const\+\_\+iterator}]{end }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Implemented in \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_ae36dbba2be732b38ebdac47c504fe91d}{xd\+::repl\+::cmd\+::\+Command}}, and \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_verb_ab0c91becdb62c517f88800e992b3548f}{xd\+::repl\+::cmd\+::\+Command\+Verb}}.
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1cmd_1_1_command_base_acb731ef346c5c1eccce3c88749fed8e8}\label{classxd_1_1repl_1_1cmd_1_1_command_base_acb731ef346c5c1eccce3c88749fed8e8}} 
+\index{xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}!print@{print}}
+\index{print@{print}!xd\+::repl\+::cmd\+::\+Command\+Base@{xd\+::repl\+::cmd\+::\+Command\+Base}}
+\subsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily virtual void xd\+::repl\+::cmd\+::\+Command\+Base\+::print (\begin{DoxyParamCaption}\item[{std\+::ostream \&}]{out,  }\item[{\mbox{\hyperlink{classxd_1_1util_1_1_indent_helper}{xd\+::util\+::\+Indent\+Helper}} \&}]{indent }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Implemented in \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_ae10301038c77c9226c6bb6c7c0ad85c8}{xd\+::repl\+::cmd\+::\+Command}}, and \mbox{\hyperlink{classxd_1_1repl_1_1cmd_1_1_command_verb_a63744f7758a04b9752e70d6b7e2697a8}{xd\+::repl\+::cmd\+::\+Command\+Verb}}.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+src/\+R\+E\+P\+L/\+Command/\mbox{\hyperlink{_command_base_8hpp}{Command\+Base.\+hpp}}\end{DoxyCompactItemize}

@@ -47,33 +47,3 @@ std::string XenStore::read(const std::string &file) const {
   return std::string(contents);
 }
 
-DomID XenStore::get_domid_from_name(const std::string& name) const {
-  auto domids = read_directory("/local/domain");
-
-  for (const auto& domid : domids) {
-    auto path = "/local/domain/" + domid + "/name";
-    auto name_candidate = read(path);
-
-    if (name_candidate == name) {
-      return (uint32_t)std::stoul(domid, nullptr, 10);
-    }
-  }
-
-  // If we got here, the domain wasn't found
-  throw XenException("Domain \"" + name + "\" not found!");
-}
-
-std::vector<DomID> XenStore::get_guest_domids() const {
-  // Domid 0 should be omitted
-  auto domid_strs = read_directory("/local/domain");
-  domid_strs.erase(std::remove(domid_strs.begin(), domid_strs.end(), "0"), domid_strs.end());
-
-  std::vector<DomID> domids;
-  domids.reserve(domids.size());
-  std::transform(domid_strs.begin(), domid_strs.end(), std::back_inserter(domids),
-    [](const auto &domid_str) {
-      return std::stoul(domid_str);
-    });
-
-  return domids;
-}

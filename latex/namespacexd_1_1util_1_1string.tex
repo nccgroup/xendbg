@@ -1,0 +1,103 @@
+\hypertarget{namespacexd_1_1util_1_1string}{}\section{xd\+:\+:util\+:\+:string Namespace Reference}
+\label{namespacexd_1_1util_1_1string}\index{xd\+::util\+::string@{xd\+::util\+::string}}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+using \mbox{\hyperlink{namespacexd_1_1util_1_1string_abf396256ffbe263d811f20c7e3e03e5d}{Str\+Const\+It}} = std\+::string\+::const\+\_\+iterator
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\footnotesize template$<$typename It\+\_\+t $>$ }\\It\+\_\+t \mbox{\hyperlink{namespacexd_1_1util_1_1string_acf865d1183dfde2a4c505a0c4ca0d63d}{next\+\_\+char}} (It\+\_\+t begin, It\+\_\+t end, char c)
+\item 
+{\footnotesize template$<$typename It\+\_\+t $>$ }\\It\+\_\+t \mbox{\hyperlink{namespacexd_1_1util_1_1string_a41b23d87a18d193fdf6572b9d644e2fc}{next\+\_\+not\+\_\+char}} (It\+\_\+t begin, It\+\_\+t end, char c)
+\item 
+{\footnotesize template$<$typename It\+\_\+t $>$ }\\It\+\_\+t \mbox{\hyperlink{namespacexd_1_1util_1_1string_a9872a2bbf2d81feb9c504f0f62b4e080}{next\+\_\+whitespace}} (It\+\_\+t begin, It\+\_\+t end)
+\item 
+{\footnotesize template$<$typename It\+\_\+t $>$ }\\It\+\_\+t \mbox{\hyperlink{namespacexd_1_1util_1_1string_a9f49114d05158d1b0b60d0ad2e471b7e}{skip\+\_\+whitespace}} (It\+\_\+t begin, It\+\_\+t end)
+\item 
+{\footnotesize template$<$typename It\+\_\+t $>$ }\\It\+\_\+t \mbox{\hyperlink{namespacexd_1_1util_1_1string_a8ef3266e15a5b77eb6c198697a0f4a36}{match\+\_\+optionally\+\_\+quoted\+\_\+string}} (It\+\_\+t begin, It\+\_\+t end)
+\item 
+{\footnotesize template$<$typename It\+\_\+t $>$ }\\bool \mbox{\hyperlink{namespacexd_1_1util_1_1string_ab1782745921b7b9d41e795009cb27a83}{is\+\_\+prefix}} (It\+\_\+t target\+\_\+begin, It\+\_\+t target\+\_\+end, It\+\_\+t begin, It\+\_\+t end)
+\item 
+{\footnotesize template$<$typename Str1\+\_\+t , typename Str2\+\_\+t $>$ }\\bool \mbox{\hyperlink{namespacexd_1_1util_1_1string_a24b0ab7d5012342c113ea60dbc1fef43}{is\+\_\+prefix}} (const Str1\+\_\+t \&s1, const Str2\+\_\+t \&s2)
+\item 
+{\footnotesize template$<$typename It\+\_\+t , typename Str\+\_\+t $>$ }\\bool \mbox{\hyperlink{namespacexd_1_1util_1_1string_a9a7d78daf733e49ea8e009343d1b8660}{is\+\_\+prefix}} (const Str\+\_\+t \&target, It\+\_\+t begin, It\+\_\+t end)
+\item 
+{\footnotesize template$<$typename It\+\_\+t $>$ }\\It\+\_\+t \mbox{\hyperlink{namespacexd_1_1util_1_1string_ae41891173f05bb3afb7521da739ff9f2}{expect}} (const std\+::string \&target, It\+\_\+t begin, It\+\_\+t end)
+\end{DoxyCompactItemize}
+
+
+\subsection{Typedef Documentation}
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_abf396256ffbe263d811f20c7e3e03e5d}\label{namespacexd_1_1util_1_1string_abf396256ffbe263d811f20c7e3e03e5d}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!Str\+Const\+It@{Str\+Const\+It}}
+\index{Str\+Const\+It@{Str\+Const\+It}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{Str\+Const\+It}{StrConstIt}}
+{\footnotesize\ttfamily using \mbox{\hyperlink{namespacexd_1_1util_1_1string_abf396256ffbe263d811f20c7e3e03e5d}{xd\+::util\+::string\+::\+Str\+Const\+It}} = typedef std\+::string\+::const\+\_\+iterator}
+
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_ae41891173f05bb3afb7521da739ff9f2}\label{namespacexd_1_1util_1_1string_ae41891173f05bb3afb7521da739ff9f2}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!expect@{expect}}
+\index{expect@{expect}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{expect()}{expect()}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t $>$ \\
+It\+\_\+t xd\+::util\+::string\+::expect (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{target,  }\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_ab1782745921b7b9d41e795009cb27a83}\label{namespacexd_1_1util_1_1string_ab1782745921b7b9d41e795009cb27a83}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!is\+\_\+prefix@{is\+\_\+prefix}}
+\index{is\+\_\+prefix@{is\+\_\+prefix}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{is\+\_\+prefix()}{is\_prefix()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t $>$ \\
+bool xd\+::util\+::string\+::is\+\_\+prefix (\begin{DoxyParamCaption}\item[{It\+\_\+t}]{target\+\_\+begin,  }\item[{It\+\_\+t}]{target\+\_\+end,  }\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_a24b0ab7d5012342c113ea60dbc1fef43}\label{namespacexd_1_1util_1_1string_a24b0ab7d5012342c113ea60dbc1fef43}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!is\+\_\+prefix@{is\+\_\+prefix}}
+\index{is\+\_\+prefix@{is\+\_\+prefix}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{is\+\_\+prefix()}{is\_prefix()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily template$<$typename Str1\+\_\+t , typename Str2\+\_\+t $>$ \\
+bool xd\+::util\+::string\+::is\+\_\+prefix (\begin{DoxyParamCaption}\item[{const Str1\+\_\+t \&}]{s1,  }\item[{const Str2\+\_\+t \&}]{s2 }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_a9a7d78daf733e49ea8e009343d1b8660}\label{namespacexd_1_1util_1_1string_a9a7d78daf733e49ea8e009343d1b8660}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!is\+\_\+prefix@{is\+\_\+prefix}}
+\index{is\+\_\+prefix@{is\+\_\+prefix}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{is\+\_\+prefix()}{is\_prefix()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t , typename Str\+\_\+t $>$ \\
+bool xd\+::util\+::string\+::is\+\_\+prefix (\begin{DoxyParamCaption}\item[{const Str\+\_\+t \&}]{target,  }\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_a8ef3266e15a5b77eb6c198697a0f4a36}\label{namespacexd_1_1util_1_1string_a8ef3266e15a5b77eb6c198697a0f4a36}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!match\+\_\+optionally\+\_\+quoted\+\_\+string@{match\+\_\+optionally\+\_\+quoted\+\_\+string}}
+\index{match\+\_\+optionally\+\_\+quoted\+\_\+string@{match\+\_\+optionally\+\_\+quoted\+\_\+string}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{match\+\_\+optionally\+\_\+quoted\+\_\+string()}{match\_optionally\_quoted\_string()}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t $>$ \\
+It\+\_\+t xd\+::util\+::string\+::match\+\_\+optionally\+\_\+quoted\+\_\+string (\begin{DoxyParamCaption}\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_acf865d1183dfde2a4c505a0c4ca0d63d}\label{namespacexd_1_1util_1_1string_acf865d1183dfde2a4c505a0c4ca0d63d}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!next\+\_\+char@{next\+\_\+char}}
+\index{next\+\_\+char@{next\+\_\+char}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{next\+\_\+char()}{next\_char()}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t $>$ \\
+It\+\_\+t xd\+::util\+::string\+::next\+\_\+char (\begin{DoxyParamCaption}\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end,  }\item[{char}]{c }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_a41b23d87a18d193fdf6572b9d644e2fc}\label{namespacexd_1_1util_1_1string_a41b23d87a18d193fdf6572b9d644e2fc}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!next\+\_\+not\+\_\+char@{next\+\_\+not\+\_\+char}}
+\index{next\+\_\+not\+\_\+char@{next\+\_\+not\+\_\+char}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{next\+\_\+not\+\_\+char()}{next\_not\_char()}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t $>$ \\
+It\+\_\+t xd\+::util\+::string\+::next\+\_\+not\+\_\+char (\begin{DoxyParamCaption}\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end,  }\item[{char}]{c }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_a9872a2bbf2d81feb9c504f0f62b4e080}\label{namespacexd_1_1util_1_1string_a9872a2bbf2d81feb9c504f0f62b4e080}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!next\+\_\+whitespace@{next\+\_\+whitespace}}
+\index{next\+\_\+whitespace@{next\+\_\+whitespace}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{next\+\_\+whitespace()}{next\_whitespace()}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t $>$ \\
+It\+\_\+t xd\+::util\+::string\+::next\+\_\+whitespace (\begin{DoxyParamCaption}\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacexd_1_1util_1_1string_a9f49114d05158d1b0b60d0ad2e471b7e}\label{namespacexd_1_1util_1_1string_a9f49114d05158d1b0b60d0ad2e471b7e}} 
+\index{xd\+::util\+::string@{xd\+::util\+::string}!skip\+\_\+whitespace@{skip\+\_\+whitespace}}
+\index{skip\+\_\+whitespace@{skip\+\_\+whitespace}!xd\+::util\+::string@{xd\+::util\+::string}}
+\subsubsection{\texorpdfstring{skip\+\_\+whitespace()}{skip\_whitespace()}}
+{\footnotesize\ttfamily template$<$typename It\+\_\+t $>$ \\
+It\+\_\+t xd\+::util\+::string\+::skip\+\_\+whitespace (\begin{DoxyParamCaption}\item[{It\+\_\+t}]{begin,  }\item[{It\+\_\+t}]{end }\end{DoxyParamCaption})}
+

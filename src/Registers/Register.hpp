@@ -15,10 +15,7 @@ namespace xd::reg {
   class _Register_impl;
 
   template <typename Value_t>
-  class _Register_impl<Value_t, 0> {};
-
-  template <typename Value_t>
-  class _Register_impl<Value_t, 2> : public _Register_impl<Value_t, 0> {
+  class _Register_impl<Value_t, 2> {
   public:
     _Register_impl(Value_t &value)
       : _value(value) {};

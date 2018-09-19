@@ -1,0 +1,123 @@
+\hypertarget{classxd_1_1dbg_1_1_debugger}{}\section{xd\+:\+:dbg\+:\+:Debugger Class Reference}
+\label{classxd_1_1dbg_1_1_debugger}\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+
+
+{\ttfamily \#include $<$Debugger.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classxd_1_1xen_1_1_domain}{xen\+::\+Domain}} \& \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_ae398868e872eca4e9b920872c28ded64}{attach}} (\mbox{\hyperlink{namespacexd_1_1xen_aaad6b5eb6f7e5ba76a4e4ca166ac8a08}{xen\+::\+Dom\+ID}} domid)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_a5e104b83ee08778977da0bd3277795db}{detach}} ()
+\item 
+\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}} \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_af75fdf2c87819aa19e89c134de6d67ca}{continue\+\_\+until\+\_\+infinite\+\_\+loop}} ()
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_ae22024cb4bd5d00f61a46d166356990f}{single\+\_\+step}} ()
+\item 
+\mbox{\hyperlink{classxd_1_1xen_1_1_xen_handle}{xen\+::\+Xen\+Handle}} \& \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_aabee0b1f45a9c3468fe70358dbd6ca61}{get\+\_\+xen\+\_\+handle}} ()
+\item 
+std\+::optional$<$ \mbox{\hyperlink{classxd_1_1xen_1_1_domain}{xen\+::\+Domain}} $>$ \& \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_ab0321f2241f8bfb7e74fc5f04e86c1cb}{get\+\_\+current\+\_\+domain}} ()
+\item 
+std\+::vector$<$ \mbox{\hyperlink{classxd_1_1xen_1_1_domain}{xen\+::\+Domain}} $>$ \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_a733f91d159e4ba35e0f43ae52edcf7af}{get\+\_\+guest\+\_\+domains}} ()
+\item 
+const Infinite\+Loop\+Map \& \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_a91d2c466c13db9598524d46257e94745}{get\+\_\+infinite\+\_\+loops}} ()
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_a596d71af13ccae02c723351c016e6096}{insert\+\_\+infinite\+\_\+loop}} (\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}} address)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_abfc9f74ef6e1e147ec853895d0e38f4a}{remove\+\_\+infinite\+\_\+loop}} (\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}} address)
+\item 
+Masked\+Memory \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_ab721cea744f771218aac15ee84361fe0}{read\+\_\+memory\+\_\+masking\+\_\+infinite\+\_\+loops}} (\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}} address, size\+\_\+t length)
+\item 
+void \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_a6347de6428c0c1489f03a14c89b6fc74}{write\+\_\+memory\+\_\+retaining\+\_\+infinite\+\_\+loops}} (\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}} address, size\+\_\+t length, void $\ast$data)
+\item 
+{\footnotesize template$<$typename Reg32\+\_\+t , typename Reg64\+\_\+t $>$ }\\uint64\+\_\+t \mbox{\hyperlink{classxd_1_1dbg_1_1_debugger_ad2bfc260b023b17e4da5ca8019319b7b}{read\+\_\+register}} ()
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_ae398868e872eca4e9b920872c28ded64}\label{classxd_1_1dbg_1_1_debugger_ae398868e872eca4e9b920872c28ded64}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!attach@{attach}}
+\index{attach@{attach}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{attach()}{attach()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classxd_1_1xen_1_1_domain}{Domain}} \& Debugger\+::attach (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespacexd_1_1xen_aaad6b5eb6f7e5ba76a4e4ca166ac8a08}{xen\+::\+Dom\+ID}}}]{domid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_af75fdf2c87819aa19e89c134de6d67ca}\label{classxd_1_1dbg_1_1_debugger_af75fdf2c87819aa19e89c134de6d67ca}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!continue\+\_\+until\+\_\+infinite\+\_\+loop@{continue\+\_\+until\+\_\+infinite\+\_\+loop}}
+\index{continue\+\_\+until\+\_\+infinite\+\_\+loop@{continue\+\_\+until\+\_\+infinite\+\_\+loop}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{continue\+\_\+until\+\_\+infinite\+\_\+loop()}{continue\_until\_infinite\_loop()}}
+{\footnotesize\ttfamily Address Debugger\+::continue\+\_\+until\+\_\+infinite\+\_\+loop (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_a5e104b83ee08778977da0bd3277795db}\label{classxd_1_1dbg_1_1_debugger_a5e104b83ee08778977da0bd3277795db}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!detach@{detach}}
+\index{detach@{detach}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{detach()}{detach()}}
+{\footnotesize\ttfamily void Debugger\+::detach (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_ab0321f2241f8bfb7e74fc5f04e86c1cb}\label{classxd_1_1dbg_1_1_debugger_ab0321f2241f8bfb7e74fc5f04e86c1cb}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!get\+\_\+current\+\_\+domain@{get\+\_\+current\+\_\+domain}}
+\index{get\+\_\+current\+\_\+domain@{get\+\_\+current\+\_\+domain}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+domain()}{get\_current\_domain()}}
+{\footnotesize\ttfamily std\+::optional$<$\mbox{\hyperlink{classxd_1_1xen_1_1_domain}{xen\+::\+Domain}}$>$\& xd\+::dbg\+::\+Debugger\+::get\+\_\+current\+\_\+domain (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_a733f91d159e4ba35e0f43ae52edcf7af}\label{classxd_1_1dbg_1_1_debugger_a733f91d159e4ba35e0f43ae52edcf7af}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!get\+\_\+guest\+\_\+domains@{get\+\_\+guest\+\_\+domains}}
+\index{get\+\_\+guest\+\_\+domains@{get\+\_\+guest\+\_\+domains}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{get\+\_\+guest\+\_\+domains()}{get\_guest\_domains()}}
+{\footnotesize\ttfamily std\+::vector$<$ \mbox{\hyperlink{classxd_1_1xen_1_1_domain}{Domain}} $>$ Debugger\+::get\+\_\+guest\+\_\+domains (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_a91d2c466c13db9598524d46257e94745}\label{classxd_1_1dbg_1_1_debugger_a91d2c466c13db9598524d46257e94745}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!get\+\_\+infinite\+\_\+loops@{get\+\_\+infinite\+\_\+loops}}
+\index{get\+\_\+infinite\+\_\+loops@{get\+\_\+infinite\+\_\+loops}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{get\+\_\+infinite\+\_\+loops()}{get\_infinite\_loops()}}
+{\footnotesize\ttfamily const Infinite\+Loop\+Map\& xd\+::dbg\+::\+Debugger\+::get\+\_\+infinite\+\_\+loops (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_aabee0b1f45a9c3468fe70358dbd6ca61}\label{classxd_1_1dbg_1_1_debugger_aabee0b1f45a9c3468fe70358dbd6ca61}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!get\+\_\+xen\+\_\+handle@{get\+\_\+xen\+\_\+handle}}
+\index{get\+\_\+xen\+\_\+handle@{get\+\_\+xen\+\_\+handle}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{get\+\_\+xen\+\_\+handle()}{get\_xen\_handle()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classxd_1_1xen_1_1_xen_handle}{xen\+::\+Xen\+Handle}}\& xd\+::dbg\+::\+Debugger\+::get\+\_\+xen\+\_\+handle (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_a596d71af13ccae02c723351c016e6096}\label{classxd_1_1dbg_1_1_debugger_a596d71af13ccae02c723351c016e6096}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!insert\+\_\+infinite\+\_\+loop@{insert\+\_\+infinite\+\_\+loop}}
+\index{insert\+\_\+infinite\+\_\+loop@{insert\+\_\+infinite\+\_\+loop}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{insert\+\_\+infinite\+\_\+loop()}{insert\_infinite\_loop()}}
+{\footnotesize\ttfamily void Debugger\+::insert\+\_\+infinite\+\_\+loop (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}}}]{address }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_ab721cea744f771218aac15ee84361fe0}\label{classxd_1_1dbg_1_1_debugger_ab721cea744f771218aac15ee84361fe0}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!read\+\_\+memory\+\_\+masking\+\_\+infinite\+\_\+loops@{read\+\_\+memory\+\_\+masking\+\_\+infinite\+\_\+loops}}
+\index{read\+\_\+memory\+\_\+masking\+\_\+infinite\+\_\+loops@{read\+\_\+memory\+\_\+masking\+\_\+infinite\+\_\+loops}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{read\+\_\+memory\+\_\+masking\+\_\+infinite\+\_\+loops()}{read\_memory\_masking\_infinite\_loops()}}
+{\footnotesize\ttfamily Debugger\+::\+Masked\+Memory Debugger\+::read\+\_\+memory\+\_\+masking\+\_\+infinite\+\_\+loops (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}}}]{address,  }\item[{size\+\_\+t}]{length }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_ad2bfc260b023b17e4da5ca8019319b7b}\label{classxd_1_1dbg_1_1_debugger_ad2bfc260b023b17e4da5ca8019319b7b}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!read\+\_\+register@{read\+\_\+register}}
+\index{read\+\_\+register@{read\+\_\+register}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{read\+\_\+register()}{read\_register()}}
+{\footnotesize\ttfamily template$<$typename Reg32\+\_\+t , typename Reg64\+\_\+t $>$ \\
+uint64\+\_\+t xd\+::dbg\+::\+Debugger\+::read\+\_\+register (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_abfc9f74ef6e1e147ec853895d0e38f4a}\label{classxd_1_1dbg_1_1_debugger_abfc9f74ef6e1e147ec853895d0e38f4a}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!remove\+\_\+infinite\+\_\+loop@{remove\+\_\+infinite\+\_\+loop}}
+\index{remove\+\_\+infinite\+\_\+loop@{remove\+\_\+infinite\+\_\+loop}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{remove\+\_\+infinite\+\_\+loop()}{remove\_infinite\_loop()}}
+{\footnotesize\ttfamily void Debugger\+::remove\+\_\+infinite\+\_\+loop (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}}}]{address }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_ae22024cb4bd5d00f61a46d166356990f}\label{classxd_1_1dbg_1_1_debugger_ae22024cb4bd5d00f61a46d166356990f}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!single\+\_\+step@{single\+\_\+step}}
+\index{single\+\_\+step@{single\+\_\+step}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{single\+\_\+step()}{single\_step()}}
+{\footnotesize\ttfamily void Debugger\+::single\+\_\+step (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1dbg_1_1_debugger_a6347de6428c0c1489f03a14c89b6fc74}\label{classxd_1_1dbg_1_1_debugger_a6347de6428c0c1489f03a14c89b6fc74}} 
+\index{xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}!write\+\_\+memory\+\_\+retaining\+\_\+infinite\+\_\+loops@{write\+\_\+memory\+\_\+retaining\+\_\+infinite\+\_\+loops}}
+\index{write\+\_\+memory\+\_\+retaining\+\_\+infinite\+\_\+loops@{write\+\_\+memory\+\_\+retaining\+\_\+infinite\+\_\+loops}!xd\+::dbg\+::\+Debugger@{xd\+::dbg\+::\+Debugger}}
+\subsubsection{\texorpdfstring{write\+\_\+memory\+\_\+retaining\+\_\+infinite\+\_\+loops()}{write\_memory\_retaining\_infinite\_loops()}}
+{\footnotesize\ttfamily void Debugger\+::write\+\_\+memory\+\_\+retaining\+\_\+infinite\+\_\+loops (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespacexd_1_1xen_a94a8d6c9448e8330c771c100dba152c3}{xen\+::\+Address}}}]{address,  }\item[{size\+\_\+t}]{length,  }\item[{void $\ast$}]{data }\end{DoxyParamCaption})}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\+Debugger/\mbox{\hyperlink{_debugger_8hpp}{Debugger.\+hpp}}\item 
+src/\+Debugger/\mbox{\hyperlink{_debugger_8cpp}{Debugger.\+cpp}}\end{DoxyCompactItemize}

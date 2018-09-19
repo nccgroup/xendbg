@@ -1,0 +1,167 @@
+\hypertarget{_g_d_b_request_packet_8hpp}{}\section{src/\+G\+D\+B\+Stub/\+G\+D\+B\+Request\+Packet.hpp File Reference}
+\label{_g_d_b_request_packet_8hpp}\index{src/\+G\+D\+B\+Stub/\+G\+D\+B\+Request\+Packet.\+hpp@{src/\+G\+D\+B\+Stub/\+G\+D\+B\+Request\+Packet.\+hpp}}
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$optional$>$}\newline
+{\ttfamily \#include $<$queue$>$}\newline
+{\ttfamily \#include $<$sstream$>$}\newline
+{\ttfamily \#include $<$stdexcept$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$variant$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+{\ttfamily \#include \char`\"{}../\+Registers/\+Registers\+X86.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}../\+Util/overloaded.\+hpp\char`\"{}}\newline
+Include dependency graph for G\+D\+B\+Request\+Packet.\+hpp\+:
+% FIG 0
+This graph shows which files directly or indirectly include this file\+:
+% FIG 1
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_request_packet_parse_exception}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Request\+Packet\+Parse\+Exception}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_g_d_b_request_packet_base}{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet\+Base}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_start_no_ack_mode_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Start\+No\+Ack\+Mode\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_query_supported_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Query\+Supported\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_restart_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Restart\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_detach_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Detach\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_query_current_thread_i_d_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Query\+Current\+Thread\+I\+D\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_query_thread_info_start_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Query\+Thread\+Info\+Start\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_query_thread_info_continuing_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Query\+Thread\+Info\+Continuing\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_query_register_info_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Query\+Register\+Info\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_set_thread_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Set\+Thread\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_register_read_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Register\+Read\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_register_write_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Register\+Write\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_general_registers_batch_write_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+General\+Registers\+Batch\+Write\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_memory_read_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Memory\+Read\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_memory_write_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Memory\+Write\+Request}}
+\item 
+class \mbox{\hyperlink{classxd_1_1dbg_1_1gdbstub_1_1pkt_1_1_query_memory_region_info_request}{xd\+::dbg\+::gdbstub\+::pkt\+::\+Query\+Memory\+Region\+Info\+Request}}
+\end{DoxyCompactItemize}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt}{xd\+::dbg\+::gdbstub\+::pkt}}
+\end{DoxyCompactItemize}
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{_g_d_b_request_packet_8hpp_a811be787e26eb4cfde2d28a26f9360c6}{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}}(name,  ch)
+\item 
+\#define \mbox{\hyperlink{_g_d_b_request_packet_8hpp_a402ef4aaae5436d1d473802143c9ffdf}{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS}}(name1,  ch1,  name2,  ch2)
+\item 
+\#define \mbox{\hyperlink{_g_d_b_request_packet_8hpp_a0e7564dd33b45ff38d52200fb06226e4}{D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST}}(name,  ch)
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+using \mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a65690974f9b6e8807842c637042664a6}{xd\+::dbg\+::gdbstub\+::pkt\+::\+G\+D\+B\+Request\+Packet}} = std\+::variant$<$ Start\+No\+Ack\+Mode\+Request, Query\+Supported\+Request, Query\+Thread\+Suffix\+Supported\+Request, Query\+List\+Threads\+In\+Stop\+Reply\+Supported\+Request, Query\+Current\+Thread\+I\+D\+Request, Query\+Thread\+Info\+Start\+Request, Query\+Thread\+Info\+Continuing\+Request, Query\+Host\+Info\+Request, Query\+Process\+Info\+Request, Query\+Register\+Info\+Request, Query\+Memory\+Region\+Info\+Request, Stop\+Reason\+Request, Kill\+Request, Set\+Thread\+Request, Register\+Read\+Request, Register\+Write\+Request, General\+Registers\+Batch\+Read\+Request, General\+Registers\+Batch\+Write\+Request, Memory\+Read\+Request, Memory\+Write\+Request, Continue\+Request, Continue\+Signal\+Request, Step\+Request, Step\+Signal\+Request, Breakpoint\+Insert\+Request, Breakpoint\+Remove\+Request, Restart\+Request, Detach\+Request $>$
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a948bf064167d7fe5a1e046b07e62c2c3}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Query\+Thread\+Suffix\+Supported\+Request, \char`\"{}Q\+Thread\+Suffix\+Supported\char`\"{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a557fffad3e80bab40dd14e7526657887}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Query\+List\+Threads\+In\+Stop\+Reply\+Supported\+Request, \char`\"{}Q\+List\+Threads\+In\+Stop\+Reply\char`\"{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a78f1de2e65aef9d111eaf946fbf88e32}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Stop\+Reason\+Request, \textquotesingle{}?\textquotesingle{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a578456622ed4906c2bbc1e57ce5077f9}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Kill\+Request, \textquotesingle{}k\textquotesingle{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_ac0ac32b52e027d6370b1bc3cadc767a3}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}} (General\+Registers\+Batch\+Read\+Request, \textquotesingle{}g\textquotesingle{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a0100e422185e866c37a69972d528bbb0}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS}} (Continue\+Request, \textquotesingle{}c\textquotesingle{}, Continue\+Signal\+Request, \textquotesingle{}C\textquotesingle{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a873b9bd00f7d5fd6042ca77210ab4275}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS}} (Step\+Request, \textquotesingle{}s\textquotesingle{}, Step\+Signal\+Request, \textquotesingle{}S\textquotesingle{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a505136d05455c78258fbad83541e8600}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Breakpoint\+Insert\+Request, \textquotesingle{}Z\textquotesingle{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a2beb6edd494b1ed8e5fdfdfc2a5019ef}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Breakpoint\+Remove\+Request, \textquotesingle{}z\textquotesingle{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a35ca67f7ed5fadb44bcf6d3b8e64c0d2}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Query\+Host\+Info\+Request, \char`\"{}q\+Host\+Info\char`\"{})
+\item 
+\mbox{\hyperlink{namespacexd_1_1dbg_1_1gdbstub_1_1pkt_a9c1c2f08b963f68552f33d8a8f2e33d2}{xd\+::dbg\+::gdbstub\+::pkt\+::\+D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}} (Query\+Process\+Info\+Request, \char`\"{}q\+Process\+Info\char`\"{})
+\end{DoxyCompactItemize}
+
+
+\subsection{Macro Definition Documentation}
+\mbox{\Hypertarget{_g_d_b_request_packet_8hpp_a0e7564dd33b45ff38d52200fb06226e4}\label{_g_d_b_request_packet_8hpp_a0e7564dd33b45ff38d52200fb06226e4}} 
+\index{G\+D\+B\+Request\+Packet.\+hpp@{G\+D\+B\+Request\+Packet.\+hpp}!D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST@{D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST}}
+\index{D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST@{D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST}!G\+D\+B\+Request\+Packet.\+hpp@{G\+D\+B\+Request\+Packet.\+hpp}}
+\subsubsection{\texorpdfstring{D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST}{DECLARE\_BREAKPOINT\_REQUEST}}
+{\footnotesize\ttfamily \#define D\+E\+C\+L\+A\+R\+E\+\_\+\+B\+R\+E\+A\+K\+P\+O\+I\+N\+T\+\_\+\+R\+E\+Q\+U\+E\+ST(\begin{DoxyParamCaption}\item[{}]{name,  }\item[{}]{ch }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}
+\textcolor{keyword}{class }name : \textcolor{keyword}{public} GDBRequestPacketBase \{ \(\backslash\)
+  public: \(\backslash\)
+    name(\textcolor{keyword}{const} std::string &data) \(\backslash\)
+      : GDBRequestPacketBase(data, ch) \(\backslash\)
+    \{ \(\backslash\)
+      \_type = read\_hex\_number<uint8\_t>(); \(\backslash\)
+      expect\_char(\textcolor{charliteral}{','}); \(\backslash\)
+      \_address = read\_hex\_number<uint64\_t>(); \(\backslash\)
+      expect\_char(\textcolor{charliteral}{','}); \(\backslash\)
+      \_kind = read\_hex\_number<uint8\_t>(); \(\backslash\)
+      expect\_end(); \(\backslash\)
+    \}; \(\backslash\)
+    uint64\_t get\_address()\textcolor{keyword}{ const }\{ \textcolor{keywordflow}{return} \_address; \}; \(\backslash\)
+    uint8\_t get\_type()\textcolor{keyword}{ const }\{ \textcolor{keywordflow}{return} \_type; \}; \(\backslash\)
+    uint8\_t get\_kind()\textcolor{keyword}{ const }\{ \textcolor{keywordflow}{return} \_kind; \}; \(\backslash\)
+  private: \(\backslash\)
+    uint64\_t \_address; \(\backslash\)
+    uint8\_t \_type, \_kind; \(\backslash\)
+  \}
+\end{DoxyCode}
+\mbox{\Hypertarget{_g_d_b_request_packet_8hpp_a402ef4aaae5436d1d473802143c9ffdf}\label{_g_d_b_request_packet_8hpp_a402ef4aaae5436d1d473802143c9ffdf}} 
+\index{G\+D\+B\+Request\+Packet.\+hpp@{G\+D\+B\+Request\+Packet.\+hpp}!D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS@{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS}}
+\index{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS@{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS}!G\+D\+B\+Request\+Packet.\+hpp@{G\+D\+B\+Request\+Packet.\+hpp}}
+\subsubsection{\texorpdfstring{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS}{DECLARE\_SIGNAL\_REQUESTS}}
+{\footnotesize\ttfamily \#define D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+G\+N\+A\+L\+\_\+\+R\+E\+Q\+U\+E\+S\+TS(\begin{DoxyParamCaption}\item[{}]{name1,  }\item[{}]{ch1,  }\item[{}]{name2,  }\item[{}]{ch2 }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}
+\mbox{\hyperlink{_g_d_b_request_packet_8hpp_a811be787e26eb4cfde2d28a26f9360c6}{DECLARE\_SIMPLE\_REQUEST}}(name1, ch1); \(\backslash\)
+  class name2 : \textcolor{keyword}{public} GDBRequestPacketBase \{ \(\backslash\)
+  public: \(\backslash\)
+    name2(\textcolor{keyword}{const} std::string &data) \(\backslash\)
+      : GDBRequestPacketBase(data, ch2), \_signal(0) \(\backslash\)
+    \{ \(\backslash\)
+      \_signal = read\_byte(); \(\backslash\)
+      expect\_end(); \(\backslash\)
+    \}; \(\backslash\)
+    uint8\_t get\_signal() \{ \textcolor{keywordflow}{return} \_signal; \}; \(\backslash\)
+  private: \(\backslash\)
+    uint8\_t \_signal; \(\backslash\)
+  \}
+\end{DoxyCode}
+\mbox{\Hypertarget{_g_d_b_request_packet_8hpp_a811be787e26eb4cfde2d28a26f9360c6}\label{_g_d_b_request_packet_8hpp_a811be787e26eb4cfde2d28a26f9360c6}} 
+\index{G\+D\+B\+Request\+Packet.\+hpp@{G\+D\+B\+Request\+Packet.\+hpp}!D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST@{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}}
+\index{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST@{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}!G\+D\+B\+Request\+Packet.\+hpp@{G\+D\+B\+Request\+Packet.\+hpp}}
+\subsubsection{\texorpdfstring{D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST}{DECLARE\_SIMPLE\_REQUEST}}
+{\footnotesize\ttfamily \#define D\+E\+C\+L\+A\+R\+E\+\_\+\+S\+I\+M\+P\+L\+E\+\_\+\+R\+E\+Q\+U\+E\+ST(\begin{DoxyParamCaption}\item[{}]{name,  }\item[{}]{ch }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}
+\textcolor{keyword}{class }name : \textcolor{keyword}{public} GDBRequestPacketBase \{ \(\backslash\)
+  public: \(\backslash\)
+    name(\textcolor{keyword}{const} std::string &data) \(\backslash\)
+      : GDBRequestPacketBase(data, ch) \(\backslash\)
+    \{ \(\backslash\)
+      expect\_end(); \(\backslash\)
+    \}; \(\backslash\)
+  \}
+\end{DoxyCode}

@@ -1,0 +1,23 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node18 [label="runtime_error",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node18 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="xd::dbg::gdbstub::Unknown\lPacketTypeException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1dbg_1_1gdbstub_1_1_unknown_packet_type_exception.html"];
+  Node18 -> Node20 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node20 [label="xd::dbg::InvalidInputException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1dbg_1_1_invalid_input_exception.html"];
+  Node18 -> Node21 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node21 [label="xd::dbg::NoSuchSymbolException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1dbg_1_1_no_such_symbol_exception.html"];
+  Node18 -> Node22 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node22 [label="xd::dbg::NoSuchVariableException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1dbg_1_1_no_such_variable_exception.html"];
+  Node18 -> Node23 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node23 [label="xd::repl::cmd::ExtraArgument\lException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1repl_1_1cmd_1_1_extra_argument_exception.html"];
+  Node18 -> Node24 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node24 [label="xd::repl::cmd::FlagNameException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1repl_1_1cmd_1_1_flag_name_exception.html"];
+  Node18 -> Node25 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node25 [label="xd::repl::cmd::NoSuchArgument\lException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1repl_1_1cmd_1_1_no_such_argument_exception.html"];
+  Node18 -> Node26 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node26 [label="xd::xen::XenException",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1xen_1_1_xen_exception.html"];
+}

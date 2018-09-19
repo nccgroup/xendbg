@@ -12,6 +12,8 @@
 
 namespace xd::xen {
 
+  class Domain;
+
   /**
    * Handles to various resources used to control Xen dom0 and guests
    */
@@ -21,6 +23,8 @@ namespace xd::xen {
     const XenCtrl& get_xenctrl() const { return _xenctrl; };
     const XenForeignMemory& get_xen_foreign_memory() const { return _xen_foreign_memory; };
     const XenStore& get_xenstore() const { return _xenstore; };
+
+    std::vector<Domain> get_domains() const;
 
   private:
     PrivCmd _privcmd;

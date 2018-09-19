@@ -1,0 +1,12 @@
+digraph "xd::reg::_Register_impl&lt; Value_t, 8 &gt;"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node4 [label="xd::reg::_Register\l_impl\< Value_t, 8 \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid"];
+  Node5 [label="xd::reg::_Register\l_impl\< Value_t, 4 \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1reg_1_1___register__impl_3_01_value__t_00_014_01_4.html"];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid"];
+  Node6 [label="xd::reg::_Register\l_impl\< Value_t, 2 \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1reg_1_1___register__impl_3_01_value__t_00_012_01_4.html"];
+  Node7 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid"];
+  Node7 [label="xd::reg::_Register\l_impl\< Value_t, 0 \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxd_1_1reg_1_1___register__impl_3_01_value__t_00_010_01_4.html"];
+}

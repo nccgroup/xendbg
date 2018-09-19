@@ -58,8 +58,7 @@ add_executable(xendbg
   src/REPL/REPL.hpp
   src/Registers/Register.hpp
   src/Registers/RegisterContext.hpp
-  src/Registers/RegisterContextIterator.hpp
-  src/Registers/RegistersX86.hpp
+        src/Registers/RegistersX86.hpp
   src/Registers/RegistersX86_64.hpp
   src/Util/IndentHelper.cpp
   src/Util/IndentHelper.hpp
@@ -87,7 +86,7 @@ add_executable(xendbg
   src/Xen/XenHandle.hpp
   src/Xen/XenStore.cpp
   src/Xen/XenStore.hpp
-  src/main.cpp)
+  src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp)
 
 target_link_libraries(xendbg
   capstone

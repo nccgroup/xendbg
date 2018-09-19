@@ -1,0 +1,112 @@
+\hypertarget{classxd_1_1repl_1_1_r_e_p_l}{}\section{xd\+:\+:repl\+:\+:R\+E\+PL Class Reference}
+\label{classxd_1_1repl_1_1_r_e_p_l}\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+
+
+{\ttfamily \#include $<$R\+E\+P\+L.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_a2e1d89ef893914e2384d0aa1baff3fdc}{R\+E\+PL}} ()
+\item 
+\mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_a8aea04977aafea7c131eb71650700f61}{R\+E\+PL}} (const \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}} \&other)=delete
+\item 
+\mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}} \& \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_ac25dfbc0192fd0b237c8d46f77dc7060}{operator=}} (const \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}} \&other)=delete
+\item 
+void \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_abc49ec956c98226be7b69198dc1fc989}{add\+\_\+command}} (Command\+Ptr cmd)
+\item 
+void \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_a72853b794df8d5d1a405cebecda7f56f}{exit}} ()
+\item 
+const std\+::string \& \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_aba522d734824a320868d5098adf6b21f}{get\+\_\+prompt}} ()
+\item 
+void \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_a8e7da66c84643eae2f35d1dd829336d2}{print\+\_\+help}} (std\+::ostream \&out)
+\item 
+void \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_aac13fa814e68437ba34ca9a654f272d3}{set\+\_\+prompt\+\_\+configurator}} (Prompt\+Configurator\+Fn f)
+\item 
+void \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_a891f0a64d8a4daa94c4e3eb7e6d43e54}{set\+\_\+no\+\_\+match\+\_\+handler}} (No\+Match\+Handler\+Fn f)
+\item 
+void \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_ac086dabd61f88f3f524aa429fec619c1}{set\+\_\+custom\+\_\+completer}} (Completer\+Fn f)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l_aeb27639fc9ace00650f4bf22c132e079}{run}} (\mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}} \&repl, Action\+Handler\+Fn action\+\_\+handler)
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_a2e1d89ef893914e2384d0aa1baff3fdc}\label{classxd_1_1repl_1_1_r_e_p_l_a2e1d89ef893914e2384d0aa1baff3fdc}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!R\+E\+PL@{R\+E\+PL}}
+\index{R\+E\+PL@{R\+E\+PL}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{R\+E\+P\+L()}{REPL()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily R\+E\+P\+L\+::\+R\+E\+PL (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_a8aea04977aafea7c131eb71650700f61}\label{classxd_1_1repl_1_1_r_e_p_l_a8aea04977aafea7c131eb71650700f61}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!R\+E\+PL@{R\+E\+PL}}
+\index{R\+E\+PL@{R\+E\+PL}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{R\+E\+P\+L()}{REPL()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily xd\+::repl\+::\+R\+E\+P\+L\+::\+R\+E\+PL (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_abc49ec956c98226be7b69198dc1fc989}\label{classxd_1_1repl_1_1_r_e_p_l_abc49ec956c98226be7b69198dc1fc989}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!add\+\_\+command@{add\+\_\+command}}
+\index{add\+\_\+command@{add\+\_\+command}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{add\+\_\+command()}{add\_command()}}
+{\footnotesize\ttfamily void R\+E\+P\+L\+::add\+\_\+command (\begin{DoxyParamCaption}\item[{R\+E\+P\+L\+::\+Command\+Ptr}]{cmd }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_a72853b794df8d5d1a405cebecda7f56f}\label{classxd_1_1repl_1_1_r_e_p_l_a72853b794df8d5d1a405cebecda7f56f}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!exit@{exit}}
+\index{exit@{exit}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{exit()}{exit()}}
+{\footnotesize\ttfamily void R\+E\+P\+L\+::exit (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_aba522d734824a320868d5098adf6b21f}\label{classxd_1_1repl_1_1_r_e_p_l_aba522d734824a320868d5098adf6b21f}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!get\+\_\+prompt@{get\+\_\+prompt}}
+\index{get\+\_\+prompt@{get\+\_\+prompt}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{get\+\_\+prompt()}{get\_prompt()}}
+{\footnotesize\ttfamily const std\+::string\& xd\+::repl\+::\+R\+E\+P\+L\+::get\+\_\+prompt (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_ac25dfbc0192fd0b237c8d46f77dc7060}\label{classxd_1_1repl_1_1_r_e_p_l_ac25dfbc0192fd0b237c8d46f77dc7060}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!operator=@{operator=}}
+\index{operator=@{operator=}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}}\& xd\+::repl\+::\+R\+E\+P\+L\+::operator= (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_a8e7da66c84643eae2f35d1dd829336d2}\label{classxd_1_1repl_1_1_r_e_p_l_a8e7da66c84643eae2f35d1dd829336d2}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!print\+\_\+help@{print\+\_\+help}}
+\index{print\+\_\+help@{print\+\_\+help}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{print\+\_\+help()}{print\_help()}}
+{\footnotesize\ttfamily void R\+E\+P\+L\+::print\+\_\+help (\begin{DoxyParamCaption}\item[{std\+::ostream \&}]{out }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_aeb27639fc9ace00650f4bf22c132e079}\label{classxd_1_1repl_1_1_r_e_p_l_aeb27639fc9ace00650f4bf22c132e079}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!run@{run}}
+\index{run@{run}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{run()}{run()}}
+{\footnotesize\ttfamily void R\+E\+P\+L\+::run (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classxd_1_1repl_1_1_r_e_p_l}{R\+E\+PL}} \&}]{repl,  }\item[{R\+E\+P\+L\+::\+Action\+Handler\+Fn}]{action\+\_\+handler }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_ac086dabd61f88f3f524aa429fec619c1}\label{classxd_1_1repl_1_1_r_e_p_l_ac086dabd61f88f3f524aa429fec619c1}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!set\+\_\+custom\+\_\+completer@{set\+\_\+custom\+\_\+completer}}
+\index{set\+\_\+custom\+\_\+completer@{set\+\_\+custom\+\_\+completer}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{set\+\_\+custom\+\_\+completer()}{set\_custom\_completer()}}
+{\footnotesize\ttfamily void xd\+::repl\+::\+R\+E\+P\+L\+::set\+\_\+custom\+\_\+completer (\begin{DoxyParamCaption}\item[{Completer\+Fn}]{f }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_a891f0a64d8a4daa94c4e3eb7e6d43e54}\label{classxd_1_1repl_1_1_r_e_p_l_a891f0a64d8a4daa94c4e3eb7e6d43e54}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!set\+\_\+no\+\_\+match\+\_\+handler@{set\+\_\+no\+\_\+match\+\_\+handler}}
+\index{set\+\_\+no\+\_\+match\+\_\+handler@{set\+\_\+no\+\_\+match\+\_\+handler}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{set\+\_\+no\+\_\+match\+\_\+handler()}{set\_no\_match\_handler()}}
+{\footnotesize\ttfamily void xd\+::repl\+::\+R\+E\+P\+L\+::set\+\_\+no\+\_\+match\+\_\+handler (\begin{DoxyParamCaption}\item[{No\+Match\+Handler\+Fn}]{f }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classxd_1_1repl_1_1_r_e_p_l_aac13fa814e68437ba34ca9a654f272d3}\label{classxd_1_1repl_1_1_r_e_p_l_aac13fa814e68437ba34ca9a654f272d3}} 
+\index{xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}!set\+\_\+prompt\+\_\+configurator@{set\+\_\+prompt\+\_\+configurator}}
+\index{set\+\_\+prompt\+\_\+configurator@{set\+\_\+prompt\+\_\+configurator}!xd\+::repl\+::\+R\+E\+PL@{xd\+::repl\+::\+R\+E\+PL}}
+\subsubsection{\texorpdfstring{set\+\_\+prompt\+\_\+configurator()}{set\_prompt\_configurator()}}
+{\footnotesize\ttfamily void xd\+::repl\+::\+R\+E\+P\+L\+::set\+\_\+prompt\+\_\+configurator (\begin{DoxyParamCaption}\item[{Prompt\+Configurator\+Fn}]{f }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\+R\+E\+P\+L/\mbox{\hyperlink{_r_e_p_l_8hpp}{R\+E\+P\+L.\+hpp}}\item 
+src/\+R\+E\+P\+L/\mbox{\hyperlink{_r_e_p_l_8cpp}{R\+E\+P\+L.\+cpp}}\end{DoxyCompactItemize}

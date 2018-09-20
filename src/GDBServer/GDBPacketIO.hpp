@@ -19,7 +19,7 @@
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
 
-namespace xd::dbg::gdbstub {
+namespace xd::dbg::gdbsrv {
 
   class UnknownPacketTypeException : public std::runtime_error {
   public:

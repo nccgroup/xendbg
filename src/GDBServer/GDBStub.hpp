@@ -18,7 +18,7 @@ namespace xd::dbg {
 
 }
 
-namespace xd::dbg::gdbstub {
+namespace xd::dbg::gdbsrv {
 
   class GDBStub {
   public:

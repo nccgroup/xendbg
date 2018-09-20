@@ -22,8 +22,8 @@
 
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
-using xd::dbg::gdbstub::GDBPacketIO;
-using xd::dbg::gdbstub::GDBStub;
+using xd::dbg::gdbsrv::GDBPacketIO;
+using xd::dbg::gdbsrv::GDBStub;
 using xd::util::overloaded;
 using xd::xen::XenException;
 

@@ -13,9 +13,9 @@
 
 #define PACKET_BUFFER_MAX_SIZE 0x400
 
-using xd::dbg::gdbstub::GDBPacketIO;
-using xd::dbg::gdbstub::pkt::GDBResponsePacket;
-using xd::dbg::gdbstub::pkt::GDBRequestPacket;
+using xd::dbg::gdbsrv::GDBPacketIO;
+using xd::dbg::gdbsrv::pkt::GDBResponsePacket;
+using xd::dbg::gdbsrv::pkt::GDBRequestPacket;
 using xd::util::pop_ret;
 using xd::util::string::is_prefix;
 

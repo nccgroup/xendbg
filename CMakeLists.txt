@@ -7,19 +7,20 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
 include_directories(
   third_party/CLI11/include
-  third_party/ELFIO/include)
+  third_party/ELFIO/include
+  third_party/sunrise/)
 
 add_executable(xendbg
   src/Debugger/DebugSession.cpp
   src/Debugger/DebugSession.hpp
   src/Debugger/DebugSessionPV.cpp
   src/Debugger/DebugSessionPV.hpp
-  src/GDBStub/GDBPacketIO.cpp
-  src/GDBStub/GDBPacketIO.hpp
-  src/GDBStub/GDBRequestPacket.hpp
-  src/GDBStub/GDBResponsePacket.hpp
-  src/GDBStub/GDBStub.cpp
-  src/GDBStub/GDBStub.hpp
+        src/GDBServer/GDBPacketIO.cpp
+        src/GDBServer/GDBPacketIO.hpp
+        src/GDBServer/GDBRequestPacket.hpp
+        src/GDBServer/GDBResponsePacket.hpp
+        src/GDBServer/GDBStub.cpp
+        src/GDBServer/GDBStub.hpp
   src/REPL/Command/Action.hpp
   src/REPL/Command/ArgsHandle.cpp
   src/REPL/Command/ArgsHandle.hpp
@@ -88,7 +89,7 @@ add_executable(xendbg
   src/Xen/XenHandle.hpp
   src/Xen/XenStore.cpp
   src/Xen/XenStore.hpp
-  src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp src/Debugger/DebugSession.cpp src/Debugger/DebugSession.hpp)
+  src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp src/Debugger/DebugSession.cpp src/Debugger/DebugSession.hpp src/GDBServer/GDBPacketQueue.cpp src/GDBServer/GDBPacketQueue.hpp src/GDBServer/GDBServer.cpp src/GDBServer/GDBServer.hpp)
 
 target_link_libraries(xendbg
   capstone

@@ -3,14 +3,14 @@
 //
 
 #include "Debugger/DebugSessionPV.hpp"
-#include "GDBStub/GDBStub.hpp"
+#include "GDBServer/GDBServer.hpp"
 #include "Xen/XenHandle.hpp"
 
 #include "CommandLine.hpp"
 
 using xd::CommandLine;
 using xd::dbg::DebugSessionPV;
-using xd::dbg::gdbstub::GDBStub;
+using xd::dbg::gdbsrv::GDBServer;
 using xd::xen::DomID;
 using xd::xen::XenException;
 using xd::xen::XenHandle;
@@ -51,9 +51,15 @@ int CommandLine::parse(int argc, char **argv) {
 }
 
 void CommandLine::start_gdb_server(DomID domid, uint16_t port) {
+  GDBServer server("127.0.0.1", port);
+  server.start([](std::string packet) {
+    std::cout << "RECV: " << packet << std::endl;
+  });
+  /*
   XenHandle xen;
   DebugSessionPV dbg(xen, domid);
   std::cout << "Attached to guest #" << domid << std::endl;
   GDBStub stub(port);
   stub.run(dbg);
+  */
 }

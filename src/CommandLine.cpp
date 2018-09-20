@@ -37,6 +37,8 @@ CommandLine::CommandLine()
         throw std::runtime_error("No such domain!");
 
       start_gdb_server(domain->get_domid(), _port);
+    } else {
+      // TODO: start REPL
     }
   });
 };
@@ -52,8 +54,8 @@ int CommandLine::parse(int argc, char **argv) {
 
 void CommandLine::start_gdb_server(DomID domid, uint16_t port) {
   GDBServer server("127.0.0.1", port);
-  server.start([](std::string packet) {
-    std::cout << "RECV: " << packet << std::endl;
+  server.start([](const auto &packet) {
+    std::cout << "RECV" << std::endl;
   });
   /*
   XenHandle xen;

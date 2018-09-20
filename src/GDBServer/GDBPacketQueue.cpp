@@ -7,6 +7,7 @@
 
 #define CHECKSUM_LENGTH 2
 
+using xd::gdbsrv::GDBPacket;
 using xd::gdbsrv::GDBPacketQueue;
 
 void GDBPacketQueue::enqueue(std::vector<char> data) {
@@ -15,19 +16,18 @@ void GDBPacketQueue::enqueue(std::vector<char> data) {
   auto end = _buffer.begin();
   while (end != _buffer.end()) {
     auto packet_start = std::find(end, _buffer.end(), '$');
-    auto chksum_start = std::find(packet_start, _buffer.end(), '#');
+    auto checksum_start = std::find(packet_start, _buffer.end(), '#');
 
     if (packet_start == _buffer.end() ||
-        chksum_start == _buffer.end() ||
-        _buffer.end() - chksum_start < (CHECKSUM_LENGTH + 2))
+        checksum_start == _buffer.end() ||
+        _buffer.end() - checksum_start < (CHECKSUM_LENGTH + 2))
       break;
 
-    end = chksum_start + CHECKSUM_LENGTH + 1;
+    end = checksum_start + CHECKSUM_LENGTH + 1;
     _packets.emplace(GDBPacket{
       std::string(packet_start, checksum_start),
-      std::stoul(std::string(checksum_start, end), 0, 16)
-    })
-    _packets.push(std::string(packet_start, end));
+      static_cast<uint8_t>(std::stoul(std::string(checksum_start, end), 0, 16))
+    });
   }
 
   end = std::find(end, _buffer.end(), '$');

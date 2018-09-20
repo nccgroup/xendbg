@@ -6,9 +6,13 @@
 #include <numeric>
 
 #include "GDBServer.hpp"
+#include "../Util/string.hpp"
 
 using xd::gdbsrv::GDBServer;
 using xd::gdbsrv::GDBPacketQueue;
+using xd::gdbsrv::pkt::GDBRequestPacket;
+using xd::gdbsrv::pkt::GDBResponsePacket;
+using xd::util::string::is_prefix;
 
 GDBServer::GDBServer(std::string address, uint16_t port)
     : _address(std::move(address)), _port(port)
@@ -135,9 +139,11 @@ void GDBServer::stop() {
   }
 }
 
-void GDBServer::send(pkt::GDBResponsePacket packet) {
+void GDBServer::send(GDBResponsePacket packet) {
+  auto s = format_packet(packet);
   auto data = new std::string;
-  data->swap(format_packet(packet)); // TODO: OK?
+
+  data->swap(s); // TODO: OK?
 
   uv_buf_t buf;
   buf.base = data->data();
@@ -150,7 +156,7 @@ void GDBServer::send(pkt::GDBResponsePacket packet) {
     const auto client = kv.first;
     uv_write(wreq, client, &buf, 1, [](uv_write_t *req, int s) {
       std::ignore = s;
-      free((std::string*)data);
+      free((std::string*)req->data);
       free(req);
     });
   }
@@ -183,19 +189,20 @@ bool xd::gdbsrv::GDBServer::validate_packet_checksum(const GDBPacket &packet) {
   return checksum_calculated == packet.checksum;
 }
 
-std::string GDBServer::format_packet(const pkt::GDBResponsePacket &packet)
+std::string GDBServer::format_packet(const GDBResponsePacket &packet) {
+  const auto& contents = packet.to_string();
   const uint8_t checksum = std::accumulate(
-      raw_packet.begin(), raw_packet.end(), (uint8_t)0);
+      contents.begin(), contents.end(), (uint8_t)0);
 
   std::stringstream ss;
-  ss << "$" << raw_packet << "#";
+  ss << "$" << contents << "#";
   ss << std::hex << std::setfill('0') << std::setw(2);
   ss << (unsigned)checksum;
 
   return ss.str();
 }
 
-pkt::GDBRequestPacket GDBServer::parse_packet(const GDBPacket &packet) {
+GDBRequestPacket GDBServer::parse_packet(const GDBPacket &packet) {
   const auto &contents = packet.contents;
 
   switch (contents[0]) {

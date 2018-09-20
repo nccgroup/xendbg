@@ -15,12 +15,8 @@ add_executable(xendbg
   src/Debugger/DebugSession.hpp
   src/Debugger/DebugSessionPV.cpp
   src/Debugger/DebugSessionPV.hpp
-        src/GDBServer/GDBPacketParser.cpp
-        src/GDBServer/GDBPacketParser.hpp
-        src/GDBServer/GDBRequestPacket.hpp
-        src/GDBServer/GDBResponsePacket.hpp
-        src/GDBServer/GDBStub.cpp
-        src/GDBServer/GDBStub.hpp
+  src/GDBServer/GDBRequestPacket.hpp
+  src/GDBServer/GDBResponsePacket.hpp
   src/REPL/Command/Action.hpp
   src/REPL/Command/ArgsHandle.cpp
   src/REPL/Command/ArgsHandle.hpp

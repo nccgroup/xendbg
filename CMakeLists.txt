@@ -84,7 +84,7 @@ add_executable(xendbg
   src/Xen/XenHandle.hpp
   src/Xen/XenStore.cpp
   src/Xen/XenStore.hpp
-  src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp src/Debugger/DebugSession.cpp src/Debugger/DebugSession.hpp src/GDBServer/GDBPacketQueue.cpp src/GDBServer/GDBPacketQueue.hpp src/GDBServer/GDBServer.cpp src/GDBServer/GDBServer.hpp)
+  src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp src/Debugger/DebugSession.cpp src/Debugger/DebugSession.hpp src/GDBServer/GDBPacketQueue.cpp src/GDBServer/GDBPacketQueue.hpp src/GDBServer/GDBServer.cpp src/GDBServer/GDBServer.hpp src/GDBServer/GDBPacketInterpreter.cpp src/GDBServer/GDBPacketInterpreter.hpp)
 
 target_link_libraries(xendbg
   capstone

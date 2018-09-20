@@ -45,11 +45,15 @@ namespace xd::gdbsrv {
     static pkt::GDBRequestPacket parse_packet(const GDBPacket &packet);
     static std::string format_packet(const pkt::GDBResponsePacket &packet);
 
+    void on_receive(const pkt::GDBRequestPacket &packet);
+    void send_raw(std::string s);
+
   private:
     std::string _address;
     uint16_t _port;
     OnReceiveFn _on_receive;
     bool _is_running;
+    bool _ack_mode;
 
     uv_loop_t _loop;
     std::unordered_map<uv_stream_t*, GDBPacketQueue> _packet_queues;

@@ -53,15 +53,12 @@ int CommandLine::parse(int argc, char **argv) {
 }
 
 void CommandLine::start_gdb_server(DomID domid, uint16_t port) {
-  GDBServer server("127.0.0.1", port);
-  server.start([](const auto &packet) {
-    std::cout << "RECV" << std::endl;
-  });
-  /*
   XenHandle xen;
   DebugSessionPV dbg(xen, domid);
   std::cout << "Attached to guest #" << domid << std::endl;
-  GDBStub stub(port);
-  stub.run(dbg);
-  */
+
+  GDBServer server("127.0.0.1", port);
+  server.start([&](const auto &packet) {
+    
+  });
 }

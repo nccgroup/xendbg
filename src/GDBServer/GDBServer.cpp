@@ -15,7 +15,7 @@ using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
 
 GDBServer::GDBServer(std::string address, uint16_t port)
-    : _address(std::move(address)), _port(port)
+    : _address(std::move(address)), _port(port), _is_running(false), _ack_mode(true)
 {};
 
 GDBServer::~GDBServer() {
@@ -76,9 +76,14 @@ void GDBServer::start(OnReceiveFn on_receive) {
             for (auto &pair : self->_packet_queues) {
               std::optional<GDBPacket> raw_packet;
               while ((raw_packet = pair.second.dequeue())) {
-                if (validate_packet_checksum(*raw_packet)) {
+                bool valid = validate_packet_checksum(*raw_packet);
+
+                if (self->_ack_mode)
+                  self->send_raw(valid ? "+" : "-");
+
+                if (valid) {
                   const auto packet = parse_packet(*raw_packet);
-                  self->_on_receive(packet);
+                  self->on_receive(packet); // TODO: exception handling
                 }
               }
             }
@@ -140,9 +145,11 @@ void GDBServer::stop() {
 }
 
 void GDBServer::send(GDBResponsePacket packet) {
-  auto s = format_packet(packet);
-  auto data = new std::string;
+  send_raw(format_packet(packet));
+}
 
+void GDBServer::send_raw(std::string s) {
+  auto data = new std::string;
   data->swap(s); // TODO: OK?
 
   uv_buf_t buf;
@@ -269,4 +276,12 @@ GDBRequestPacket GDBServer::parse_packet(const GDBPacket &packet) {
   }
 
   throw UnknownPacketTypeException(contents);
+}
+
+void GDBServer::on_receive(const GDBRequestPacket &packet) {
+  if (std::holds_alternative<pkt::StartNoAckModeRequest>(packet)) {
+    _ack_mode = false;
+  } else {
+    _on_receive(packet);
+  }
 }

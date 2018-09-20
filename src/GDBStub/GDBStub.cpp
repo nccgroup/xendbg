@@ -15,7 +15,7 @@
 #include <thread>
 #include <unistd.h>
 
-#include "../Debugger/Debugger.hpp"
+#include "../Debugger/DebugSessionPV.hpp"
 #include "GDBPacketIO.hpp"
 #include "GDBStub.hpp"
 #include "../Util/overloaded.hpp"
@@ -41,7 +41,7 @@ GDBStub::GDBStub(in_addr_t address, int port)
 {
 }
 
-void GDBStub::run(Debugger &dbg) {
+void GDBStub::run(DebugSessionPV &dbg) {
   int listen_fd = tcp_socket_open(_address, _port);
   int remote_fd = tcp_socket_accept(listen_fd);
 
@@ -49,9 +49,9 @@ void GDBStub::run(Debugger &dbg) {
   char ack;
   const auto bytes_read = recv(remote_fd, &ack, sizeof(ack), 0);
   if (bytes_read <= 0)
-    std::runtime_error("Didn't get an ack from remote!");
+    throw std::runtime_error("Didn't get an ack from remote!");
   if (ack != '+')
-    std::runtime_error("Unexpected value.");
+    throw std::runtime_error("Unexpected value.");
   //send(remote_fd, &ack, sizeof(ack), 0);
 
   GDBPacketIO io(remote_fd);
@@ -88,14 +88,14 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::QueryHostInfoRequest &req) {
-          const auto domain = dbg.get_current_domain();
+          const auto domain = dbg.get_domain();
           const auto name = domain->get_name();
           const auto word_size = domain->get_word_size();
           io.write_packet(pkt::QueryHostInfoResponse(word_size, name));
         },
         [&io, &dbg](const pkt::QueryRegisterInfoRequest &req) {
           const auto id = req.get_register_id();
-          const auto word_size = dbg.get_current_domain()->get_word_size();
+          const auto word_size = dbg.get_domain()->get_word_size();
 
           if (word_size == sizeof(uint64_t)) {
             RegistersX86_64::find_metadata_by_id(id, [&io, id](const auto &md) {
@@ -125,7 +125,7 @@ void GDBStub::run(Debugger &dbg) {
           try {
             const auto start = address & XC_PAGE_MASK;
             const auto size = XC_PAGE_SIZE;
-            const auto perms = dbg.get_current_domain()->get_memory_permissions(address);
+            const auto perms = dbg.get_domain()->get_memory_permissions(address);
 
             io.write_packet(pkt::QueryMemoryRegionInfoResponse(start, size, perms));
           } catch (const XenException &e) {
@@ -148,7 +148,7 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
         },
         [&io, &dbg, &running](const pkt::KillRequest &req) {
-          dbg.get_current_domain()->destroy();
+          dbg.get_domain()->destroy();
           io.write_packet(pkt::TerminatedResponse(SIGKILL));
           running = false;
         },
@@ -158,7 +158,7 @@ void GDBStub::run(Debugger &dbg) {
         [&io, &dbg](const pkt::RegisterReadRequest &req) {
           const auto id = req.get_register_id();
           const auto thread_id = req.get_thread_id();
-          const auto regs = dbg.get_current_domain()->get_cpu_context(thread_id-1);
+          const auto regs = dbg.get_domain()->get_cpu_context(thread_id-1);
 
           std::visit(util::overloaded {
             [&](const auto &regs) {
@@ -174,7 +174,7 @@ void GDBStub::run(Debugger &dbg) {
           const auto id = req.get_register_id();
           const auto value = req.get_value();
 
-          auto regs = dbg.get_current_domain()->get_cpu_context();
+          auto regs = dbg.get_domain()->get_cpu_context();
           std::visit(util::overloaded {
             [&](auto &regs) {
               regs.find_by_id(id, [&value](const auto&, auto &reg) {
@@ -184,11 +184,11 @@ void GDBStub::run(Debugger &dbg) {
               });
             }
           }, regs);
-          dbg.get_current_domain()->set_cpu_context(regs);
+          dbg.get_domain()->set_cpu_context(regs);
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::GeneralRegistersBatchReadRequest &req) {
-          const auto regs = dbg.get_current_domain()->get_cpu_context();
+          const auto regs = dbg.get_domain()->get_cpu_context();
           std::visit(util::overloaded {
             [&io](const RegistersX86_32 &regs) {
               io.write_packet(pkt::GeneralRegistersBatchReadResponse(regs));
@@ -200,7 +200,7 @@ void GDBStub::run(Debugger &dbg) {
           io.write_packet(pkt::NotSupportedResponse());
         },
         [&io, &dbg](const pkt::GeneralRegistersBatchWriteRequest &req) {
-          auto orig_regs_any = dbg.get_current_domain()->get_cpu_context();
+          auto orig_regs_any = dbg.get_domain()->get_cpu_context();
           auto values = req.get_values();
 
           std::visit(util::overloaded {
@@ -224,32 +224,12 @@ void GDBStub::run(Debugger &dbg) {
               });
             }
           }, orig_regs_any);
-
-          /*
-          std::visit(util::overloaded {
-            [&values](auto &orig_regs) {
-              for (size_t id = 0; id < values.size(); ++id) {
-                const auto value_var_opt = values.at(id);
-                orig_regs.find_by_id(id, [&value_var_opt](const auto&, auto &reg) {
-                  if (value_var_opt)
-                    std::visit(util::overloaded {
-                      [&reg](const auto &value) {
-                        reg = value;
-                      }
-                    }, *value_var_opt);
-                }, []() {
-                  throw std::runtime_error("Oversized register write packet!");
-                });
-              }
-            }
-          }, orig_regs_any);
-          */
         },
         [&io, &dbg](const pkt::MemoryReadRequest &req) {
           const auto address = req.get_address();
           const auto length = req.get_length();
 
-          const auto data = dbg.read_memory_masking_infinite_loops(address, length);
+          const auto data = dbg.read_memory_masking_breakpoints(address, length);
           io.write_packet(pkt::MemoryReadResponse(data.get(), length));
         },
         [&io, &dbg](const pkt::MemoryWriteRequest &req) {
@@ -257,13 +237,13 @@ void GDBStub::run(Debugger &dbg) {
           const auto length = req.get_length();
           const auto data = req.get_data();
 
-          dbg.write_memory_retaining_infinite_loops(
+          dbg.write_memory_retaining_breakpoints(
               address, length, (void*)&data[0]);
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::ContinueRequest &req) {
           io.write_packet(pkt::OKResponse());
-          dbg.continue_until_infinite_loop();
+          dbg.continue_();
           io.write_packet(pkt::StopReasonSignalResponse(SIGTRAP, 1));
         },
         [&io, &dbg](const pkt::ContinueSignalRequest &req) {
@@ -278,19 +258,18 @@ void GDBStub::run(Debugger &dbg) {
         },
         [&io, &dbg](const pkt::BreakpointInsertRequest &req) {
           const auto address = req.get_address();
-          dbg.insert_infinite_loop(address);
+          dbg.insert_breakpoint(address);
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::BreakpointRemoveRequest &req) {
           const auto address = req.get_address();
-          dbg.remove_infinite_loop(address);
+          dbg.remove_breakpoint(address);
           io.write_packet(pkt::OKResponse());
         },
         [&io](const pkt::RestartRequest &req) {
           io.write_packet(pkt::NotSupportedResponse());
         },
         [&io, &dbg, &running](const pkt::DetachRequest &req) {
-          dbg.detach();
           running = false;
           io.write_packet(pkt::OKResponse());
         },

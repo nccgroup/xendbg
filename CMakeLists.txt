@@ -10,8 +10,8 @@ include_directories(
   third_party/ELFIO/include)
 
 add_executable(xendbg
-  src/Debugger/Debugger.cpp
-  src/Debugger/Debugger.hpp
+        src/Debugger/DebugSessionPV.cpp
+        src/Debugger/DebugSessionPV.hpp
   src/GDBStub/GDBPacketIO.cpp
   src/GDBStub/GDBPacketIO.hpp
   src/GDBStub/GDBRequestPacket.hpp
@@ -86,7 +86,7 @@ add_executable(xendbg
   src/Xen/XenHandle.hpp
   src/Xen/XenStore.cpp
   src/Xen/XenStore.hpp
-  src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp)
+  src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp src/Debugger/DebugSession.cpp src/Debugger/DebugSession.hpp)
 
 target_link_libraries(xendbg
   capstone

@@ -14,7 +14,7 @@
 
 namespace xd::dbg {
 
-  class Debugger;
+  class DebugSessionPV;
 
 }
 
@@ -25,7 +25,7 @@ namespace xd::dbg::gdbstub {
     GDBStub(int port);
     GDBStub(in_addr_t address, int port);
 
-    void run(xd::dbg::Debugger &dbg);
+    void run(xd::dbg::DebugSessionPV &dbg);
 
   private:
     int tcp_socket_open(in_addr_t addr, int port);

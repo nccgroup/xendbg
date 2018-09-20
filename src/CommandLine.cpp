@@ -2,14 +2,14 @@
 // Created by Spencer Michaels on 9/19/18.
 //
 
-#include "Debugger/Debugger.hpp"
+#include "Debugger/DebugSessionPV.hpp"
 #include "GDBStub/GDBStub.hpp"
 #include "Xen/XenHandle.hpp"
 
 #include "CommandLine.hpp"
 
 using xd::CommandLine;
-using xd::dbg::Debugger;
+using xd::dbg::DebugSessionPV;
 using xd::dbg::gdbstub::GDBStub;
 using xd::xen::DomID;
 using xd::xen::XenException;
@@ -51,7 +51,7 @@ int CommandLine::parse(int argc, char **argv) {
 }
 
 void CommandLine::start_gdb_server(DomID domid, uint16_t port) {
-  Debugger dbg;
+  DebugSessionPV dbg;
   dbg.attach(domid);
   std::cout << "Attached to guest #" << domid << std::endl;
   GDBStub stub(port);

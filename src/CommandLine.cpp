@@ -10,7 +10,7 @@
 
 using xd::CommandLine;
 using xd::dbg::DebugSessionPV;
-using xd::dbg::gdbsrv::GDBServer;
+using xd::gdbsrv::GDBServer;
 using xd::xen::DomID;
 using xd::xen::XenException;
 using xd::xen::XenHandle;

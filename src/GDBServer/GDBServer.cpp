@@ -2,8 +2,6 @@
 // Created by Spencer Michaels on 9/20/18.
 //
 
-#include <iostream>
-
 #include <uvcast.h>
 
 #include "GDBServer.hpp"
@@ -21,6 +19,7 @@ GDBServer::~GDBServer() {
 
 void GDBServer::start(OnReceiveFn on_receive) {
   _on_receive = std::move(on_receive);
+  _is_running = true;
 
   uv_loop_init(&_loop);
   _loop.data = this;
@@ -35,52 +34,49 @@ void GDBServer::start(OnReceiveFn on_receive) {
   uv_tcp_bind(server, (const struct sockaddr *) &address, 0);
 
   int err = uv_listen(uv_upcast<uv_stream_t>(server), 10,
-      [](uv_stream_t *server, int status) {
-        const auto self = (GDBServer*)server->data;
+    [](uv_stream_t *server, int status) {
+      const auto self = (GDBServer*)server->data;
 
-        if (status < 0)
-          throw std::runtime_error("Listen failed!");
+      if (status < 0)
+        throw std::runtime_error("Listen failed!");
 
-        auto client = new uv_tcp_t;
-        uv_tcp_init(&self->_loop, client);
-        client->data = self;
+      auto client = new uv_tcp_t;
+      uv_tcp_init(&self->_loop, client);
+      client->data = self;
 
-        if (uv_accept(server, uv_upcast<uv_stream_t>(client))) {
-          std::cout << "Accept failed" << std::endl;
-          uv_close(uv_upcast<uv_handle_t>(client), destroy_stream_context);
-          return;
-        }
+      if (uv_accept(server, uv_upcast<uv_stream_t>(client))) {
+        uv_close(uv_upcast<uv_handle_t>(client), destroy_stream_context);
+        return;
+      }
 
-        std::cout << "Accepted." << std::endl;
-        self->_packet_queues[uv_upcast<uv_stream_t>(client)] = GDBPacketQueue();
+      self->_packet_queues[uv_upcast<uv_stream_t>(client)] = GDBPacketQueue();
 
-        uv_read_start(uv_upcast<uv_stream_t>(client), alloc_buffer,
-          [](uv_stream_t *sock, ssize_t nread, const uv_buf_t *buf) {
-            const auto self = (GDBServer*)sock->data;
+      uv_read_start(uv_upcast<uv_stream_t>(client), alloc_buffer,
+        [](uv_stream_t *sock, ssize_t nread, const uv_buf_t *buf) {
+          const auto self = (GDBServer*)sock->data;
 
-            if (nread <= 0) {
-              if (nread != UV_EOF) {
-                std::cout << "Read error!" << std::endl;
-              }
-              std::cout << "Got EOF." << std::endl;
-              uv_close(uv_upcast<uv_handle_t>(sock), destroy_stream_context);
-              free(buf->base);
-            } else {
-              std::cout << "Got data." << std::endl;
-              auto data = std::vector<char>(buf->base, buf->base + nread);
-              auto &queue = self->_packet_queues[uv_upcast<uv_stream_t>(sock)];
+          if (nread <= 0) {
+            uv_close(uv_upcast<uv_handle_t>(sock), destroy_stream_context);
+            free(buf->base);
 
-              queue.enqueue(data);
-              free(buf->base);
-
-              for (auto &pair : self->_packet_queues) {
-                std::optional<std::string> packet;
-                while ((packet = pair.second.dequeue()))
-                  self->_on_receive(*packet);
-              }
+            if (nread != UV_EOF) {
+              std::runtime_error("Read failed!");
             }
-          });
-      });
+          } else {
+            auto data = std::vector<char>(buf->base, buf->base + nread);
+            auto &queue = self->_packet_queues[uv_upcast<uv_stream_t>(sock)];
+
+            queue.enqueue(data);
+            free(buf->base);
+
+            for (auto &pair : self->_packet_queues) {
+              std::optional<std::string> packet;
+              while ((packet = pair.second.dequeue()))
+                self->_on_receive(*packet);
+            }
+          }
+        });
+    });
 
   if (err < 0)
     throw std::runtime_error("Listen failed!");
@@ -113,13 +109,15 @@ void GDBServer::start(OnReceiveFn on_receive) {
     });
   }, SIGINT);
 
-  std::cout << "Listening..." << std::endl;
   uv_run(&_loop, UV_RUN_DEFAULT);
 
   stop();
 }
 
 void GDBServer::stop() {
+  if (!_is_running)
+    return;
+
   uv_walk(&_loop, [](uv_handle_t *walk_handle, void *arg) {
     uv_close(walk_handle, [](uv_handle_t *close_handle) {
       free(close_handle);

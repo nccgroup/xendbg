@@ -95,6 +95,7 @@ target_link_libraries(xendbg
   capstone
   pthread
   readline
+  uv
   xenctrl
   xenforeignmemory
   xenlight

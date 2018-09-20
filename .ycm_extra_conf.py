@@ -21,7 +21,8 @@ BASE_FLAGS = [
         '-I/usr/lib/',
         '-I/usr/include/',
         '-I' + BASE_PATH + '/third_party/CLI11/include/',
-        '-I' + BASE_PATH + '/third_party/ELFIO/include/'
+        '-I' + BASE_PATH + '/third_party/ELFIO/include/',
+        '-I' + BASE_PATH + '/third_party/sunrise/'
         ]
 
 SOURCE_EXTENSIONS = [

@@ -34,9 +34,9 @@ namespace xd::gdbsrv {
     std::string _address;
     uint16_t _port;
     OnReceiveFn _on_receive;
+    bool _is_running;
 
     uv_loop_t _loop;
-    std::unordered_map<uv_stream_t*, void> _context;
     std::unordered_map<uv_stream_t*, GDBPacketQueue> _packet_queues;
   };
 

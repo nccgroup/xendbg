@@ -98,14 +98,14 @@ void GDBStub::run(DebugSessionPV &dbg) {
           const auto word_size = dbg.get_domain().get_word_size();
 
           if (word_size == sizeof(uint64_t)) {
-            RegistersX86_64::find_metadata_by_id(id, [&io, id](const auto &md) {
+            RegistersX86_64::find_metadata_by_id(id, [&io](const auto &md) {
               io.write_packet(pkt::QueryRegisterInfoResponse(
                     md.name, 8*md.width, md.offset, md.gcc_id));
               }, [&io]() {
                 io.write_packet(pkt::ErrorResponse(0x45));
               });
           } else if (word_size == sizeof(uint32_t)) {
-            RegistersX86_32::find_metadata_by_id(id, [&io, id](const auto &md) {
+            RegistersX86_32::find_metadata_by_id(id, [&io](const auto &md) {
               io.write_packet(pkt::QueryRegisterInfoResponse(
                     md.name, 8*md.width, md.offset, md.gcc_id));
               }, [&io]() {

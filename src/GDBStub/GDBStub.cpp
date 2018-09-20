@@ -89,13 +89,13 @@ void GDBStub::run(DebugSessionPV &dbg) {
         },
         [&io, &dbg](const pkt::QueryHostInfoRequest &req) {
           const auto domain = dbg.get_domain();
-          const auto name = domain->get_name();
-          const auto word_size = domain->get_word_size();
+          const auto name = domain.get_name();
+          const auto word_size = domain.get_word_size();
           io.write_packet(pkt::QueryHostInfoResponse(word_size, name));
         },
         [&io, &dbg](const pkt::QueryRegisterInfoRequest &req) {
           const auto id = req.get_register_id();
-          const auto word_size = dbg.get_domain()->get_word_size();
+          const auto word_size = dbg.get_domain().get_word_size();
 
           if (word_size == sizeof(uint64_t)) {
             RegistersX86_64::find_metadata_by_id(id, [&io, id](const auto &md) {
@@ -125,7 +125,7 @@ void GDBStub::run(DebugSessionPV &dbg) {
           try {
             const auto start = address & XC_PAGE_MASK;
             const auto size = XC_PAGE_SIZE;
-            const auto perms = dbg.get_domain()->get_memory_permissions(address);
+            const auto perms = dbg.get_domain().get_memory_permissions(address);
 
             io.write_packet(pkt::QueryMemoryRegionInfoResponse(start, size, perms));
           } catch (const XenException &e) {
@@ -148,7 +148,7 @@ void GDBStub::run(DebugSessionPV &dbg) {
           io.write_packet(pkt::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
         },
         [&io, &dbg, &running](const pkt::KillRequest &req) {
-          dbg.get_domain()->destroy();
+          dbg.get_domain().destroy();
           io.write_packet(pkt::TerminatedResponse(SIGKILL));
           running = false;
         },
@@ -158,7 +158,7 @@ void GDBStub::run(DebugSessionPV &dbg) {
         [&io, &dbg](const pkt::RegisterReadRequest &req) {
           const auto id = req.get_register_id();
           const auto thread_id = req.get_thread_id();
-          const auto regs = dbg.get_domain()->get_cpu_context(thread_id-1);
+          const auto regs = dbg.get_domain().get_cpu_context(thread_id-1);
 
           std::visit(util::overloaded {
             [&](const auto &regs) {
@@ -174,7 +174,7 @@ void GDBStub::run(DebugSessionPV &dbg) {
           const auto id = req.get_register_id();
           const auto value = req.get_value();
 
-          auto regs = dbg.get_domain()->get_cpu_context();
+          auto regs = dbg.get_domain().get_cpu_context();
           std::visit(util::overloaded {
             [&](auto &regs) {
               regs.find_by_id(id, [&value](const auto&, auto &reg) {
@@ -184,11 +184,11 @@ void GDBStub::run(DebugSessionPV &dbg) {
               });
             }
           }, regs);
-          dbg.get_domain()->set_cpu_context(regs);
+          dbg.get_domain().set_cpu_context(regs);
           io.write_packet(pkt::OKResponse());
         },
         [&io, &dbg](const pkt::GeneralRegistersBatchReadRequest &req) {
-          const auto regs = dbg.get_domain()->get_cpu_context();
+          const auto regs = dbg.get_domain().get_cpu_context();
           std::visit(util::overloaded {
             [&io](const RegistersX86_32 &regs) {
               io.write_packet(pkt::GeneralRegistersBatchReadResponse(regs));
@@ -200,7 +200,7 @@ void GDBStub::run(DebugSessionPV &dbg) {
           io.write_packet(pkt::NotSupportedResponse());
         },
         [&io, &dbg](const pkt::GeneralRegistersBatchWriteRequest &req) {
-          auto orig_regs_any = dbg.get_domain()->get_cpu_context();
+          auto orig_regs_any = dbg.get_domain().get_cpu_context();
           auto values = req.get_values();
 
           std::visit(util::overloaded {

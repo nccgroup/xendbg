@@ -51,8 +51,8 @@ int CommandLine::parse(int argc, char **argv) {
 }
 
 void CommandLine::start_gdb_server(DomID domid, uint16_t port) {
-  DebugSessionPV dbg;
-  dbg.attach(domid);
+  XenHandle xen;
+  DebugSessionPV dbg(xen, domid);
   std::cout << "Attached to guest #" << domid << std::endl;
   GDBStub stub(port);
   stub.run(dbg);

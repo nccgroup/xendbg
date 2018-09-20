@@ -10,8 +10,10 @@ include_directories(
   third_party/ELFIO/include)
 
 add_executable(xendbg
-        src/Debugger/DebugSessionPV.cpp
-        src/Debugger/DebugSessionPV.hpp
+  src/Debugger/DebugSession.cpp
+  src/Debugger/DebugSession.hpp
+  src/Debugger/DebugSessionPV.cpp
+  src/Debugger/DebugSessionPV.hpp
   src/GDBStub/GDBPacketIO.cpp
   src/GDBStub/GDBPacketIO.hpp
   src/GDBStub/GDBRequestPacket.hpp

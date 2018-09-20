@@ -70,7 +70,8 @@ Address xd::dbg::DebugSessionPV::single_step() {
     insert_breakpoint(*dest2_addr);
 
   domain.unpause();
-  while (!(check_breakpoint_hit()));
+  std::optional<Address> address_opt;
+  while (!(address_opt = check_breakpoint_hit()));
   domain.pause();
 
   // Remove each of our two infinite loops unless there is a
@@ -83,6 +84,8 @@ Address xd::dbg::DebugSessionPV::single_step() {
   // If there was a BP at the instruction we started at, put it back
   if (orig_addr)
     insert_breakpoint(*orig_addr);
+
+  return *address_opt;
 }
 
 void xd::dbg::DebugSessionPV::insert_breakpoint(Address address) {

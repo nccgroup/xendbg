@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 9/5/18.
 //
 
-#ifndef XENDBG_GDBPACKETIO_HPP
-#define XENDBG_GDBPACKETIO_HPP
+#ifndef XENDBG_GDBPACKETPARSER_HPP
+#define XENDBG_GDBPACKETPARSER_HPP
 
 #define PACKET_BUFFER_MAX_SIZE 0x400
 
@@ -19,17 +19,17 @@
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
 
-namespace xd::dbg::gdbsrv {
+namespace xd::gdbsrv {
 
   class UnknownPacketTypeException : public std::runtime_error {
   public:
-    UnknownPacketTypeException(const std::string &data)
+    explicit UnknownPacketTypeException(const std::string &data)
       : std::runtime_error(data) {};
   };
 
-  class GDBPacketIO {
+  class GDBPacketParser {
   public:
-    explicit GDBPacketIO(int remote_fd);
+    explicit GDBPacketParser(int remote_fd);
 
     pkt::GDBRequestPacket read_packet();
     void write_packet(const pkt::GDBResponsePacket& packet);
@@ -55,4 +55,4 @@ namespace xd::dbg::gdbsrv {
 }
 
 
-#endif //XENDBG_GDBPACKETIO_HPP
+#endif //XENDBG_GDBPACKETPARSER_HPP

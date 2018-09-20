@@ -63,7 +63,7 @@
     uint8_t _type, _kind; \
   }
 
-namespace xd::dbg::gdbsrv::pkt {
+namespace xd::gdbsrv::pkt {
 
   /*
   class RequestPacketParseException : public std::runtime_error {

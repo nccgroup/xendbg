@@ -23,6 +23,10 @@ void GDBPacketQueue::enqueue(std::vector<char> data) {
       break;
 
     end = chksum_start + CHECKSUM_LENGTH + 1;
+    _packets.emplace(GDBPacket{
+      std::string(packet_start, checksum_start),
+      std::stoul(std::string(checksum_start, end), 0, 16)
+    })
     _packets.push(std::string(packet_start, end));
   }
 
@@ -30,7 +34,7 @@ void GDBPacketQueue::enqueue(std::vector<char> data) {
   _buffer.erase(_buffer.begin(), end);
 }
 
-std::optional<std::string> GDBPacketQueue::dequeue() {
+std::optional<GDBPacket> GDBPacketQueue::dequeue() {
   if (_packets.empty())
     return std::nullopt;
 

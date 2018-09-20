@@ -12,13 +12,18 @@
 
 namespace xd::gdbsrv {
 
+  struct GDBPacket {
+    std::string contents;
+    uint8_t checksum;
+  };
+
   class GDBPacketQueue {
   public:
     void enqueue(std::vector<char> data);
-    std::optional<std::string> dequeue();
+    std::optional<GDBPacket> dequeue();
 
   private:
-    std::queue<std::string> _packets;
+    std::queue<GDBPacket> _packets;
     std::vector<char> _buffer;
   };
 

@@ -15,8 +15,8 @@ add_executable(xendbg
   src/Debugger/DebugSession.hpp
   src/Debugger/DebugSessionPV.cpp
   src/Debugger/DebugSessionPV.hpp
-        src/GDBServer/GDBPacketIO.cpp
-        src/GDBServer/GDBPacketIO.hpp
+        src/GDBServer/GDBPacketParser.cpp
+        src/GDBServer/GDBPacketParser.hpp
         src/GDBServer/GDBRequestPacket.hpp
         src/GDBServer/GDBResponsePacket.hpp
         src/GDBServer/GDBStub.cpp
@@ -68,8 +68,7 @@ add_executable(xendbg
   src/Util/clear.hpp
   src/Util/overloaded.hpp
   src/Util/pop_ret.hpp
-  src/Util/string.cpp
-  src/Util/string.hpp
+        src/Util/string.hpp
   src/Xen/BridgeHeaders/domctl.h
   src/Xen/BridgeHeaders/xenctrl.h
   src/Xen/BridgeHeaders/xenforeignmemory.h

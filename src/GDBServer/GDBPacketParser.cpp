@@ -5,40 +5,12 @@
 
 #include <unistd.h>
 
-#include "GDBPacketIO.hpp"
-#include "GDBResponsePacket.hpp"
+#include "GDBPacketParser.hpp"
 #include "GDBRequestPacket.hpp"
 #include "../Util/pop_ret.hpp"
 #include "../Util/string.hpp"
 
-#define PACKET_BUFFER_MAX_SIZE 0x400
-
-using xd::dbg::gdbsrv::GDBPacketIO;
-using xd::dbg::gdbsrv::pkt::GDBResponsePacket;
-using xd::dbg::gdbsrv::pkt::GDBRequestPacket;
-using xd::util::pop_ret;
-using xd::util::string::is_prefix;
-
-GDBPacketIO::GDBPacketIO(int remote_fd)
-  : _remote_fd(remote_fd), _ack_enabled(true)
-{
-}
-
-GDBRequestPacket GDBPacketIO::read_packet() {
-  const auto raw_packet = read_raw_packet();
-
-  if (raw_packet.empty())
-    throw std::runtime_error("Empty packet!");
-
-  return parse_raw_packet(raw_packet);
-}
-
-void GDBPacketIO::write_packet(const GDBResponsePacket& packet) {
-  const auto raw_packet = packet.to_string();
-  write_raw_packet(raw_packet);
-}
-
-GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
+GDBPacketParser::RawGDBPacket GDBPacketParser::read_raw_packet() {
   char buffer[PACKET_BUFFER_MAX_SIZE];
   char *buffer_ptr = buffer;
   size_t remaining_space = sizeof(buffer);
@@ -114,47 +86,7 @@ GDBPacketIO::RawGDBPacket GDBPacketIO::read_raw_packet() {
   return packet;
 }
 
-void GDBPacketIO::write_raw_packet(const RawGDBPacket& raw_packet) {
-  const uint8_t checksum = std::accumulate(
-      raw_packet.begin(), raw_packet.end(), (uint8_t)0);
-
-  std::stringstream ss;
-  ss << "$" << raw_packet << "#";
-  ss << std::hex << std::setfill('0') << std::setw(2);
-  ss << (unsigned)checksum;
-  const auto ss_str = ss.str();
-
-  std::cout << "SEND: " << ss_str << std::endl;
-
-  auto remaining = ss_str.size();
-  auto data_ptr = ss_str.c_str();
-  while (remaining) {
-    // TODO: if == 0 then remote has closed, do something
-    auto bytes_written = send(_remote_fd, data_ptr, remaining, 0);
-
-    if (bytes_written < 0)
-      throw std::runtime_error("Failed to write to remote FD!");
-
-    data_ptr += bytes_written;
-    remaining -= bytes_written;
-  }
-
-  /*
-  if (_ack_enabled) {
-    char ack;
-    const auto bytes_read = read(_remote_fd, &ack, 1);
-    if (bytes_read < 0)
-      throw std::runtime_error("Failed to read from remote FD!");
-    if (bytes_read == 0)
-      throw std::runtime_error("Remote closed while waiting for ACK!");
-    std::cout << ack << std::endl;
-    if (ack != '+')
-      throw std::runtime_error("Did not get expected ACK!");
-  }
-  */
-}
-
-GDBRequestPacket GDBPacketIO::parse_raw_packet(const RawGDBPacket &raw_packet) {
+GDBRequestPacket GDBPacketParser::parse_raw_packet(const RawGDBPacket &raw_packet) {
   switch (raw_packet[0]) {
     case 'q':
       if (raw_packet == "qfThreadInfo")

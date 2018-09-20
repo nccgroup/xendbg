@@ -3,6 +3,7 @@
 //
 
 #include <uvcast.h>
+#include <numeric>
 
 #include "GDBServer.hpp"
 
@@ -58,7 +59,6 @@ void GDBServer::start(OnReceiveFn on_receive) {
           if (nread <= 0) {
             uv_close(uv_upcast<uv_handle_t>(sock), destroy_stream_context);
             free(buf->base);
-
             if (nread != UV_EOF) {
               std::runtime_error("Read failed!");
             }
@@ -70,9 +70,13 @@ void GDBServer::start(OnReceiveFn on_receive) {
             free(buf->base);
 
             for (auto &pair : self->_packet_queues) {
-              std::optional<std::string> packet;
-              while ((packet = pair.second.dequeue()))
-                self->_on_receive(*packet);
+              std::optional<GDBPacket> raw_packet;
+              while ((raw_packet = pair.second.dequeue())) {
+                if (validate_packet_checksum(*raw_packet)) {
+                  const auto packet = parse_packet(*raw_packet);
+                  self->_on_receive(packet);
+                }
+              }
             }
           }
         });
@@ -131,6 +135,27 @@ void GDBServer::stop() {
   }
 }
 
+void GDBServer::send(pkt::GDBResponsePacket packet) {
+  auto data = new std::string;
+  data->swap(format_packet(packet)); // TODO: OK?
+
+  uv_buf_t buf;
+  buf.base = data->data();
+  buf.len = data->size();
+
+  auto wreq = new uv_write_t;
+  wreq->data = data;
+
+  for (const auto kv : _packet_queues) {
+    const auto client = kv.first;
+    uv_write(wreq, client, &buf, 1, [](uv_write_t *req, int s) {
+      std::ignore = s;
+      free((std::string*)data);
+      free(req);
+    });
+  }
+}
+
 void GDBServer::destroy_stream_context(uv_handle_t *handle) noexcept {
   if (handle) {
     const auto server = (GDBServer*)handle->data;
@@ -148,4 +173,93 @@ void GDBServer::alloc_buffer(uv_handle_t *h, size_t suggested, uv_buf_t *buf) no
   std::ignore = h;
   buf->base = (char*) malloc(suggested);
   buf->len = suggested;
+}
+
+bool xd::gdbsrv::GDBServer::validate_packet_checksum(const GDBPacket &packet) {
+  const auto& contents = packet.contents;
+  const auto checksum_calculated = std::accumulate(
+      contents.begin(), contents.end(), (uint8_t)0);
+
+  return checksum_calculated == packet.checksum;
+}
+
+std::string GDBServer::format_packet(const pkt::GDBResponsePacket &packet)
+  const uint8_t checksum = std::accumulate(
+      raw_packet.begin(), raw_packet.end(), (uint8_t)0);
+
+  std::stringstream ss;
+  ss << "$" << raw_packet << "#";
+  ss << std::hex << std::setfill('0') << std::setw(2);
+  ss << (unsigned)checksum;
+
+  return ss.str();
+}
+
+pkt::GDBRequestPacket GDBServer::parse_packet(const GDBPacket &packet) {
+  const auto &contents = packet.contents;
+
+  switch (contents[0]) {
+    case 'q':
+      if (contents == "qfThreadInfo")
+        return pkt::QueryThreadInfoStartRequest(contents);
+      else if (contents == "qsThreadInfo")
+        return pkt::QueryThreadInfoContinuingRequest(contents);
+      else if (contents == "qC")
+        return pkt::QueryCurrentThreadIDRequest(contents);
+      else if (is_prefix(std::string("qSupported"), contents))
+        return pkt::QuerySupportedRequest(contents);
+      else if ("qHostInfo" == contents)
+        return pkt::QueryHostInfoRequest(contents);
+      else if ("qProcessInfo" == contents)
+        return pkt::QueryProcessInfoRequest(contents);
+      else if (is_prefix(std::string("qRegisterInfo"), contents))
+        return pkt::QueryRegisterInfoRequest(contents);
+      else if (is_prefix(std::string("qMemoryRegionInfo"), contents))
+        return pkt::QueryMemoryRegionInfoRequest(contents);
+      break;
+    case 'Q':
+      if (contents == "QStartNoAckMode")
+        return pkt::StartNoAckModeRequest(contents);
+      else if (contents == "QThreadSuffixSupported")
+        return pkt::QueryThreadSuffixSupportedRequest(contents);
+      else if (contents == "QListThreadsInStopReply")
+        return pkt::QueryListThreadsInStopReplySupportedRequest(contents);
+      break;
+    case '?':
+      return pkt::StopReasonRequest(contents);
+    case 'k':
+      return pkt::KillRequest(contents);
+    case 'H':
+      return pkt::SetThreadRequest(contents);
+    case 'p':
+      return pkt::RegisterReadRequest(contents);
+    case 'P':
+      return pkt::RegisterWriteRequest(contents);
+    case 'G':
+      return pkt::GeneralRegistersBatchWriteRequest(contents);
+    case 'g':
+      return pkt::GeneralRegistersBatchReadRequest(contents);
+    case 'M':
+      return pkt::MemoryWriteRequest(contents);
+    case 'm':
+      return pkt::MemoryReadRequest(contents);
+    case 'c':
+      return pkt::ContinueRequest(contents);
+    case 'C':
+      return pkt::ContinueSignalRequest(contents);
+    case 's':
+      return pkt::StepRequest(contents);
+    case 'S':
+      return pkt::StepSignalRequest(contents);
+    case 'Z':
+      return pkt::BreakpointInsertRequest(contents);
+    case 'z':
+      return pkt::BreakpointRemoveRequest(contents);
+    case 'R':
+      return pkt::RestartRequest(contents);
+    case 'D':
+      return pkt::DetachRequest(contents);
+  }
+
+  throw UnknownPacketTypeException(contents);
 }

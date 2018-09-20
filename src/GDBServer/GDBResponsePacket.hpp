@@ -17,7 +17,7 @@
 #include "../Registers/RegistersX86.hpp"
 #include "../Util/overloaded.hpp"
 
-namespace xd::dbg::gdbsrv::pkt {
+namespace xd::gdbsrv::pkt {
 
   namespace {
     // Writes the bytes of a value of arbitrary size in guest order

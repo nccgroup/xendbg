@@ -16,13 +16,13 @@
 #include <unistd.h>
 
 #include "../Debugger/DebugSessionPV.hpp"
-#include "GDBPacketIO.hpp"
+#include "GDBPacketParser.hpp"
 #include "GDBStub.hpp"
 #include "../Util/overloaded.hpp"
 
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
-using xd::dbg::gdbsrv::GDBPacketIO;
+using xd::dbg::gdbsrv::GDBPacketParser;
 using xd::dbg::gdbsrv::GDBStub;
 using xd::util::overloaded;
 using xd::xen::XenException;
@@ -54,7 +54,7 @@ void GDBStub::run(DebugSessionPV &dbg) {
     throw std::runtime_error("Unexpected value.");
   //send(remote_fd, &ack, sizeof(ack), 0);
 
-  GDBPacketIO io(remote_fd);
+  GDBPacketParser io(remote_fd);
 
   bool running = true;
   while (running) {

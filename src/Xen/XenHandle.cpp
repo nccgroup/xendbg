@@ -9,12 +9,13 @@ using xd::xen::Domain;
 using xd::xen::XenHandle;
 
 std::vector<Domain> XenHandle::get_domains() const {
-  const auto domids = get_xenstore().get_guest_domids();
+  const auto domid_strs = get_xenstore().read_directory("/local/domain");
 
   std::vector<Domain> domains;
-  domains.reserve(domids.size());
-  std::transform(domids.begin(), domids.end(), std::back_inserter(domains),
-    [this](const auto& domid) {
+  domains.reserve(domid_strs.size());
+  std::transform(domid_strs.begin(), domid_strs.end(), std::back_inserter(domains),
+    [this](const auto& domid_str) {
+      const auto domid = std::stoul(domid_str);
       return Domain(*this, domid);
     });
   return domains;

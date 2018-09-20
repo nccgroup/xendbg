@@ -5,6 +5,8 @@ import logging
 import ycm_core
 import re
 
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+
 BASE_FLAGS = [
         '-Wall',
         '-Wextra',
@@ -18,8 +20,8 @@ BASE_FLAGS = [
         '-xc++',
         '-I/usr/lib/',
         '-I/usr/include/',
-        '-I../third_party/CLI11/include/',
-        '-I../third_party/ELFIO/include/'
+        '-I' + BASE_PATH + '/third_party/CLI11/include/',
+        '-I' + BASE_PATH + '/third_party/ELFIO/include/'
         ]
 
 SOURCE_EXTENSIONS = [

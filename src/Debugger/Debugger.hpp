@@ -54,7 +54,6 @@ namespace xd::dbg {
     xen::Address continue_until_infinite_loop();
     void single_step();
 
-    xen::XenHandle &get_xen_handle() { return _xen; };
     std::optional<xen::Domain>& get_current_domain() { return _domain; };
 
     const InfiniteLoopMap& get_infinite_loops() { return _infinite_loops; };
@@ -67,6 +66,11 @@ namespace xd::dbg {
     void write_memory_retaining_infinite_loops(
         xen::Address address, size_t length, void *data);
 
+  private:
+    std::optional<xen::Address> check_infinite_loop_hit();
+    std::pair<std::optional<xen::Address>,
+              std::optional<xen::Address>> get_address_of_next_instruction();
+
     template <typename Reg32_t, typename Reg64_t>
     uint64_t read_register() {
       return std::visit(util::overloaded {
@@ -78,11 +82,6 @@ namespace xd::dbg {
           }
       }, _domain->get_cpu_context(_current_vcpu));
     }
-
-  private:
-    std::optional<xen::Address> check_infinite_loop_hit();
-    std::pair<std::optional<xen::Address>,
-      std::optional<xen::Address>> get_address_of_next_instruction();
 
   private:
     csh _capstone;

@@ -2,6 +2,8 @@
 // Created by Spencer Michaels on 9/20/18.
 //
 
+#include <iostream>
+
 #include "GDBPacketQueue.hpp"
 #include "../Util/pop_ret.hpp"
 
@@ -20,13 +22,13 @@ void GDBPacketQueue::enqueue(std::vector<char> data) {
 
     if (packet_start == _buffer.end() ||
         checksum_start == _buffer.end() ||
-        _buffer.end() - checksum_start < (CHECKSUM_LENGTH + 2))
+        _buffer.end() - checksum_start < (CHECKSUM_LENGTH + 1))
       break;
 
     end = checksum_start + CHECKSUM_LENGTH + 1;
     _packets.emplace(GDBPacket{
-      std::string(packet_start, checksum_start),
-      static_cast<uint8_t>(std::stoul(std::string(checksum_start, end), 0, 16))
+      std::string(packet_start+1, checksum_start),
+      static_cast<uint8_t>(std::stoul(std::string(checksum_start+1, end), 0, 16))
     });
   }
 

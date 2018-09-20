@@ -4,6 +4,7 @@
 
 #include "Debugger/DebugSessionPV.hpp"
 #include "GDBServer/GDBServer.hpp"
+#include "GDBServer/GDBPacketInterpreter.hpp"
 #include "Xen/XenHandle.hpp"
 
 #include "CommandLine.hpp"
@@ -59,6 +60,8 @@ void CommandLine::start_gdb_server(DomID domid, uint16_t port) {
 
   GDBServer server("127.0.0.1", port);
   server.start([&](const auto &packet) {
-    
+    xd::gdbsrv::interpret_packet(dbg, packet, [&](const auto &pkt) {
+      server.send(pkt);
+    });
   });
 }

@@ -38,8 +38,10 @@ void GDBServer::start(OnReceiveFn on_receive) {
 
   uv_tcp_bind(server, (const struct sockaddr *) &address, 0);
 
+    std::cout << "listening" << std::endl;
   int err = uv_listen(uv_upcast<uv_stream_t>(server), 10,
     [](uv_stream_t *server, int status) {
+    std::cout << "listened" << std::endl;
       const auto self = (GDBServer*)server->data;
 
       if (status < 0)
@@ -53,7 +55,6 @@ void GDBServer::start(OnReceiveFn on_receive) {
         uv_close(uv_upcast<uv_handle_t>(client), destroy_stream_context);
         return;
       }
-
       self->_packet_queues[uv_upcast<uv_stream_t>(client)] = GDBPacketQueue();
 
       uv_read_start(uv_upcast<uv_stream_t>(client), alloc_buffer,
@@ -77,13 +78,19 @@ void GDBServer::start(OnReceiveFn on_receive) {
               std::optional<GDBPacket> raw_packet;
               while ((raw_packet = pair.second.dequeue())) {
                 bool valid = validate_packet_checksum(*raw_packet);
+                std::cout << "RECV: " << raw_packet->contents << std::endl;
 
                 if (self->_ack_mode)
                   self->send_raw(valid ? "+" : "-");
 
                 if (valid) {
-                  const auto packet = parse_packet(*raw_packet);
-                  self->on_receive(packet); // TODO: exception handling
+                  try { // TODO
+                    const auto packet = parse_packet(*raw_packet);
+                    self->on_receive(packet); // TODO: exception handling
+                  } catch (const xd::gdbsrv::UnknownPacketTypeException &e) {
+                    self->send(pkt::NotSupportedResponse());
+                    std::cout << e.what() << std::endl;
+                  }
                 }
               }
             }
@@ -144,7 +151,7 @@ void GDBServer::stop() {
   }
 }
 
-void GDBServer::send(GDBResponsePacket packet) {
+void GDBServer::send(const GDBResponsePacket& packet) {
   send_raw(format_packet(packet));
 }
 
@@ -281,6 +288,7 @@ GDBRequestPacket GDBServer::parse_packet(const GDBPacket &packet) {
 void GDBServer::on_receive(const GDBRequestPacket &packet) {
   if (std::holds_alternative<pkt::StartNoAckModeRequest>(packet)) {
     _ack_mode = false;
+    send(pkt::OKResponse());
   } else {
     _on_receive(packet);
   }

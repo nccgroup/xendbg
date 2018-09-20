@@ -36,7 +36,7 @@ namespace xd::gdbsrv {
     void start(OnReceiveFn on_receive);
     void stop();
 
-    void send(pkt::GDBResponsePacket packet);
+    void send(const pkt::GDBResponsePacket& packet);
 
   private:
     static void destroy_stream_context(uv_handle_t *handle) noexcept;

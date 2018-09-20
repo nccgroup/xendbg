@@ -20,7 +20,7 @@ void xd::gdbsrv::interpret_packet(xd::dbg::DebugSessionPV &dbg, const pkt::GDBRe
 
   try {
     const auto visitor = util::overloaded {
-        [](const StartNoAckModeRequest &req) {
+        [&](const StartNoAckModeRequest &req) {
           // do nothing ... handled by GDBServer already
           // TOOD: this is a bit weird, should probably pass some interface to the GDBServer
         },
@@ -98,10 +98,10 @@ void xd::gdbsrv::interpret_packet(xd::dbg::DebugSessionPV &dbg, const pkt::GDBRe
         [&](const StopReasonRequest &req) {
           send(StopReasonSignalResponse(SIGTRAP, 1)); // TODO
         },
-        [dbg, &running](const KillRequest &req) {
+        [&](const KillRequest &req) {
           dbg.get_domain().destroy();
           send(TerminatedResponse(SIGKILL));
-          running = false;
+          // TODO
         },
         [&](const SetThreadRequest &req) {
           send(OKResponse());

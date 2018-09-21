@@ -32,7 +32,7 @@ xd::dbg::DebugSessionPV::~DebugSessionPV() {
   }
 }
 
-Address xd::dbg::DebugSessionPV::continue_() {
+void xd::dbg::DebugSessionPV::continue_() {
   const auto &domain = get_domain();
 
   // Single step first to move beyond the current breakpoint;
@@ -41,14 +41,7 @@ Address xd::dbg::DebugSessionPV::continue_() {
     single_step();
 
   domain.unpause();
-
-  std::optional<Address> address;
-  while (!(address = check_breakpoint_hit()) &&
-         !domain.get_info().paused); // TODO hack for now
-
-  domain.pause();
-
-  return *address;}
+}
 
 Address xd::dbg::DebugSessionPV::single_step() {
   const auto &domain = get_domain();
@@ -61,12 +54,13 @@ Address xd::dbg::DebugSessionPV::single_step() {
 
   // For conditional branches, we need to insert EBFEs at both potential locations.
   const auto [dest1_addr, dest2_addr] = get_address_of_next_instruction();
+
   bool dest1_had_il = dest1_addr && (_infinite_loops.count(*dest1_addr) != 0);
   bool dest2_had_il = dest2_addr && (_infinite_loops.count(*dest2_addr) != 0);
 
-  if (!dest1_had_il)
+  if (dest1_addr && !dest1_had_il)
     insert_breakpoint(*dest1_addr);
-  if (!dest2_had_il)
+  if (dest2_addr && !dest2_had_il)
     insert_breakpoint(*dest2_addr);
 
   domain.unpause();
@@ -93,7 +87,7 @@ void xd::dbg::DebugSessionPV::insert_breakpoint(Address address) {
     std::cout << "[!]: Tried to insert infinite loop where one already exists." << std::endl;
     return; // TODO?
   }
-  std::cout << "Inserting infinite loop." << std::endl;
+  std::cout << "Inserting infinite loop at " << std::hex << address << std::endl;
 
   const auto mem_handle = get_domain().map_memory(address, 2, PROT_READ | PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();

@@ -27,13 +27,12 @@ namespace xd::dbg {
     DebugSessionPV(const xen::XenHandle& xen, xen::DomID domid);
     ~DebugSessionPV() override;
 
-    xen::Address continue_() override;
+    void continue_() override;
     xen::Address single_step() override;
+    std::optional<xen::Address> check_breakpoint_hit() override;
 
     void insert_breakpoint(xen::Address address) override;
     void remove_breakpoint(xen::Address address) override;
-
-    std::optional<xen::Address> check_breakpoint_hit() override;
 
     MaskedMemory read_memory_masking_breakpoints(xen::Address address, size_t length) override;
     void write_memory_retaining_breakpoints(xen::Address address, size_t length, void *data) override;

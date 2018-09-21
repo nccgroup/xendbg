@@ -2,36 +2,26 @@
 // Created by Spencer Michaels on 9/20/18.
 //
 
-#include <uvcast.h>
 #include <numeric>
 
 #include "GDBServer.hpp"
 #include "../Util/string.hpp"
 
 using xd::gdbsrv::GDBServer;
-using xd::gdbsrv::GDBPacketInterpreterInterface;
 using xd::gdbsrv::GDBPacketQueue;
 using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
 
-GDBServer::GDBServer(std::string address, uint16_t port)
-    : _address(std::move(address)), _port(port),
-      _is_running(false), _ack_mode(true)
+GDBServer::GDBServer(const uv::UVLoop &loop, std::string address, uint16_t port)
+    : _loop(loop), _address(std::move(address)), _port(port)
 {};
 
-GDBServer::~GDBServer() {
-  stop();
-}
-
-void GDBServer::start() {
-  _is_running = true;
-
-  uv_loop_init(&_loop);
-  _loop.data = this;
+void GDBServer::start(OnReceiveFn on_receive) {
+  _on_receive = on_receive;
 
   auto server = new uv_tcp_t;
-  uv_tcp_init(&_loop, server);
+  uv_tcp_init(_loop.get(), server);
   server->data = this;
 
   struct sockaddr_in address;
@@ -39,24 +29,25 @@ void GDBServer::start() {
 
   uv_tcp_bind(server, (const struct sockaddr *) &address, 0);
 
-    std::cout << "listening" << std::endl;
   int err = uv_listen(uv_upcast<uv_stream_t>(server), 10,
     [](uv_stream_t *server, int status) {
-    std::cout << "listened" << std::endl;
+      std::cout << "Got client" << std::endl;
       const auto self = (GDBServer*)server->data;
 
       if (status < 0)
         throw std::runtime_error("Listen failed!");
 
       auto client = new uv_tcp_t;
-      uv_tcp_init(&self->_loop, client);
+      uv_tcp_init(self->_loop.get(), client);
       client->data = self;
 
       if (uv_accept(server, uv_upcast<uv_stream_t>(client))) {
         uv_close(uv_upcast<uv_handle_t>(client), destroy_stream_context);
         return;
       }
-      self->_input_queues[uv_upcast<uv_stream_t>(client)] = GDBPacketQueue();
+      self->_client_contexts.emplace(
+        uv_upcast<uv_stream_t>(client),
+        ClientContext());
 
       uv_read_start(uv_upcast<uv_stream_t>(client), alloc_buffer,
         [](uv_stream_t *sock, ssize_t nread, const uv_buf_t *buf) {
@@ -70,27 +61,30 @@ void GDBServer::start() {
             }
           } else {
             auto data = std::vector<char>(buf->base, buf->base + nread);
-            auto &queue = self->_input_queues[uv_upcast<uv_stream_t>(sock)];
+            self->_client_contexts[uv_upcast<uv_stream_t>(sock)]
+              .input_queue.enqueue(data);
 
-            queue.enqueue(data);
             free(buf->base);
 
-            for (auto &pair : self->_input_queues) {
+            for (auto &pair : self->_client_contexts) {
+              auto &context = pair.second;
+
               std::optional<GDBPacket> raw_packet;
-              while ((raw_packet = pair.second.dequeue())) {
+              while ((raw_packet = context.input_queue.dequeue())) {
                 bool valid = validate_packet_checksum(*raw_packet);
                 std::cout << "RECV: " << raw_packet->contents << std::endl;
 
-                if (self->_ack_mode)
+                if (context.ack_mode)
                   self->send_raw(valid ? "+" : "-", sock);
 
                 if (valid) {
+                  const auto client = ClientHandle(*self, sock);
                   try { // TODO exception handling
                     const auto packet = parse_packet(*raw_packet);
-                    self->_interpreter.interpret(packet));
+                    self->_on_receive(client, packet);
                   } catch (const xd::gdbsrv::UnknownPacketTypeException &e) {
-                    self->send(pkt::NotSupportedResponse());
-                    std::cout << e.what() << std::endl;
+                    client.send(pkt::NotSupportedResponse());
+                    std::cout << "[!] " << e.what() << std::endl;
                   }
                 }
               }
@@ -103,7 +97,7 @@ void GDBServer::start() {
     throw std::runtime_error("Listen failed!");
 
   auto signal = new uv_signal_t;
-  uv_signal_init(&_loop, signal);
+  uv_signal_init(_loop.get(), signal);
   signal->data = this;
 
   uv_signal_start(signal, [](uv_signal_t *signal_handle, int signal) {
@@ -111,7 +105,7 @@ void GDBServer::start() {
 
     std::ignore = signal;
     auto idle = new uv_idle_t;
-    uv_idle_init(&self->_loop, idle);
+    uv_idle_init(self->_loop.get(), idle);
     idle->data = self;
 
     uv_idle_start(idle, [](uv_idle_t *handle) {
@@ -121,7 +115,7 @@ void GDBServer::start() {
       uv_close(uv_upcast<uv_handle_t>(handle), [](uv_handle_t *close_handle) {
         free(close_handle);
       });
-      uv_stop(&self->_loop);
+      uv_stop(self->_loop.get());
     });
 
     uv_signal_stop(signal_handle);
@@ -130,70 +124,50 @@ void GDBServer::start() {
     });
   }, SIGINT);
 
-  uv_run(&_loop, UV_RUN_DEFAULT);
+  uv_run(_loop.get(), UV_RUN_DEFAULT);
 
-  stop();
-}
-
-void GDBServer::stop() {
-  if (!_is_running)
-    return;
-
-  uv_walk(&_loop, [](uv_handle_t *walk_handle, void *arg) {
+  // Shutdown
+  uv_walk(_loop.get(), [](uv_handle_t *walk_handle, void *arg) {
+    std::ignore = arg;
     uv_close(walk_handle, [](uv_handle_t *close_handle) {
       free(close_handle);
     });
   }, nullptr);
 
-  uv_run(&_loop, UV_RUN_DEFAULT);
-
-  if (uv_loop_close(&_loop)) {
-    throw std::runtime_error("Loop close failed!");
-  }
+  uv_run(_loop.get(), UV_RUN_DEFAULT);
 }
 
-void GDBServer::send(const GDBResponsePacket& packet) {
-  send_raw(format_packet(packet), client.get());
+void GDBServer::send(const GDBResponsePacket& packet, uv_stream_t *client) {
+  send_raw(format_packet(packet), client);
 }
 
 void GDBServer::send_raw(std::string s, uv_stream_t *client) {
-  size_t ref_count = client ? 1 : _input_queues.size();
-  const auto data = new OutputData{ ref_count, std::move(s) };
+  std::cout << "SEND: " << s << std::endl;
+
+  const auto data = new std::string(std::move(s));
 
   uv_buf_t buf;
-  buf.base = data->data.data(); // this is beautiful
-  buf.len = data->data.size();
+  buf.base = data->data(); // this is beautiful
+  buf.len = data->size();
 
-  const auto write_to_client = [&](const auto client) {
-    auto wreq = new uv_write_t;
-    wreq->data = data;
+  auto wreq = new uv_write_t;
+  wreq->data = data;
 
-    uv_write(wreq, client, &buf, 1, [](uv_write_t *req, int s) {
-      std::ignore = s;
-      const auto data = (OutputData*) req->data;
-      if (--data->ref_count == 0)
-        delete data;
-      free(req);
-    });
-  };
-
-  if (client) {
-    write_to_client(client);
-  } else {
-    for (const auto &kv : _input_queues) {
-      write_to_client(kv.first);
-    }
-  }
+  uv_write(wreq, client, &buf, 1, [](uv_write_t *req, int s) {
+    std::ignore = s;
+    delete (std::string*) req->data;
+    free(req);
+  });
 }
 
-void GDBServer::destroy_stream_context(uv_handle_t *handle) noexcept {
+void GDBServer::destroy_stream_context(uv_handle_t *handle) {
   if (handle) {
     const auto server = (GDBServer*)handle->data;
 
     uv_stream_t *stream = uv_downcast<uv_stream_t>(handle);
-    const auto found = server->_input_queues.find(stream);
-    if (found != server->_input_queues.end())
-      server->_input_queues.erase(found);
+    auto contexts = server->_client_contexts;
+
+    contexts.erase(stream);
 
     free(handle);
   }

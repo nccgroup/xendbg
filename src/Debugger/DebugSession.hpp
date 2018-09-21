@@ -50,12 +50,12 @@ namespace xd::dbg {
     size_t get_vcpu_id() { return _vcpu_id; }
 
 
-    virtual xen::Address continue_() = 0;
+    virtual void continue_() = 0;
     virtual xen::Address single_step() = 0;
+    virtual std::optional<xen::Address> check_breakpoint_hit() = 0;
 
     virtual void insert_breakpoint(xen::Address address) = 0;
     virtual void remove_breakpoint(xen::Address address) = 0;
-    virtual std::optional<xen::Address> check_breakpoint_hit() = 0;
 
     virtual MaskedMemory read_memory_masking_breakpoints(xen::Address address, size_t length) = 0;
     virtual void write_memory_retaining_breakpoints(xen::Address address, size_t length, void *data) = 0;

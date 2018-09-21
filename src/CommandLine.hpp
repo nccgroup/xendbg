@@ -11,6 +11,14 @@
 
 namespace xd {
 
+  namespace uv {
+    class UVLoop;
+  }
+
+  namespace xen {
+    class XenHandle;
+  }
+
   class CommandLine {
   public:
     CommandLine();
@@ -19,11 +27,11 @@ namespace xd {
 
   private:
     CLI::App _app;
-    uint16_t _port;
-    std::string _domain;
 
   private:
-    static void start_gdb_server(xen::DomID domid, uint16_t port);
+    uint16_t _base_port;
+    static void start_gdb_server(const uv::UVLoop &loop, const xen::XenHandle
+        &xen, xen::DomID domid, uint16_t port);
   };
 
 }

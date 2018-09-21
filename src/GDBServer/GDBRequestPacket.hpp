@@ -245,6 +245,8 @@ namespace xd::gdbsrv::pkt {
     std::string::const_iterator _it;
   };
 
+  DECLARE_SIMPLE_REQUEST(InterruptRequest, '\x03');
+
   class StartNoAckModeRequest : public GDBRequestPacketBase {
   public:
     StartNoAckModeRequest(const std::string &data)

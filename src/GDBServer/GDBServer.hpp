@@ -12,11 +12,29 @@
 #include <unordered_map>
 
 #include <uv.h>
+#include <uvcast.h>
 
-#include "GDBPacketInterpreter.hpp"
 #include "GDBPacketQueue.hpp"
 #include "GDBResponsePacket.hpp"
 #include "GDBRequestPacket.hpp"
+
+namespace xd::uv {
+
+  class UVLoop {
+  public:
+    UVLoop() {
+      uv_loop_init(_loop);
+    }
+    ~UVLoop() {
+      uv_loop_close(_loop);
+    }
+    uv_loop_t *get() const { return _loop; };
+
+  private:
+    uv_loop_t *_loop;
+  };
+
+}
 
 namespace xd::gdbsrv {
 
@@ -27,65 +45,73 @@ namespace xd::gdbsrv {
   };
 
   class GDBServer {
+  public:
   private:
-    struct OutputData {
-      size_t ref_count;
-      std::string data;
+    struct ClientContext {
+      ClientContext() : ack_mode(true) {};
+
+      GDBPacketQueue input_queue;
+      bool ack_mode;
     };
-
-    /*
-    struct ClientID {
-    public:
-      static ClientID All;
-
-      bool operator==(const ClientID &other) {
-        return _client == other._client;
-      }
-
-      bool operator!=(const ClientID &other) {
-        return _client != other._client;
-      }
-
-    protected:
-      explicit ClientID(uv_stream_t *client)
-        : _client(client) {};
-
-      uv_stream_t *get() { return _client; };
-
-    private:
-      uv_stream_t *_client;
-    };
-     */
 
   public:
-    GDBServer(std::string address, uint16_t port);
-    ~GDBServer();
+    class ClientHandle {
+    public:
+      ClientHandle(GDBServer &server, uv_stream_t *client)
+        : _server(server), _client(client) {};
 
-    void set_ack_mode(bool enabled) { _ack_mode = enabled; };
+      void disable_ack_mode() const {
+        _server._client_contexts.at(_client).ack_mode = false;
+      }
 
-    void start();
+      void send(const pkt::GDBResponsePacket &packet) const {
+        _server.send(packet, _client);
+      };
+
+      void detach() const {
+        uv_close(uv_upcast<uv_handle_t>(_client), destroy_stream_context);
+
+        auto &contexts = _server._client_contexts;
+        auto found = contexts.find(_client);
+        if (found != contexts.end()) {
+          contexts.erase(found);
+        }
+      }
+
+    private:
+      GDBServer &_server;
+      uv_stream_t *_client;
+    };
+
+    using OnReceiveFn = std::function<void(const ClientHandle&,
+        const pkt::GDBRequestPacket&)>;
+
+  public:
+    GDBServer(const uv::UVLoop &loop, std::string address, uint16_t port);
+
+    void start(OnReceiveFn on_receive);
     void stop();
 
-    void send(const pkt::GDBResponsePacket& packet);
+    void broadcast(const pkt::GDBResponsePacket& packet);
 
   private:
-    static void destroy_stream_context(uv_handle_t *handle) noexcept;
+    static void destroy_stream_context(uv_handle_t *handle) ;
     static void alloc_buffer(uv_handle_t *h, size_t suggested, uv_buf_t *buf) noexcept;
     static bool validate_packet_checksum(const GDBPacket &packet);
     static pkt::GDBRequestPacket parse_packet(const GDBPacket &packet);
     static std::string format_packet(const pkt::GDBResponsePacket &packet);
 
-    void send_raw(std::string s, uv_stream_t *client = nullptr);
+    void send(const pkt::GDBResponsePacket& packet, uv_stream_t *client);
+    void send_raw(std::string s, uv_stream_t *client);
 
   private:
+    const uv::UVLoop &_loop;
+
     std::string _address;
     uint16_t _port;
-    bool _is_running;
-    bool _ack_mode;
-    GDBPacketInterpreterInterface &_interpreter;
+    OnReceiveFn _on_receive;
 
-    uv_loop_t _loop;
-    std::unordered_map<uv_stream_t*, GDBPacketQueue> _input_queues;
+    std::unordered_map<uv_stream_t*, ClientContext> _client_contexts;
   };
 
 }

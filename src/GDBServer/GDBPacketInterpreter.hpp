@@ -5,43 +5,22 @@
 #ifndef XENDBG_GDBPACKETINTERPRETER_HPP
 #define XENDBG_GDBPACKETINTERPRETER_HPP
 
+#include "GDBServer.hpp"
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
 
 namespace xd::dbg {
 
-  class DebugSessionPV;
+  class DebugSession;
 
 }
 
 namespace xd::gdbsrv {
 
-  namespace pkt {
-
-    class GDBRequestPacket;
-
-  }
-
-  class GDBServer {
-  public:
-    class ClientID;
-  };
-
-  class GDBPacketInterpreterInterface {
-  public:
-    virtual void interpret(const pkt::GDBRequestPacket &packet) = 0;
-  };
-
-  class GDBPacketInterpreter : public GDBPacketInterpreterInterface {
-  public:
-    GDBPacketInterpreter(xd::gdbsrv::GDBServer &server, xd::dbg::DebugSessionPV &debugger);
-
-    void interpret(const pkt::GDBRequestPacket &packet) override;
-
-  private:
-    xd::gdbsrv::GDBServer &_server;
-    xd::dbg::DebugSessionPV &_debugger;
-  };
+  void interpret_packet(
+      const xd::gdbsrv::GDBServer::ClientHandle &client,
+      const xd::gdbsrv::pkt::GDBRequestPacket &packet,
+      xd::dbg::DebugSession &debugger);
 
 }
 

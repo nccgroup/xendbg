@@ -12,12 +12,24 @@
 using xd::gdbsrv::GDBPacket;
 using xd::gdbsrv::GDBPacketQueue;
 
-void GDBPacketQueue::enqueue(std::vector<char> data) {
+void GDBPacketQueue::enqueue(const std::vector<char> &data) {
   _buffer.insert(_buffer.end(), data.begin(), data.end());
+
+  /*
+   * For some ungodly reason, GDB sends interrupt requests as a raw 0x03 byte,
+   * not encapsulated in a packet. As such, we have to check the intermediate
+   * space between packets for 0x03s and interpret them as interrupts.
+   */
+  const auto find_checking_interrupts = [this](auto it, auto end, char target) {
+    while (it != end && *it != target)
+      if (*it++ == '\x03')
+        _packets.emplace(GDBPacket{"\x03", 0x03});
+    return it;
+  };
 
   auto end = _buffer.begin();
   while (end != _buffer.end()) {
-    auto packet_start = std::find(end, _buffer.end(), '$');
+    auto packet_start = find_checking_interrupts(end, _buffer.end(), '$');
     auto checksum_start = std::find(packet_start, _buffer.end(), '#');
 
     if (packet_start == _buffer.end() ||
@@ -32,7 +44,7 @@ void GDBPacketQueue::enqueue(std::vector<char> data) {
     });
   }
 
-  end = std::find(end, _buffer.end(), '$');
+  end = find_checking_interrupts(end, _buffer.end(), '$');
   _buffer.erase(_buffer.begin(), end);
 }
 

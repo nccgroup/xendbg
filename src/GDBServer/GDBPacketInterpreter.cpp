@@ -2,12 +2,12 @@
 // Created by Spencer Michaels on 9/20/18.
 //
 
+#include "GDBServer.hpp"
 #include "GDBPacketInterpreter.hpp"
 #include "GDBResponsePacket.hpp"
 #include "../Registers/RegistersX86.hpp"
 #include "../Xen/XenException.hpp"
 #include "../Debugger/DebugSessionPV.hpp"
-#include "GDBServer.hpp"
 
 using xd::dbg::DebugSessionPV;
 using xd::gdbsrv::GDBPacketInterpreter;
@@ -21,7 +21,7 @@ GDBPacketInterpreter::GDBPacketInterpreter(GDBServer &server, DebugSessionPV &de
 {
 }
 
-void GDBPacketInterpreter::interpret(const pkt::GDBRequestPacket &packet) {
+void GDBPacketInterpreter::interpret(const pkt::GDBRequestPacket &packet)  {
   using namespace xd::gdbsrv::pkt;
   try {
     const auto visitor = util::overloaded {

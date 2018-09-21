@@ -9,23 +9,22 @@
 #include "../Util/string.hpp"
 
 using xd::gdbsrv::GDBServer;
+using xd::gdbsrv::GDBPacketInterpreterInterface;
 using xd::gdbsrv::GDBPacketQueue;
 using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
 
-GDBServer::ClientID GDBServer::ClientID::All = ClientID(nullptr);
-
 GDBServer::GDBServer(std::string address, uint16_t port)
-    : _address(std::move(address)), _port(port), _is_running(false), _ack_mode(true)
+    : _address(std::move(address)), _port(port),
+      _is_running(false), _ack_mode(true)
 {};
 
 GDBServer::~GDBServer() {
   stop();
 }
 
-void GDBServer::start(OnReceiveFn on_receive) {
-  _on_receive = std::move(on_receive);
+void GDBServer::start() {
   _is_running = true;
 
   uv_loop_init(&_loop);
@@ -88,7 +87,7 @@ void GDBServer::start(OnReceiveFn on_receive) {
                 if (valid) {
                   try { // TODO exception handling
                     const auto packet = parse_packet(*raw_packet);
-                    self->_on_receive(packet, ClientID(sock));
+                    self->_interpreter.interpret(packet));
                   } catch (const xd::gdbsrv::UnknownPacketTypeException &e) {
                     self->send(pkt::NotSupportedResponse());
                     std::cout << e.what() << std::endl;
@@ -153,7 +152,7 @@ void GDBServer::stop() {
   }
 }
 
-void GDBServer::send(const GDBResponsePacket& packet, ClientID client) {
+void GDBServer::send(const GDBResponsePacket& packet) {
   send_raw(format_packet(packet), client.get());
 }
 

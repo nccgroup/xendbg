@@ -13,6 +13,7 @@
 
 #include <uv.h>
 
+#include "GDBPacketInterpreter.hpp"
 #include "GDBPacketQueue.hpp"
 #include "GDBResponsePacket.hpp"
 #include "GDBRequestPacket.hpp"
@@ -32,6 +33,7 @@ namespace xd::gdbsrv {
       std::string data;
     };
 
+    /*
     struct ClientID {
     public:
       static ClientID All;
@@ -53,8 +55,7 @@ namespace xd::gdbsrv {
     private:
       uv_stream_t *_client;
     };
-
-    using OnReceiveFn = std::function<void(const pkt::GDBRequestPacket&, ClientID)>;
+     */
 
   public:
     GDBServer(std::string address, uint16_t port);
@@ -62,10 +63,10 @@ namespace xd::gdbsrv {
 
     void set_ack_mode(bool enabled) { _ack_mode = enabled; };
 
-    void start(OnReceiveFn on_receive);
+    void start();
     void stop();
 
-    void send(const pkt::GDBResponsePacket& packet, ClientID client = ClientID::All);
+    void send(const pkt::GDBResponsePacket& packet);
 
   private:
     static void destroy_stream_context(uv_handle_t *handle) noexcept;
@@ -74,15 +75,14 @@ namespace xd::gdbsrv {
     static pkt::GDBRequestPacket parse_packet(const GDBPacket &packet);
     static std::string format_packet(const pkt::GDBResponsePacket &packet);
 
-    void on_receive(const pkt::GDBRequestPacket &packet, ClientID client);
     void send_raw(std::string s, uv_stream_t *client = nullptr);
 
   private:
     std::string _address;
     uint16_t _port;
-    OnReceiveFn _on_receive;
     bool _is_running;
     bool _ack_mode;
+    GDBPacketInterpreterInterface &_interpreter;
 
     uv_loop_t _loop;
     std::unordered_map<uv_stream_t*, GDBPacketQueue> _input_queues;

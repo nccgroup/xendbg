@@ -16,6 +16,12 @@ namespace xd::dbg {
 
 namespace xd::gdbsrv {
 
+  namespace pkt {
+
+    class GDBRequestPacket;
+
+  }
+
   class GDBServer {
   public:
     class ClientID;
@@ -23,16 +29,14 @@ namespace xd::gdbsrv {
 
   class GDBPacketInterpreterInterface {
   public:
-    virtual void interpret(GDBServer::ClientID client,
-        const pkt::GDBRequestPacket &packet) = 0;
+    virtual void interpret(const pkt::GDBRequestPacket &packet) = 0;
   };
 
   class GDBPacketInterpreter : public GDBPacketInterpreterInterface {
   public:
     GDBPacketInterpreter(xd::gdbsrv::GDBServer &server, xd::dbg::DebugSessionPV &debugger);
 
-    void interpret(GDBServer::ClientID client,
-        const pkt::GDBRequestPacket &packet) override;
+    void interpret(const pkt::GDBRequestPacket &packet) override;
 
   private:
     xd::gdbsrv::GDBServer &_server;

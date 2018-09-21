@@ -41,7 +41,6 @@ CommandLine::CommandLine()
       start_gdb_server(domain->get_domid(), _port);
     } else {
       GDBServer server("127.0.0.1", 1234);
-      GDBPacketInterpreter interpreter;
       server.start(interpreter);
     }
   });
@@ -60,11 +59,4 @@ void CommandLine::start_gdb_server(DomID domid, uint16_t port) {
   XenHandle xen;
   DebugSessionPV dbg(xen, domid);
   std::cout << "Attached to guest #" << domid << std::endl;
-
-  GDBServer server("127.0.0.1", port);
-  server.start([&](const auto &packet) {
-    xd::gdbsrv::interpret_packet(dbg, packet, [&](const auto &pkt) {
-      server.send(pkt);
-    });
-  });
 }

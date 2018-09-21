@@ -14,6 +14,8 @@ using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
 
+GDBServer::ClientID GDBServer::ClientID::All = ClientID(nullptr);
+
 GDBServer::GDBServer(std::string address, uint16_t port)
     : _address(std::move(address)), _port(port), _is_running(false), _ack_mode(true)
 {};
@@ -55,7 +57,7 @@ void GDBServer::start(OnReceiveFn on_receive) {
         uv_close(uv_upcast<uv_handle_t>(client), destroy_stream_context);
         return;
       }
-      self->_packet_queues[uv_upcast<uv_stream_t>(client)] = GDBPacketQueue();
+      self->_input_queues[uv_upcast<uv_stream_t>(client)] = GDBPacketQueue();
 
       uv_read_start(uv_upcast<uv_stream_t>(client), alloc_buffer,
         [](uv_stream_t *sock, ssize_t nread, const uv_buf_t *buf) {
@@ -69,24 +71,24 @@ void GDBServer::start(OnReceiveFn on_receive) {
             }
           } else {
             auto data = std::vector<char>(buf->base, buf->base + nread);
-            auto &queue = self->_packet_queues[uv_upcast<uv_stream_t>(sock)];
+            auto &queue = self->_input_queues[uv_upcast<uv_stream_t>(sock)];
 
             queue.enqueue(data);
             free(buf->base);
 
-            for (auto &pair : self->_packet_queues) {
+            for (auto &pair : self->_input_queues) {
               std::optional<GDBPacket> raw_packet;
               while ((raw_packet = pair.second.dequeue())) {
                 bool valid = validate_packet_checksum(*raw_packet);
                 std::cout << "RECV: " << raw_packet->contents << std::endl;
 
                 if (self->_ack_mode)
-                  self->send_raw(valid ? "+" : "-");
+                  self->send_raw(valid ? "+" : "-", sock);
 
                 if (valid) {
-                  try { // TODO
+                  try { // TODO exception handling
                     const auto packet = parse_packet(*raw_packet);
-                    self->on_receive(packet); // TODO: exception handling
+                    self->_on_receive(packet, ClientID(sock));
                   } catch (const xd::gdbsrv::UnknownPacketTypeException &e) {
                     self->send(pkt::NotSupportedResponse());
                     std::cout << e.what() << std::endl;
@@ -151,28 +153,37 @@ void GDBServer::stop() {
   }
 }
 
-void GDBServer::send(const GDBResponsePacket& packet) {
-  send_raw(format_packet(packet));
+void GDBServer::send(const GDBResponsePacket& packet, ClientID client) {
+  send_raw(format_packet(packet), client.get());
 }
 
-void GDBServer::send_raw(std::string s) {
-  auto data = new std::string;
-  data->swap(s); // TODO: OK?
+void GDBServer::send_raw(std::string s, uv_stream_t *client) {
+  size_t ref_count = client ? 1 : _input_queues.size();
+  const auto data = new OutputData{ ref_count, std::move(s) };
 
   uv_buf_t buf;
-  buf.base = data->data();
-  buf.len = data->size();
+  buf.base = data->data.data(); // this is beautiful
+  buf.len = data->data.size();
 
-  auto wreq = new uv_write_t;
-  wreq->data = data;
+  const auto write_to_client = [&](const auto client) {
+    auto wreq = new uv_write_t;
+    wreq->data = data;
 
-  for (const auto kv : _packet_queues) {
-    const auto client = kv.first;
     uv_write(wreq, client, &buf, 1, [](uv_write_t *req, int s) {
       std::ignore = s;
-      free((std::string*)req->data);
+      const auto data = (OutputData*) req->data;
+      if (--data->ref_count == 0)
+        delete data;
       free(req);
     });
+  };
+
+  if (client) {
+    write_to_client(client);
+  } else {
+    for (const auto &kv : _input_queues) {
+      write_to_client(kv.first);
+    }
   }
 }
 
@@ -181,9 +192,9 @@ void GDBServer::destroy_stream_context(uv_handle_t *handle) noexcept {
     const auto server = (GDBServer*)handle->data;
 
     uv_stream_t *stream = uv_downcast<uv_stream_t>(handle);
-    const auto found = server->_packet_queues.find(stream);
-    if (found != server->_packet_queues.end())
-      server->_packet_queues.erase(found);
+    const auto found = server->_input_queues.find(stream);
+    if (found != server->_input_queues.end())
+      server->_input_queues.erase(found);
 
     free(handle);
   }
@@ -283,13 +294,4 @@ GDBRequestPacket GDBServer::parse_packet(const GDBPacket &packet) {
   }
 
   throw UnknownPacketTypeException(contents);
-}
-
-void GDBServer::on_receive(const GDBRequestPacket &packet) {
-  if (std::holds_alternative<pkt::StartNoAckModeRequest>(packet)) {
-    _ack_mode = false;
-    send(pkt::OKResponse());
-  } else {
-    _on_receive(packet);
-  }
 }

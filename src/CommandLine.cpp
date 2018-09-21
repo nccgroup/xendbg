@@ -11,6 +11,7 @@
 
 using xd::CommandLine;
 using xd::dbg::DebugSessionPV;
+using xd::gdbsrv::GDBPacketInterpreter;
 using xd::gdbsrv::GDBServer;
 using xd::xen::DomID;
 using xd::xen::XenException;
@@ -39,7 +40,9 @@ CommandLine::CommandLine()
 
       start_gdb_server(domain->get_domid(), _port);
     } else {
-      // TODO: start REPL
+      GDBServer server("127.0.0.1", 1234);
+      GDBPacketInterpreter interpreter;
+      server.start(interpreter);
     }
   });
 };

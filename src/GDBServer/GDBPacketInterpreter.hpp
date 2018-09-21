@@ -7,12 +7,37 @@
 
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
-#include "../Debugger/DebugSessionPV.hpp"
+
+namespace xd::dbg {
+
+  class DebugSessionPV;
+
+}
 
 namespace xd::gdbsrv {
 
-  void interpret_packet(xd::dbg::DebugSessionPV &dbg, const pkt::GDBRequestPacket &pkt,
-      std::function<void(const pkt::GDBResponsePacket&)>);
+  class GDBServer {
+  public:
+    class ClientID;
+  };
+
+  class GDBPacketInterpreterInterface {
+  public:
+    virtual void interpret(GDBServer::ClientID client,
+        const pkt::GDBRequestPacket &packet) = 0;
+  };
+
+  class GDBPacketInterpreter : public GDBPacketInterpreterInterface {
+  public:
+    GDBPacketInterpreter(xd::gdbsrv::GDBServer &server, xd::dbg::DebugSessionPV &debugger);
+
+    void interpret(GDBServer::ClientID client,
+        const pkt::GDBRequestPacket &packet) override;
+
+  private:
+    xd::gdbsrv::GDBServer &_server;
+    xd::dbg::DebugSessionPV &_debugger;
+  };
 
 }
 

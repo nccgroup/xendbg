@@ -26,13 +26,16 @@ namespace xd::uv {
     UVTimer& operator=(const UVTimer& other) = delete;
 
     uv_timer_t *get() const { return _timer; };
+    bool is_running() const { return _is_running; };
 
     void start(OnTickFn on_tick, uint64_t interval, uint64_t initial_delay = 0);
+    void stop();
 
   private:
     const UVLoop &_loop;
     uv_timer_t *_timer;
     OnTickFn _on_tick;
+    bool _is_running;
   };
 }
 

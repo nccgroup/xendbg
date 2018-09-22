@@ -12,8 +12,8 @@
 #include "GDBPacketQueue.hpp"
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
-#include "UVLoop.hpp"
-#include "UVTimer.hpp"
+#include "../UV/UVLoop.hpp"
+#include "../UV/UVTimer.hpp"
 
 namespace xd::gdbsrv {
 

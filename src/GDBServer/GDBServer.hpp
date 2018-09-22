@@ -16,7 +16,7 @@
 #include "GDBConnection.hpp"
 #include "GDBResponsePacket.hpp"
 #include "GDBRequestPacket.hpp"
-#include "UVLoop.hpp"
+#include "../UV/UVLoop.hpp"
 
 namespace xd::gdbsrv {
 
@@ -30,6 +30,7 @@ namespace xd::gdbsrv {
 
     GDBServer(GDBServer&& other) = default;
     GDBServer(const GDBServer& other) = delete;
+    GDBServer& operator=(GDBServer&& other) = default;
     GDBServer& operator=(const GDBServer& other) = delete;
 
     void start(OnAcceptFn on_accept);

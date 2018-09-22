@@ -25,8 +25,9 @@ GDBServer::GDBServer(const uv::UVLoop &loop, const std::string& address_str, uin
 };
 
 GDBServer::~GDBServer() {
-  std::cout << "destroy" << std::endl;
-  stop();
+  uv_close(uv_upcast<uv_handle_t>(_server), [](uv_handle_t *close_handle) {
+    free(close_handle);
+  });
   free(_server);
 }
 
@@ -37,13 +38,6 @@ void GDBServer::start(OnAcceptFn on_accept) {
     throw std::runtime_error("Listen failed!");
 
   std::cout << "Listening..." << std::endl;
-}
-
-
-void GDBServer::stop() {
-  uv_close(uv_upcast<uv_handle_t>(_server), [](uv_handle_t *close_handle) {
-    free(close_handle);
-  });
 }
 
 void GDBServer::on_connect(uv_stream_t *server, int status) {

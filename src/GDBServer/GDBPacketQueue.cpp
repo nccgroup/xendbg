@@ -13,6 +13,7 @@ using xd::gdbsrv::GDBPacket;
 using xd::gdbsrv::GDBPacketQueue;
 
 void GDBPacketQueue::append(const std::vector<char> &data) {
+  std::cout << "appending " << data.size() << std::endl;
   _buffer.insert(_buffer.end(), data.begin(), data.end());
 
   /*

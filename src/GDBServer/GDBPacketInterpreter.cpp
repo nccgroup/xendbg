@@ -202,7 +202,7 @@ void xd::gdbsrv::interpret_packet(
       [&](const ContinueRequest &req) {
         //connection.send(OKResponse());
         debugger.continue_();
-        connection.send(StopReasonSignalResponse(SIGTRAP, 1));
+        connection.send(StopReasonSignalResponse(SIGTRAP, 1)); // TODO: don't do this
       },
       [&](const ContinueSignalRequest &req) {
         connection.send(NotSupportedResponse());

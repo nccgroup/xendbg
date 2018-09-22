@@ -34,7 +34,6 @@ namespace xd::gdbsrv {
     GDBServer& operator=(const GDBServer& other) = delete;
 
     void start(OnAcceptFn on_accept);
-    void stop();
 
   private:
     const uv::UVLoop &_loop;

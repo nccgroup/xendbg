@@ -30,17 +30,6 @@ namespace xd::uv {
     ~UVLoop() {
       uv_loop_close(_loop);
       free(_loop);
-
-      /*
-      // Close and free any remaining handles
-      // TODO: this crashes if .run() was never called
-      uv_walk(_loop, [](uv_handle_t *walk_handle, void *arg) {
-        uv_close(walk_handle, [](uv_handle_t *close_handle) {
-          free(close_handle);
-        });
-      }, nullptr);
-      uv_run(_loop, UV_RUN_DEFAULT);
-      */
     }
 
     uv_loop_t *get() const { return _loop; };

@@ -34,6 +34,7 @@ CommandLine::CommandLine()
         if (domain.get_domid() != 0)
           start_gdb_server(loop, xen, domain.get_domid(), port++);
       }
+      //loop.run();
     } else {
       // REPL
     }
@@ -52,10 +53,15 @@ int CommandLine::parse(int argc, char **argv) {
 void CommandLine::start_gdb_server(const uv::UVLoop &loop, const XenHandle &xen,
     DomID domid, uint16_t port)
 {
-  GDBServer server(loop, "127.0.0.1", port);
   DebugSessionPV debugger(xen, domid);
-  server.start([&debugger](const auto &client, const auto &packet) {
-      interpret_packet(client, packet, debugger);
+
+  GDBServer server(loop, "127.0.0.1", port); // TODO: this gets destroyed
+  server.start([&](auto &connection) {
+    connection.start([&](auto &packet) {
+      interpret_packet(debugger, connection, packet);
+    });
   });
+
   std::cout << "Port " << port << ": domain #" << domid << std::endl;
+  loop.run(); // TODO
 }

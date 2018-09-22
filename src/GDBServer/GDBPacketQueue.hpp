@@ -19,8 +19,10 @@ namespace xd::gdbsrv {
 
   class GDBPacketQueue {
   public:
-    void enqueue(const std::vector<char> &data);
-    std::optional<GDBPacket> dequeue();
+    void append(const std::vector<char> &data);
+    GDBPacket pop();
+
+    bool empty() const { return _packets.empty(); };
 
   private:
     std::queue<GDBPacket> _packets;

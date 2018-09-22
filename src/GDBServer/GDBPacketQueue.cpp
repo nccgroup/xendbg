@@ -12,7 +12,7 @@
 using xd::gdbsrv::GDBPacket;
 using xd::gdbsrv::GDBPacketQueue;
 
-void GDBPacketQueue::enqueue(const std::vector<char> &data) {
+void GDBPacketQueue::append(const std::vector<char> &data) {
   _buffer.insert(_buffer.end(), data.begin(), data.end());
 
   /*
@@ -48,9 +48,9 @@ void GDBPacketQueue::enqueue(const std::vector<char> &data) {
   _buffer.erase(_buffer.begin(), end);
 }
 
-std::optional<GDBPacket> GDBPacketQueue::dequeue() {
+GDBPacket GDBPacketQueue::pop() {
   if (_packets.empty())
-    return std::nullopt;
+    throw std::runtime_error("No packets!");
 
   return util::pop_ret(_packets);
 }

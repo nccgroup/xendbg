@@ -2,16 +2,18 @@
 #include <numeric>
 #include <stdexcept>
 
-#include <uvcast.h>
+#include "../uvcast.hpp"
 
 #include "GDBConnection.hpp"
 #include "../Util/string.hpp"
 
+using uvcast::uv_upcast;
 using xd::gdbsrv::GDBConnection;
 using xd::gdbsrv::GDBPacket;
 using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
+using xd::uv::UVLoop;
 
 class UnknownPacketTypeException : public std::runtime_error {
 public:
@@ -19,8 +21,8 @@ public:
       : std::runtime_error(data) {};
 };
 
-GDBConnection::GDBConnection(uv_stream_t *connection)
-  : _connection(connection), _ack_mode(true)
+GDBConnection::GDBConnection(const UVLoop &loop, uv_stream_t *connection)
+  : _loop(loop), _connection(connection), _ack_mode(true)
 {
   _connection->data = this;
 }
@@ -32,7 +34,7 @@ GDBConnection::~GDBConnection() {
 }
 
 void GDBConnection::start(OnReceiveFn on_receive) {
-  _on_receive = on_receive;
+  _on_receive = std::move(on_receive);
 
   uv_read_start(uv_upcast<uv_stream_t>(_connection), GDBConnection::alloc_buffer,
     [](uv_stream_t *sock, ssize_t nread, const uv_buf_t *buf) {
@@ -86,6 +88,11 @@ void GDBConnection::send(const pkt::GDBResponsePacket &packet) {
   send_raw(_connection, raw_packet);
 }
 
+void GDBConnection::add_timer(uv::UVTimer::OnTickFn on_tick, uint64_t interval) {
+  _timers.emplace_back(_loop);
+  _timers.front().start(on_tick, interval); // TODO: detect and cleanup expired timers
+}
+
 void GDBConnection::alloc_buffer(uv_handle_t *h, size_t suggested, uv_buf_t *buf) noexcept {
   std::ignore = h;
   buf->base = (char*) malloc(suggested);
@@ -125,8 +132,7 @@ void GDBConnection::send_raw(uv_stream_t *dest, std::string s) {
   auto wreq = new uv_write_t;
   wreq->data = data;
 
-  uv_write(wreq, dest, &buf, 1, [](uv_write_t *req, int s) {
-    std::ignore = s;
+  uv_write(wreq, dest, &buf, 1, [](uv_write_t *req, int /*status*/) {
     delete (std::string*) req->data;
     free(req);
   });

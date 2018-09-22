@@ -5,16 +5,17 @@
 #include <numeric>
 
 #include "GDBServer.hpp"
+#include "../uvcast.hpp"
 
+using uvcast::uv_upcast;
 using xd::gdbsrv::GDBConnection;
 using xd::gdbsrv::GDBServer;
 using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 
 GDBServer::GDBServer(const uv::UVLoop &loop, const std::string& address_str, uint16_t port)
-    : _loop(loop)
+    : _loop(loop), _server(new uv_tcp_t)
 {
-  _server = new uv_tcp_t;
   uv_tcp_init(_loop.get(), _server);
   _server->data = this;
 
@@ -28,11 +29,10 @@ GDBServer::~GDBServer() {
   uv_close(uv_upcast<uv_handle_t>(_server), [](uv_handle_t *close_handle) {
     free(close_handle);
   });
-  free(_server);
 }
 
 void GDBServer::start(OnAcceptFn on_accept) {
-  _on_accept = on_accept;
+  _on_accept = std::move(on_accept);
 
   if (uv_listen(uv_upcast<uv_stream_t>(_server), 10, GDBServer::on_connect) < 0)
     throw std::runtime_error("Listen failed!");
@@ -61,6 +61,6 @@ void GDBServer::on_connect(uv_stream_t *server, int status) {
   std::cout << "Accepted." << std::endl;
 
   auto &connections = self->_connections;
-  connections.emplace(connections.end(), uv_upcast<uv_stream_t>(client));
+  connections.emplace_back(self->_loop, uv_upcast<uv_stream_t>(client));
   self->_on_accept(connections.front());
 };

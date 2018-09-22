@@ -12,7 +12,6 @@
 #include <unordered_map>
 
 #include <uv.h>
-#include <uvcast.h>
 
 #include "GDBConnection.hpp"
 #include "GDBResponsePacket.hpp"

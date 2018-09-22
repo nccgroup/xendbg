@@ -200,9 +200,18 @@ void xd::gdbsrv::interpret_packet(
         connection.send(OKResponse());
       },
       [&](const ContinueRequest &req) {
-        //connection.send(OKResponse());
         debugger.continue_();
-        connection.send(StopReasonSignalResponse(SIGTRAP, 1)); // TODO: don't do this
+
+        connection.add_timer([&]() {
+          bool hit = debugger.check_breakpoint_hit().has_value();
+          if (hit) {
+            debugger.get_domain().pause();
+            connection.send(StopReasonSignalResponse(SIGTRAP, 1)); // TODO
+          }
+          return hit;
+        }, 100);
+
+        connection.send(OKResponse());
       },
       [&](const ContinueSignalRequest &req) {
         connection.send(NotSupportedResponse());

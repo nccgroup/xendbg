@@ -7,8 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
 include_directories(
   third_party/CLI11/include
-  third_party/ELFIO/include
-  third_party/sunrise/)
+  third_party/ELFIO/include)
 
 add_executable(xendbg
   src/Debugger/DebugSession.cpp
@@ -89,7 +88,9 @@ add_executable(xendbg
   src/GDBServer/GDBPacketQueue.cpp src/GDBServer/GDBPacketQueue.hpp
   src/GDBServer/GDBServer.cpp src/GDBServer/GDBServer.hpp
   src/GDBServer/GDBPacketInterpreter.cpp src/GDBServer/GDBPacketInterpreter.hpp
-  src/GDBServer/GDBConnection.cpp src/GDBServer/GDBConnection.hpp)
+  src/GDBServer/GDBConnection.cpp src/GDBServer/GDBConnection.hpp
+  src/GDBServer/UVLoop.hpp src/GDBServer/UVLoop.cpp
+  src/GDBServer/UVTimer.hpp src/GDBServer/UVTimer.cpp)
 
 target_link_libraries(xendbg
   capstone

@@ -16,7 +16,14 @@ namespace xd::xen {
 
   class Domain {
   public:
-    Domain(const XenHandle& xen, DomID domid);
+    Domain(XenHandle& xen, DomID domid);
+
+    bool operator==(const Domain &other) const {
+      return _domid == other._domid;
+    }
+    bool operator!=(const Domain &other) const {
+      return !operator==(other);
+    }
 
     DomID get_domid() const { return _domid; };
     std::string get_name() const;
@@ -52,7 +59,7 @@ namespace xd::xen {
     void destroy() const;
 
   private:
-    const XenHandle& _xen;
+    XenHandle& _xen;
     const DomID _domid;
   };
 

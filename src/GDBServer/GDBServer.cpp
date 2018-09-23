@@ -13,7 +13,7 @@ using xd::gdbsrv::GDBServer;
 using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 
-GDBServer::GDBServer(const uv::UVLoop &loop, const std::string& address_str, uint16_t port)
+GDBServer::GDBServer(uv::UVLoop &loop, const std::string& address_str, uint16_t port)
     : _loop(loop), _server(new uv_tcp_t)
 {
   uv_tcp_init(_loop.get(), _server);

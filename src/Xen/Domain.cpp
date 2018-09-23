@@ -15,7 +15,7 @@ using xd::xen::XenCtrl;
 using xd::xen::XenHandle;
 using xd::xen::MemoryPermissions;
 
-Domain::Domain(const XenHandle& xen, DomID domid)
+Domain::Domain(XenHandle& xen, DomID domid)
     : _xen(xen), _domid(domid)
 {
   get_info(); // Make sure the domain is behaving properly

@@ -19,14 +19,13 @@ namespace xd::uv {
     UVLoop& operator=(UVLoop&& other) = default;
     UVLoop& operator=(const UVLoop& other) = delete;
 
-    uv_loop_t *get() const { return _loop; };
+    uv_loop_t *get() { return &_loop; };
 
-    void run() const;
+    void start();
+    void stop();
 
   private:
-    uv_loop_t *_loop;
-
-    static void on_sigint(uv_signal_t *signal_handle, int /*signal*/);
+    uv_loop_t _loop;
 
   };
 }

@@ -5,8 +5,12 @@
 #ifndef XENDBG_XENSTORE_HPP
 #define XENDBG_XENSTORE_HPP
 
+#include <functional>
 #include <memory>
+#include <optional>
+#include <queue>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "BridgeHeaders/xenstore.h"
@@ -17,13 +21,44 @@ namespace xd::xen {
 
   class XenStore {
   public:
+    class Watch;
+    using Path = std::string;
+    using Token = std::string;
+
     XenStore();
+
+    int get_fileno() const;
+
+    Watch &add_watch();
 
     std::string read(const std::string& file) const;
     std::vector<std::string> read_directory(const std::string& dir) const;
 
   private:
     std::unique_ptr<struct xs_handle, decltype(&xs_close)> _xenstore;
+    std::unordered_map<Token, Watch> _watches;
+    size_t _next_watch_id;
+
+    void check_watches();
+
+  public:
+    class Watch {
+    public:
+      Watch(XenStore &xenstore, std::string token);
+      ~Watch();
+
+      void add_path(Path path);
+      std::optional<Path> check();
+
+    private:
+      friend class XenStore;
+
+      XenStore &_xenstore;
+      const Token _token;
+      std::vector<std::string> _paths;
+
+      std::queue<Path> _events;
+    };
   };
 
 }

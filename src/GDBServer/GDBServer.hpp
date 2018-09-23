@@ -25,7 +25,7 @@ namespace xd::gdbsrv {
     using OnAcceptFn = std::function<void(GDBConnection&)>;
 
   public:
-    GDBServer(const uv::UVLoop &loop, const std::string& address_str, uint16_t port);
+    GDBServer(uv::UVLoop &loop, const std::string& address_str, uint16_t port);
     ~GDBServer();
 
     GDBServer(GDBServer&& other) = default;
@@ -36,7 +36,7 @@ namespace xd::gdbsrv {
     void start(OnAcceptFn on_accept);
 
   private:
-    const uv::UVLoop &_loop;
+    uv::UVLoop &_loop;
     uv_tcp_t *_server;
     OnAcceptFn _on_accept;
 

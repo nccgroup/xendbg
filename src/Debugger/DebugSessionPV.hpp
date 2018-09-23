@@ -24,7 +24,7 @@ namespace xd::dbg {
     using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
 
   public:
-    DebugSessionPV(const xen::XenHandle& xen, xen::DomID domid);
+    DebugSessionPV(xen::XenHandle& xen, xen::DomID domid);
     ~DebugSessionPV() override;
 
     void continue_() override;

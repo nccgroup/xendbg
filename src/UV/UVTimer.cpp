@@ -7,24 +7,23 @@ using uvcast::uv_upcast;
 using xd::uv::UVLoop;
 using xd::uv::UVTimer;
 
-UVTimer::UVTimer(const UVLoop &loop)
-  : _loop(loop), _timer(new uv_timer_t), _is_running(false)
+UVTimer::UVTimer(UVLoop &loop)
+  : _is_running(false)
 {
-  uv_timer_init(loop.get(), _timer);
-  _timer->data = this;
+  uv_timer_init(loop.get(), &_timer);
+  _timer.data = this;
 }
 
 UVTimer::~UVTimer() {
-  uv_close(uv_upcast<uv_handle_t>(_timer), [](uv_handle_t *close_handle) {
-    free(close_handle);
+  uv_close(uv_upcast<uv_handle_t>(&_timer), [](uv_handle_t *) {
   });
 }
 
-void UVTimer::start(OnTickFn on_tick, uint64_t interval, uint64_t initial_delay) {
+void UVTimer::start(OnTickFn on_tick, uint64_t initial_delay, uint64_t interval) {
   _is_running = true;
   _on_tick = std::move(on_tick);
 
-  uv_timer_start(_timer, [](uv_timer_t *timer) {
+  uv_timer_start(&_timer, [](uv_timer_t *timer) {
     auto self = (UVTimer*) timer->data;
     if (self->_on_tick())
       self->stop();
@@ -32,6 +31,6 @@ void UVTimer::start(OnTickFn on_tick, uint64_t interval, uint64_t initial_delay)
 }
 
 void UVTimer::stop() {
-  uv_timer_stop(_timer);
+  uv_timer_stop(&_timer);
   _is_running = false;
 }

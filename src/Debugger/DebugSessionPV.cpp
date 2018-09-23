@@ -21,7 +21,7 @@ using xd::xen::Domain;
 using xd::xen::DomID;
 using xd::xen::XenHandle;
 
-xd::dbg::DebugSessionPV::DebugSessionPV(const XenHandle &xen, DomID domid)
+xd::dbg::DebugSessionPV::DebugSessionPV(XenHandle &xen, DomID domid)
   : DebugSession(xen, domid)
 {
 }
@@ -99,7 +99,7 @@ void xd::dbg::DebugSessionPV::insert_breakpoint(Address address) {
 }
 
 void xd::dbg::DebugSessionPV::remove_breakpoint(Address address) {
-  std::cout << "Removing infinite loop." << std::endl;
+  std::cout << "Removing infinite loop at " << std::hex << address << std::endl;
 
   const auto mem_handle = get_domain().map_memory(address, 2, PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();

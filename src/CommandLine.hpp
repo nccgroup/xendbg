@@ -30,8 +30,6 @@ namespace xd {
 
   private:
     uint16_t _base_port;
-    static void start_gdb_server(const uv::UVLoop &loop, const xen::XenHandle
-        &xen, xen::DomID domid, uint16_t port);
   };
 
 }

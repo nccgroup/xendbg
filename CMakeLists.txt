@@ -89,9 +89,11 @@ add_executable(xendbg
   src/GDBServer/GDBServer.cpp src/GDBServer/GDBServer.hpp
   src/GDBServer/GDBPacketInterpreter.cpp src/GDBServer/GDBPacketInterpreter.hpp
   src/GDBServer/GDBConnection.cpp src/GDBServer/GDBConnection.hpp
+  src/ServerModeController.hpp src/ServerModeController.cpp
   src/UV/UVLoop.hpp src/UV/UVLoop.cpp
   src/UV/UVIdle.hpp src/UV/UVIdle.cpp
   src/UV/UVSignal.hpp src/UV/UVSignal.cpp
+  src/UV/UVPoll.hpp src/UV/UVPoll.cpp
   src/UV/UVTimer.hpp src/UV/UVTimer.cpp)
 
 target_link_libraries(xendbg

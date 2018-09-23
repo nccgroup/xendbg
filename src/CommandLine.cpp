@@ -5,6 +5,7 @@
 #include "Debugger/DebugSessionPV.hpp"
 #include "GDBServer/GDBServer.hpp"
 #include "GDBServer/GDBPacketInterpreter.hpp"
+#include "ServerModeController.hpp"
 #include "Xen/XenHandle.hpp"
 
 #include "CommandLine.hpp"
@@ -25,18 +26,10 @@ CommandLine::CommandLine()
 
   _app.callback([this, server_mode] {
     if (server_mode->count()) {
-      XenHandle xen;
-      const auto domains = xen.get_domains();
-
-      xd::uv::UVLoop loop;
-      auto port = _base_port;
-      for (const auto &domain : domains) {
-        if (domain.get_domid() != 0)
-          start_gdb_server(loop, xen, domain.get_domid(), port++);
-      }
-      //loop.run();
+      xd::ServerModeController smc(_base_port);
+      smc.run();
     } else {
-      // REPL
+      // TODO
     }
   });
 };
@@ -50,7 +43,8 @@ int CommandLine::parse(int argc, char **argv) {
   return 0;
 }
 
-void CommandLine::start_gdb_server(const uv::UVLoop &loop, const XenHandle &xen,
+/*
+void CommandLine::start_gdb_server(uv::UVLoop &loop, XenHandle &xen,
     DomID domid, uint16_t port)
 {
   DebugSessionPV debugger(xen, domid);
@@ -63,5 +57,6 @@ void CommandLine::start_gdb_server(const uv::UVLoop &loop, const XenHandle &xen,
   });
 
   std::cout << "Port " << port << ": domain #" << domid << std::endl;
-  loop.run(); // TODO
+  loop.start(); // TODO
 }
+*/

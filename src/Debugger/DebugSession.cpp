@@ -10,7 +10,7 @@ using xd::dbg::DebugSession;
 using xd::xen::Address ;
 using xd::xen::DomID;
 
-DebugSession::DebugSession(const xen::XenHandle& xen, xen::DomID domid)
+DebugSession::DebugSession(xen::XenHandle& xen, xen::DomID domid)
   : _xen(xen), _domain(xen, domid), _vcpu_id(0)
 {
   _domain.pause();

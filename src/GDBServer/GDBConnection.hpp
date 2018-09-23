@@ -12,6 +12,7 @@
 #include "GDBPacketQueue.hpp"
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
+#include "../UV/UVIdle.hpp"
 #include "../UV/UVLoop.hpp"
 #include "../UV/UVTimer.hpp"
 
@@ -23,7 +24,7 @@ namespace xd::gdbsrv {
   public:
     using OnReceiveFn = std::function<void(const pkt::GDBRequestPacket&)>;
 
-    GDBConnection(const uv::UVLoop &loop, uv_stream_t *connection);
+    GDBConnection(uv::UVLoop &loop, uv_stream_t *connection);
     ~GDBConnection();
 
     GDBConnection(GDBConnection&& other) = default;
@@ -37,10 +38,11 @@ namespace xd::gdbsrv {
 
     void send(const pkt::GDBResponsePacket &packet);
 
-    void add_timer(uv::UVTimer::OnTickFn on_tick, uint64_t interval);
+    uv::UVTimer &add_timer();
 
   private:
-    const uv::UVLoop &_loop;
+    uv::UVLoop &_loop;
+    uv::UVIdle _idle;
     uv_stream_t *_connection;
     GDBPacketQueue _input_queue;
     bool _ack_mode;

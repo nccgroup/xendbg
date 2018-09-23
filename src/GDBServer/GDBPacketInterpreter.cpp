@@ -202,14 +202,14 @@ void xd::gdbsrv::interpret_packet(
       [&](const ContinueRequest &req) {
         debugger.continue_();
 
-        connection.add_timer([&]() {
+        connection.add_timer().start([&]() {
           bool hit = debugger.check_breakpoint_hit().has_value();
           if (hit) {
             debugger.get_domain().pause();
             connection.send(StopReasonSignalResponse(SIGTRAP, 1)); // TODO
           }
           return hit;
-        }, 100);
+        }, 0, 100);
 
         connection.send(OKResponse());
       },

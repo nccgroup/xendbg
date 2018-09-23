@@ -14,6 +14,7 @@ using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
 using xd::uv::UVLoop;
+using xd::uv::UVTimer;
 
 class UnknownPacketTypeException : public std::runtime_error {
 public:
@@ -21,8 +22,8 @@ public:
       : std::runtime_error(data) {};
 };
 
-GDBConnection::GDBConnection(const UVLoop &loop, uv_stream_t *connection)
-  : _loop(loop), _connection(connection), _ack_mode(true)
+GDBConnection::GDBConnection(UVLoop &loop, uv_stream_t *connection)
+  : _loop(loop), _idle(loop), _connection(connection), _ack_mode(true)
 {
   _connection->data = this;
 }
@@ -35,6 +36,16 @@ GDBConnection::~GDBConnection() {
 
 void GDBConnection::start(OnReceiveFn on_receive) {
   _on_receive = std::move(on_receive);
+
+  // Clean up expired timers
+  _idle.start([this]() {
+    _timers.erase(std::remove_if(
+          _timers.begin(), _timers.end(),
+          [](const auto &timer) {
+            return !timer.is_running();
+          }),
+      _timers.end());
+  });
 
   uv_read_start(uv_upcast<uv_stream_t>(_connection), GDBConnection::alloc_buffer,
     [](uv_stream_t *sock, ssize_t nread, const uv_buf_t *buf) {
@@ -81,6 +92,10 @@ void GDBConnection::start(OnReceiveFn on_receive) {
 
 void GDBConnection::stop() {
   uv_read_stop(_connection);
+  uv_close(uvcast::uv_upcast<uv_handle_t>(_connection), [](uv_handle_t *) {
+  });
+
+  _idle.stop();
 }
 
 void GDBConnection::send(const pkt::GDBResponsePacket &packet) {
@@ -88,9 +103,9 @@ void GDBConnection::send(const pkt::GDBResponsePacket &packet) {
   send_raw(_connection, raw_packet);
 }
 
-void GDBConnection::add_timer(uv::UVTimer::OnTickFn on_tick, uint64_t interval) {
+UVTimer &GDBConnection::add_timer() {
   _timers.emplace_back(_loop);
-  _timers.front().start(on_tick, interval); // TODO: detect and cleanup expired timers
+  return _timers.front();
 }
 
 void GDBConnection::alloc_buffer(uv_handle_t *h, size_t suggested, uv_buf_t *buf) noexcept {

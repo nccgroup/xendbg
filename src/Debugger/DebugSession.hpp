@@ -43,7 +43,7 @@ namespace xd::dbg {
     using MaskedMemory = std::unique_ptr<unsigned char>;
 
   public:
-    DebugSession(const xen::XenHandle& xen, xen::DomID domid);
+    DebugSession(xen::XenHandle& xen, xen::DomID domid);
     virtual ~DebugSession();
 
     const xen::Domain& get_domain() { return _domain; };
@@ -78,7 +78,7 @@ namespace xd::dbg {
     }
 
   private:
-    const xen::XenHandle& _xen;
+    xen::XenHandle& _xen;
     const xen::Domain _domain;
 
     csh _capstone;

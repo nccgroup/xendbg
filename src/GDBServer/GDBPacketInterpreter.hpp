@@ -9,6 +9,12 @@
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
 
+namespace xd::uv {
+
+  class UVLoop;
+
+}
+
 namespace xd::dbg {
 
   class DebugSession;

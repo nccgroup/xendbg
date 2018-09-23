@@ -17,7 +17,7 @@ namespace xd::uv {
   public:
     using OnTickFn = std::function<bool()>;
 
-    UVTimer(const UVLoop &loop);
+    UVTimer(UVLoop &loop);
     ~UVTimer();
 
     UVTimer(UVTimer&& other) = default;
@@ -25,15 +25,14 @@ namespace xd::uv {
     UVTimer& operator=(UVTimer&& other) = default;
     UVTimer& operator=(const UVTimer& other) = delete;
 
-    uv_timer_t *get() const { return _timer; };
+    uv_timer_t *get() { return &_timer; };
     bool is_running() const { return _is_running; };
 
-    void start(OnTickFn on_tick, uint64_t interval, uint64_t initial_delay = 0);
+    void start(OnTickFn on_tick, uint64_t initial_delay, uint64_t interval);
     void stop();
 
   private:
-    const UVLoop &_loop;
-    uv_timer_t *_timer;
+    uv_timer_t _timer;
     OnTickFn _on_tick;
     bool _is_running;
   };

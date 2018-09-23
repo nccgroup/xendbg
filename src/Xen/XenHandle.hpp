@@ -19,12 +19,12 @@ namespace xd::xen {
    */
   class XenHandle {
   public:
-    const PrivCmd& get_privcmd() const { return _privcmd; };
-    const XenCtrl& get_xenctrl() const { return _xenctrl; };
-    const XenForeignMemory& get_xen_foreign_memory() const { return _xen_foreign_memory; };
-    const XenStore& get_xenstore() const { return _xenstore; };
+    PrivCmd& get_privcmd() { return _privcmd; };
+    XenCtrl& get_xenctrl() { return _xenctrl; };
+    XenForeignMemory& get_xen_foreign_memory() { return _xen_foreign_memory; };
+    XenStore& get_xenstore() { return _xenstore; };
 
-    std::vector<Domain> get_domains() const;
+    std::vector<Domain> get_domains();
 
   private:
     PrivCmd _privcmd;

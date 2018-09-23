@@ -8,7 +8,7 @@
 using xd::xen::Domain;
 using xd::xen::XenHandle;
 
-std::vector<Domain> XenHandle::get_domains() const {
+std::vector<Domain> XenHandle::get_domains() {
   const auto domid_strs = get_xenstore().read_directory("/local/domain");
 
   std::vector<Domain> domains;

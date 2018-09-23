@@ -24,13 +24,14 @@ namespace xd::dbg {
     using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
 
   public:
-    DebugSessionPV(xen::XenHandle& xen, xen::DomID domid);
+    DebugSessionPV(xen::Domain domain);
     ~DebugSessionPV() override;
 
     void continue_() override;
     xen::Address single_step() override;
     std::optional<xen::Address> check_breakpoint_hit() override;
 
+    std::vector<xen::Address> get_breakpoints() override;
     void insert_breakpoint(xen::Address address) override;
     void remove_breakpoint(xen::Address address) override;
 

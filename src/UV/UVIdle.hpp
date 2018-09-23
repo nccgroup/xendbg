@@ -6,8 +6,11 @@
 #define XENDBG_UVIDLE_HPP
 
 #include <functional>
+#include <memory>
 
 #include <uv.h>
+
+#include "UVUtil.hpp"
 
 namespace xd::uv {
 
@@ -18,21 +21,22 @@ namespace xd::uv {
     using OnTickFn = std::function<void()>;
 
     UVIdle(UVLoop &loop);
-    ~UVIdle();
+    ~UVIdle() = default;
 
-    UVIdle(UVIdle&& other) = default;
+    UVIdle(UVIdle&& other);
+    UVIdle& operator=(UVIdle&& other);
+
     UVIdle(const UVIdle& other) = delete;
-    UVIdle& operator=(UVIdle&& other) = default;
     UVIdle& operator=(const UVIdle& other) = delete;
 
-    uv_idle_t *get() { return &_idle; };
+    uv_idle_t *get() { return _idle.get(); };
     bool is_running() const { return _is_running; };
 
     void start(OnTickFn on_tick);
     void stop();
 
   private:
-    uv_idle_t _idle;
+    UVHandlePtr<uv_idle_t> _idle;
     OnTickFn _on_tick;
     bool _is_running;
   };

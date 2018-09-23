@@ -47,6 +47,11 @@ namespace xd::xen {
       Watch(XenStore &xenstore, std::string token);
       ~Watch();
 
+      Watch(Watch&& other) = default;
+      Watch(const Watch& other) = delete;
+      Watch& operator=(Watch&& other) = default;
+      Watch& operator=(const Watch& other) = delete;
+
       void add_path(Path path);
       std::optional<Path> check();
 
@@ -54,7 +59,7 @@ namespace xd::xen {
       friend class XenStore;
 
       XenStore &_xenstore;
-      const Token _token;
+      Token _token;
       std::vector<std::string> _paths;
 
       std::queue<Path> _events;

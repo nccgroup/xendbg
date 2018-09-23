@@ -9,6 +9,8 @@
 
 #include <uv.h>
 
+#include "UVUtil.hpp"
+
 namespace xd::uv {
 
   class UVLoop;
@@ -18,21 +20,22 @@ namespace xd::uv {
     using OnSignalFn = std::function<void()>;
 
     UVSignal(UVLoop &loop);
-    ~UVSignal();
+    ~UVSignal() = default;
 
-    UVSignal(UVSignal&& other) = default;
+    UVSignal(UVSignal&& other);
+    UVSignal& operator=(UVSignal&& other);
+
     UVSignal(const UVSignal& other) = delete;
-    UVSignal& operator=(UVSignal&& other) = default;
     UVSignal& operator=(const UVSignal& other) = delete;
 
-    uv_signal_t *get() { return &_signal; };
+    uv_signal_t *get() { return _signal.get(); };
     bool is_running() const { return _is_running; };
 
     void start(OnSignalFn on_tick, int signum);
     void stop();
 
   private:
-    uv_signal_t _signal;
+    UVHandlePtr<uv_signal_t> _signal;
     OnSignalFn _on_signal;
     bool _is_running;
   };

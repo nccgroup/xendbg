@@ -9,6 +9,8 @@
 
 #include <uv.h>
 
+#include "UVUtil.hpp"
+
 namespace xd::uv {
 
   class UVLoop;
@@ -23,21 +25,22 @@ namespace xd::uv {
     using OnEventFn = std::function<void(const Event&)>;
 
     UVPoll(UVLoop &loop, int fd);
-    ~UVPoll();
+    ~UVPoll() = default;
 
-    UVPoll(UVPoll&& other) = default;
+    UVPoll(UVPoll&& other);
+    UVPoll& operator=(UVPoll&& other);
+
     UVPoll(const UVPoll& other) = delete;
-    UVPoll& operator=(UVPoll&& other) = default;
     UVPoll& operator=(const UVPoll& other) = delete;
 
-    uv_poll_t *get() { return &_poll; };
+    uv_poll_t *get() { return _poll.get(); };
     bool is_running() const { return _is_running; };
 
     void start(OnEventFn on_event);
     void stop();
 
   private:
-    uv_poll_t _poll;
+    UVHandlePtr<uv_poll_t> _poll;
     OnEventFn _on_event;
     bool _is_running;
   };

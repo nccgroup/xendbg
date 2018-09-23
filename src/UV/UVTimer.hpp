@@ -9,6 +9,8 @@
 
 #include <uv.h>
 
+#include "UVUtil.hpp"
+
 namespace xd::uv {
 
   class UVLoop;
@@ -18,21 +20,22 @@ namespace xd::uv {
     using OnTickFn = std::function<bool()>;
 
     UVTimer(UVLoop &loop);
-    ~UVTimer();
+    ~UVTimer() = default;
 
-    UVTimer(UVTimer&& other) = default;
+    UVTimer(UVTimer&& other);
+    UVTimer& operator=(UVTimer&& other);
+
     UVTimer(const UVTimer& other) = delete;
-    UVTimer& operator=(UVTimer&& other) = default;
     UVTimer& operator=(const UVTimer& other) = delete;
 
-    uv_timer_t *get() { return &_timer; };
+    uv_timer_t *get() { return _timer.get(); };
     bool is_running() const { return _is_running; };
 
     void start(OnTickFn on_tick, uint64_t initial_delay, uint64_t interval);
     void stop();
 
   private:
-    uv_timer_t _timer;
+    UVHandlePtr<uv_timer_t> _timer;
     OnTickFn _on_tick;
     bool _is_running;
   };

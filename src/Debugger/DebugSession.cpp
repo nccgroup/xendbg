@@ -10,12 +10,9 @@ using xd::dbg::DebugSession;
 using xd::xen::Address ;
 using xd::xen::DomID;
 
-DebugSession::DebugSession(xen::XenHandle& xen, xen::DomID domid)
-  : _xen(xen), _domain(xen, domid), _vcpu_id(0)
+DebugSession::DebugSession(xen::Domain domain)
+  : _domain(std::move(domain)), _vcpu_id(0)
 {
-  _domain.pause();
-  _domain.set_debugging(true);
-
   const auto mode =
       (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
 
@@ -26,8 +23,18 @@ DebugSession::DebugSession(xen::XenHandle& xen, xen::DomID domid)
 }
 
 DebugSession::~DebugSession() {
-  _domain.unpause();
   cs_close(&_capstone);
+}
+
+void DebugSession::attach() {
+  _domain.set_debugging(true);
+  _domain.pause();
+}
+
+void DebugSession::detach() {
+  for (const auto address : get_breakpoints())
+    remove_breakpoint(address);
+  _domain.unpause();
 }
 
 std::optional<Address> DebugSession::check_breakpoint_hit() {

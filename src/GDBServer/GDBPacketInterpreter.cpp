@@ -237,8 +237,8 @@ void xd::gdbsrv::interpret_packet(
         connection.send(NotSupportedResponse());
       },
       [&](const DetachRequest &req) {
-        // TODO
         connection.send(OKResponse());
+        connection.stop();
       },
   };
 

@@ -12,7 +12,6 @@
 #include "GDBPacketQueue.hpp"
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
-#include "../UV/UVIdle.hpp"
 #include "../UV/UVLoop.hpp"
 #include "../UV/UVTimer.hpp"
 
@@ -22,18 +21,23 @@ namespace xd::gdbsrv {
 
   class GDBConnection {
   public:
-    using OnReceiveFn = std::function<void(const pkt::GDBRequestPacket&)>;
+    using OnReceiveFn = std::function<void(GDBConnection&, const pkt::GDBRequestPacket&)>;
+    using OnCloseFn = std::function<void()>;
+    using OnErrorFn = std::function<void()>;
 
     GDBConnection(uv::UVLoop &loop, uv_stream_t *connection);
-    ~GDBConnection();
+    ~GDBConnection() = default;
 
-    GDBConnection(GDBConnection&& other) = default;
+    GDBConnection(GDBConnection&& other);
+    GDBConnection& operator=(GDBConnection&& other);
+
     GDBConnection(const GDBConnection& other) = delete;
-    GDBConnection& operator=(GDBConnection&& other) = default;
     GDBConnection& operator=(const GDBConnection& other) = delete;
 
+    bool is_running() const { return _is_running; };
+
     void disable_ack_mode() { _ack_mode = false; };
-    void start(OnReceiveFn on_receive);
+    void start(OnReceiveFn on_receive, OnCloseFn on_close, OnErrorFn on_error);
     void stop();
 
     void send(const pkt::GDBResponsePacket &packet);
@@ -41,12 +45,16 @@ namespace xd::gdbsrv {
     uv::UVTimer &add_timer();
 
   private:
+    static void close_connection(uv_stream_t *connection);
+
     uv::UVLoop &_loop;
-    uv::UVIdle _idle;
-    uv_stream_t *_connection;
+    uv::UVTimer _timer;
+    std::unique_ptr<uv_stream_t, decltype(&close_connection)> _connection;
     GDBPacketQueue _input_queue;
-    bool _ack_mode;
+    bool _ack_mode, _is_running, _is_initializing;
     OnReceiveFn _on_receive;
+    OnCloseFn _on_close;
+    OnErrorFn _on_error;
     std::vector<uv::UVTimer> _timers;
 
     static void alloc_buffer(uv_handle_t *h, size_t suggested, uv_buf_t *buf) noexcept;

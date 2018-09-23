@@ -2,6 +2,8 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
+#include <iostream>
+
 #include "../Util/pop_ret.hpp"
 #include "XenException.hpp"
 #include "XenStore.hpp"

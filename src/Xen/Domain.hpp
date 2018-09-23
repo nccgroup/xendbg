@@ -16,7 +16,7 @@ namespace xd::xen {
 
   class Domain {
   public:
-    Domain(XenHandle& xen, DomID domid);
+    Domain(XenHandlePtr xen, DomID domid);
 
     bool operator==(const Domain &other) const {
       return _domid == other._domid;
@@ -31,17 +31,11 @@ namespace xd::xen {
     DomInfo get_info() const;
     int get_word_size() const;
 
-    //void reboot() const;
 
     template<typename InitFn_t, typename CleanupFn_t>
     void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) const {
-      _xen.get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
+      _xen->get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
     }
-
-    /*
-    void read_memory(Address address, void *data, size_t size);
-    void write_memory(Address address, void *data, size_t size);
-    */
 
     MemInfo map_meminfo() const;
     MappedMemory map_memory(Address address, size_t size, int prot) const;
@@ -58,9 +52,15 @@ namespace xd::xen {
     void shutdown(int reason) const;
     void destroy() const;
 
+    /*
+    void reboot() const;
+    void read_memory(Address address, void *data, size_t size);
+    void write_memory(Address address, void *data, size_t size);
+    */
+
   private:
-    XenHandle& _xen;
-    const DomID _domid;
+    XenHandlePtr _xen;
+    DomID _domid;
   };
 
 }

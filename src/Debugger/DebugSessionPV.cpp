@@ -19,20 +19,17 @@ using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::Address;
 using xd::xen::Domain;
 using xd::xen::DomID;
-using xd::xen::XenHandle;
 
-xd::dbg::DebugSessionPV::DebugSessionPV(XenHandle &xen, DomID domid)
-  : DebugSession(xen, domid)
+DebugSessionPV::DebugSessionPV(xen::Domain domain)
+  : DebugSession(std::move(domain))
 {
 }
 
-xd::dbg::DebugSessionPV::~DebugSessionPV() {
-  for (const auto &il : _infinite_loops) {
-    remove_breakpoint(il.first);
-  }
+DebugSessionPV::~DebugSessionPV() {
+
 }
 
-void xd::dbg::DebugSessionPV::continue_() {
+void DebugSessionPV::continue_() {
   const auto &domain = get_domain();
 
   // Single step first to move beyond the current breakpoint;
@@ -43,7 +40,7 @@ void xd::dbg::DebugSessionPV::continue_() {
   domain.unpause();
 }
 
-Address xd::dbg::DebugSessionPV::single_step() {
+Address DebugSessionPV::single_step() {
   const auto &domain = get_domain();
 
   domain.pause();
@@ -82,7 +79,17 @@ Address xd::dbg::DebugSessionPV::single_step() {
   return *address_opt;
 }
 
-void xd::dbg::DebugSessionPV::insert_breakpoint(Address address) {
+std::vector<Address> DebugSessionPV::get_breakpoints() {
+  std::vector<Address> addresses;
+  std::transform(_infinite_loops.begin(), _infinite_loops.end(),
+      std::back_inserter(addresses),
+      [](const auto &il) {
+        return il.first;
+      });
+  return addresses;
+}
+
+void DebugSessionPV::insert_breakpoint(Address address) {
   if (_infinite_loops.count(address)) {
     std::cout << "[!]: Tried to insert infinite loop where one already exists." << std::endl;
     return; // TODO?
@@ -98,7 +105,7 @@ void xd::dbg::DebugSessionPV::insert_breakpoint(Address address) {
   *mem = X86_INFINITE_LOOP;
 }
 
-void xd::dbg::DebugSessionPV::remove_breakpoint(Address address) {
+void DebugSessionPV::remove_breakpoint(Address address) {
   std::cout << "Removing infinite loop at " << std::hex << address << std::endl;
 
   const auto mem_handle = get_domain().map_memory(address, 2, PROT_WRITE);
@@ -111,7 +118,7 @@ void xd::dbg::DebugSessionPV::remove_breakpoint(Address address) {
 }
 
 xd::dbg::DebugSession::MaskedMemory
-xd::dbg::DebugSessionPV::read_memory_masking_breakpoints(Address address, size_t length) {
+DebugSessionPV::read_memory_masking_breakpoints(Address address, size_t length) {
   const auto mem_handle = get_domain().map_memory(
       address, length, PROT_READ);
 
@@ -129,7 +136,7 @@ xd::dbg::DebugSessionPV::read_memory_masking_breakpoints(Address address, size_t
   return MaskedMemory(mem_masked);
 }
 
-void xd::dbg::DebugSessionPV::write_memory_retaining_breakpoints(Address address, size_t length, void *data) {
+void DebugSessionPV::write_memory_retaining_breakpoints(Address address, size_t length, void *data) {
   const auto half_overlap_start_address = address-1;
   const auto half_overlap_end_address = address+length-1;
 
@@ -160,7 +167,7 @@ void xd::dbg::DebugSessionPV::write_memory_retaining_breakpoints(Address address
     insert_breakpoint(il_address);
 }
 
-std::optional<Address> xd::dbg::DebugSessionPV::check_breakpoint_hit() {
+std::optional<Address> DebugSessionPV::check_breakpoint_hit() {
   const auto &domain = get_domain();
 
   const auto address = std::visit(util::overloaded {

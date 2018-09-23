@@ -5,6 +5,8 @@
 #ifndef XENDBG_XENHANDLE_HPP
 #define XENDBG_XENHANDLE_HPP
 
+#include <memory>
+
 #include "PrivCmd.hpp"
 #include "XenCtrl.hpp"
 #include "XenForeignMemory.hpp"
@@ -24,14 +26,16 @@ namespace xd::xen {
     XenForeignMemory& get_xen_foreign_memory() { return _xen_foreign_memory; };
     XenStore& get_xenstore() { return _xenstore; };
 
-    std::vector<Domain> get_domains();
-
   private:
     PrivCmd _privcmd;
     XenCtrl _xenctrl;
     XenForeignMemory _xen_foreign_memory;
     XenStore _xenstore;
   };
+
+  using XenHandlePtr = std::shared_ptr<XenHandle>;
+
+  std::vector<Domain> get_domains(XenHandlePtr xen);
 
 }
 

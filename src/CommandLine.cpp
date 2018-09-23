@@ -4,19 +4,15 @@
 
 #include "Debugger/DebugSessionPV.hpp"
 #include "GDBServer/GDBServer.hpp"
-#include "GDBServer/GDBPacketInterpreter.hpp"
 #include "ServerModeController.hpp"
-#include "Xen/XenHandle.hpp"
 
 #include "CommandLine.hpp"
 
 using xd::CommandLine;
 using xd::dbg::DebugSessionPV;
-using xd::gdbsrv::interpret_packet;
 using xd::gdbsrv::GDBServer;
 using xd::xen::DomID;
 using xd::xen::XenException;
-using xd::xen::XenHandle;
 
 CommandLine::CommandLine()
     : _app{"xendbg"}, _base_port(0)

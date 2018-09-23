@@ -15,10 +15,6 @@ namespace xd {
     class UVLoop;
   }
 
-  namespace xen {
-    class XenHandle;
-  }
-
   class CommandLine {
   public:
     CommandLine();

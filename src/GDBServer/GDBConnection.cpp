@@ -23,33 +23,69 @@ public:
 };
 
 GDBConnection::GDBConnection(UVLoop &loop, uv_stream_t *connection)
-  : _loop(loop), _idle(loop), _connection(connection), _ack_mode(true)
+  : _loop(loop), _timer(loop), _connection(connection, &close_connection),
+    _ack_mode(true), _is_running(false)
 {
   _connection->data = this;
 }
 
-GDBConnection::~GDBConnection() {
-  uv_close(uv_upcast<uv_handle_t>(_connection), [](uv_handle_t *close_handle) {
-    free(close_handle);
-  });
+GDBConnection::GDBConnection(GDBConnection&& other)
+  : _loop(other._loop),
+    _timer(std::move(other._timer)),
+    _connection(std::move(other._connection)),
+    _input_queue(std::move(other._input_queue)),
+    _ack_mode(other._ack_mode),
+    _is_running(other._is_running),
+    _is_initializing(other._is_initializing),
+    _on_receive(std::move(other._on_receive)),
+    _on_close(std::move(other._on_close)),
+    _on_error(std::move(other._on_error)),
+    _timers(std::move(other._timers))
+{
+  if (_connection)
+    _connection->data = this;
 }
 
-void GDBConnection::start(OnReceiveFn on_receive) {
+GDBConnection& GDBConnection::operator=(GDBConnection&& other) {
+  _loop = std::move(other._loop);
+  _timer = std::move(other._timer);
+  _connection = std::move(other._connection);
+  if (_connection)
+    _connection->data = this;
+  _input_queue = std::move(other._input_queue);
+  _ack_mode = other._ack_mode;
+  _is_running = other._is_running;
+  _is_initializing = other._is_initializing;
+  _on_receive = std::move(other._on_receive);
+  _on_close = std::move(other._on_close);
+  _on_error = std::move(other._on_error);
+  _timers = std::move(other._timers);
+  return *this;
+}
+
+void GDBConnection::start(OnReceiveFn on_receive, OnCloseFn on_close, OnErrorFn on_error) {
+  _is_running = true;
+  _is_initializing = true;
+
   _on_receive = std::move(on_receive);
+  _on_close = std::move(on_close);
+  _on_error = std::move(on_error);
 
   // Clean up expired timers
-  _idle.start([this]() {
+  _timer.start([this]() {
     _timers.erase(std::remove_if(
           _timers.begin(), _timers.end(),
           [](const auto &timer) {
             return !timer.is_running();
           }),
       _timers.end());
-  });
+    return false;
+  }, 100, 100);
 
-  uv_read_start(uv_upcast<uv_stream_t>(_connection), GDBConnection::alloc_buffer,
+  uv_read_start(uv_upcast<uv_stream_t>(_connection.get()), GDBConnection::alloc_buffer,
     [](uv_stream_t *sock, ssize_t nread, const uv_buf_t *buf) {
       const auto self = (GDBConnection*)sock->data;
+      //std::cout << "RRCV: " << buf->base << std::endl;
 
       if (nread <= 0) {
         uv_close(uv_upcast<uv_handle_t>(sock), [](uv_handle_t *close_handle) {
@@ -57,9 +93,20 @@ void GDBConnection::start(OnReceiveFn on_receive) {
         });
         free(buf->base);
 
+        self->stop();
+        self->_on_close();
+
         if (nread != UV_EOF)
-          throw std::runtime_error("Read failed!");
+          self->_on_error();
+
+      } else if (self->_is_initializing && nread == 1 && *buf->base == '+') {
+
+        self->send_raw(sock, "+");
+        self->_is_initializing = false;
+        free(buf->base);
+
       } else {
+
         auto data = std::vector<char>(buf->base, buf->base + nread);
         auto &input_queue = self->_input_queue;
 
@@ -71,7 +118,7 @@ void GDBConnection::start(OnReceiveFn on_receive) {
           const auto raw_packet = input_queue.pop();
 
           bool valid = validate_packet_checksum(raw_packet);
-          std::cout << "RECV: " << raw_packet.contents << std::endl;
+          //std::cout << "RECV: " << raw_packet.contents << std::endl;
 
           if (self->_ack_mode)
             self->send_raw(sock, valid ? "+" : "-");
@@ -79,10 +126,10 @@ void GDBConnection::start(OnReceiveFn on_receive) {
           if (valid) {
             try { // TODO exception handling
               const auto packet = parse_packet(raw_packet);
-              self->_on_receive(packet);
+              self->_on_receive(*self, packet);
             } catch (const UnknownPacketTypeException &e) {
               self->send(pkt::NotSupportedResponse());
-              std::cout << "[!] " << e.what() << std::endl; // TODO
+              //std::cout << "[!] " << e.what() << std::endl; // TODO
             }
           }
         }
@@ -91,21 +138,20 @@ void GDBConnection::start(OnReceiveFn on_receive) {
 }
 
 void GDBConnection::stop() {
-  uv_read_stop(_connection);
-  uv_close(uvcast::uv_upcast<uv_handle_t>(_connection), [](uv_handle_t *) {
-  });
+  uv_read_stop(_connection.get());
+  _timer.stop();
 
-  _idle.stop();
+  _is_running = false;
 }
 
 void GDBConnection::send(const pkt::GDBResponsePacket &packet) {
   const auto raw_packet = format_packet(packet);
-  send_raw(_connection, raw_packet);
+  send_raw(_connection.get(), raw_packet);
 }
 
 UVTimer &GDBConnection::add_timer() {
   _timers.emplace_back(_loop);
-  return _timers.front();
+  return _timers.back();
 }
 
 void GDBConnection::alloc_buffer(uv_handle_t *h, size_t suggested, uv_buf_t *buf) noexcept {
@@ -136,7 +182,7 @@ std::string GDBConnection::format_packet(const GDBResponsePacket &packet) {
 }
 
 void GDBConnection::send_raw(uv_stream_t *dest, std::string s) {
-  std::cout << "SEND: " << s << std::endl;
+  //std::cout << "SEND: " << s << std::endl;
 
   const auto data = new std::string(std::move(s));
 
@@ -220,4 +266,17 @@ GDBRequestPacket GDBConnection::parse_packet(const GDBPacket &packet) {
   }
 
   throw UnknownPacketTypeException(contents);
+}
+
+void GDBConnection::close_connection(uv_stream_t *connection) {
+  auto req = new uv_shutdown_t;
+  uv_shutdown(req, uv_upcast<uv_stream_t>(connection), [](uv_shutdown_t *req, int status) {
+    if (status < 0)
+      throw std::runtime_error("Shutdown failed!");
+
+    uv_close(uv_upcast<uv_handle_t>(req->handle), [](uv_handle_t *close_handle) {
+      free(close_handle);
+    });
+    free(req);
+  });
 }

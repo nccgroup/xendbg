@@ -6,18 +6,25 @@
 using uvcast::uv_upcast;
 using xd::uv::UVLoop;
 
-UVLoop::UVLoop() {
-  uv_loop_init(&_loop);
+UVLoop::UVLoop()
+  : _loop(new uv_loop_t, &uv_loop_close)
+{
+  uv_loop_init(_loop.get());
 }
 
-UVLoop::~UVLoop() {
-  uv_loop_close(&_loop);
+UVLoop::UVLoop(UVLoop&& other)
+  : _loop(std::move(other._loop))
+{}
+
+UVLoop& UVLoop::operator=(UVLoop&& other) {
+  _loop = std::move(other._loop);
+  return *this;
 }
 
 void UVLoop::start() {
-  uv_run(&_loop, UV_RUN_DEFAULT);
+  uv_run(_loop.get(), UV_RUN_DEFAULT);
 }
 
 void UVLoop::stop() {
-  uv_stop(&_loop);
+  uv_stop(_loop.get());
 }

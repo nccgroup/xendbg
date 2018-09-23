@@ -6,17 +6,20 @@
 #include "XenHandle.hpp"
 
 using xd::xen::Domain;
-using xd::xen::XenHandle;
+using xd::xen::XenHandlePtr;
 
-std::vector<Domain> XenHandle::get_domains() {
-  const auto domid_strs = get_xenstore().read_directory("/local/domain");
+std::vector<Domain> xd::xen::get_domains(XenHandlePtr xen) {
+  auto domid_strs = xen->get_xenstore().read_directory("/local/domain");
+
+  // Exclude domain 0
+  domid_strs.erase(std::remove(domid_strs.begin(), domid_strs.end(), "0"));
 
   std::vector<Domain> domains;
   domains.reserve(domid_strs.size());
   std::transform(domid_strs.begin(), domid_strs.end(), std::back_inserter(domains),
-    [this](const auto& domid_str) {
+    [&](const auto& domid_str) {
       const auto domid = std::stoul(domid_str);
-      return Domain(*this, domid);
+      return Domain(xen, domid);
     });
   return domains;
 }

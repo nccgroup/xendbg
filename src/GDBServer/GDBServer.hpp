@@ -17,6 +17,7 @@
 #include "GDBResponsePacket.hpp"
 #include "GDBRequestPacket.hpp"
 #include "../UV/UVLoop.hpp"
+#include "../UV/UVTimer.hpp"
 
 namespace xd::gdbsrv {
 
@@ -25,20 +26,25 @@ namespace xd::gdbsrv {
     using OnAcceptFn = std::function<void(GDBConnection&)>;
 
   public:
-    GDBServer(uv::UVLoop &loop, const std::string& address_str, uint16_t port);
-    ~GDBServer();
+    GDBServer(uv::UVLoop &loop);
 
-    GDBServer(GDBServer&& other) = default;
+    GDBServer(GDBServer&& other);
+    GDBServer& operator=(GDBServer&& other);
+
     GDBServer(const GDBServer& other) = delete;
-    GDBServer& operator=(GDBServer&& other) = default;
     GDBServer& operator=(const GDBServer& other) = delete;
 
-    void start(OnAcceptFn on_accept);
+    void run(const std::string& address_str, uint16_t port, size_t max_connections,
+        OnAcceptFn on_accept);
 
   private:
+    static void close_server(uv_tcp_t *server);
+
     uv::UVLoop &_loop;
-    uv_tcp_t *_server;
+    uv::UVTimer _timer;
+    std::unique_ptr<uv_tcp_t, decltype(&close_server)> _server;
     OnAcceptFn _on_accept;
+    size_t _max_connections;
 
     std::vector<GDBConnection> _connections;
 

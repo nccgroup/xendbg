@@ -25,6 +25,24 @@ public:
 GDBConnection::GDBConnection(UVTCP tcp)
   : _tcp(std::move(tcp)), _ack_mode(true), _is_initializing(false)
 {
+  _tcp.data = this;
+}
+
+GDBConnection::GDBConnection(GDBConnection&& other)
+  : _tcp(std::move(other._tcp)),
+    _input_queue(std::move(other._input_queue)),
+    _ack_mode(other._ack_mode), _is_initializing(other._is_initializing)
+{
+  _tcp.data = this;
+}
+
+GDBConnection& GDBConnection::operator=(GDBConnection&& other) {
+  _tcp = std::move(other._tcp);
+  _tcp.data = this;
+  _input_queue = std::move(other._input_queue);
+  _ack_mode = other._ack_mode;
+  _is_initializing = other._is_initializing;
+  return *this;
 }
 
 void GDBConnection::start(OnReceiveFn on_receive, OnCloseFn on_close,
@@ -32,26 +50,27 @@ void GDBConnection::start(OnReceiveFn on_receive, OnCloseFn on_close,
 {
   _is_initializing = true;
 
-  // TODO: can't capture THIS pointer here
-  _tcp.read_start([this, on_receive, on_error](auto data) {
-    if (_is_initializing && data.size() == 1 && data.front() == '+') {
-      _tcp.write("+", on_error);
+  _tcp.read_start([on_receive, on_error](auto &tcp, auto data) {
+    auto self = (GDBConnection*)tcp.data;
+
+    if (self->_is_initializing && data.size() == 1 && data.front() == '+') {
+      tcp.write("+", on_error);
     } else {
-      _input_queue.append(std::move(data));
-      while (!_input_queue.empty()) {
-        const auto raw_packet = _input_queue.pop();
+      self->_input_queue.append(std::move(data));
+      while (!self->_input_queue.empty()) {
+        const auto raw_packet = self->_input_queue.pop();
 
         bool valid = validate_packet_checksum(raw_packet);
 
-        if (_ack_mode)
-          _tcp.write(valid ? "+" : "-", on_error);
+        if (self->_ack_mode)
+          tcp.write(valid ? "+" : "-", on_error);
 
         if (valid) {
           try { // TODO exception handling
             const auto packet = parse_packet(raw_packet);
-            on_receive(*this, packet);
+            on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
-            send(pkt::NotSupportedResponse(), on_error);
+            self->send(pkt::NotSupportedResponse(), on_error);
           }
         }
       }

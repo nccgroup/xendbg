@@ -28,6 +28,8 @@ namespace xd::uv {
     UVTimer(const UVTimer& other) = delete;
     UVTimer& operator=(const UVTimer& other) = delete;
 
+    void *data;
+
     uv_timer_t *get() { return _timer.get(); };
     bool is_running() const { return _is_running; };
 

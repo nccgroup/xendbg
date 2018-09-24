@@ -33,6 +33,8 @@ namespace xd::uv {
     UVPoll(const UVPoll& other) = delete;
     UVPoll& operator=(const UVPoll& other) = delete;
 
+    void *data;
+
     uv_poll_t *get() { return _poll.get(); };
     bool is_running() const { return _is_running; };
 

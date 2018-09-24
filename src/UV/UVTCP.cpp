@@ -85,7 +85,7 @@ void UVTCP::read_start(OnReadFn on_read, OnCloseFn on_close, OnErrorFn on_error)
           self->_on_read_error(nread);
       } else {
         auto data = std::vector<char>(buf->base, buf->base + nread);
-        self->_on_read(std::move(data));
+        self->_on_read(*self, std::move(data));
       }
 
       free(buf->base);

@@ -26,8 +26,8 @@ namespace xd::gdbsrv {
     GDBConnection(uv::UVTCP tcp);
     ~GDBConnection() = default;
 
-    GDBConnection(GDBConnection&& other) = default;
-    GDBConnection& operator=(GDBConnection&& other) = default;
+    GDBConnection(GDBConnection&& other);
+    GDBConnection& operator=(GDBConnection&& other);
 
     GDBConnection(const GDBConnection& other) = delete;
     GDBConnection& operator=(const GDBConnection& other) = delete;

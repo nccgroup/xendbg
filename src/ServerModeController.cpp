@@ -87,7 +87,7 @@ void ServerModeController::Instance::run(const std::string& address_str, uint16_
     std::cout << "Error: " << std::strerror(error) << std::endl;
   };
 
-  _server.run(address_str, port, 2, [this, on_error](auto &server, auto &connection) {
+  _server.run(address_str, port, 1, [this, on_error](auto &server, auto &connection) {
     _debugger->attach();
 
     connection.start([this, &server](auto &connection, const auto &packet) {

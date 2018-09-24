@@ -37,7 +37,7 @@ namespace xd::uv {
   class UVTCP {
   public:
     using OnConnectFn = std::function<void(UVTCP&)>;
-    using OnReadFn = std::function<void(std::vector<char>)>;
+    using OnReadFn = std::function<void(UVTCP&, std::vector<char>)>;
     using OnCloseFn = std::function<void()>;
 
     UVTCP(UVLoop &loop);
@@ -48,6 +48,8 @@ namespace xd::uv {
 
     UVTCP(const UVTCP& other) = delete;
     UVTCP& operator=(const UVTCP& other) = delete;
+
+    void *data;
 
     uv_tcp_t *get() { return _tcp.get(); };
 

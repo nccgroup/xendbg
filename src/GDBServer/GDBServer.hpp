@@ -29,8 +29,8 @@ namespace xd::gdbsrv {
   public:
     GDBServer(uv::UVLoop &loop);
 
-    GDBServer(GDBServer&& other) = default;
-    GDBServer& operator=(GDBServer&& other) = default;
+    GDBServer(GDBServer&& other);
+    GDBServer& operator=(GDBServer&& other);
 
     GDBServer(const GDBServer& other) = delete;
     GDBServer& operator=(const GDBServer& other) = delete;

@@ -28,6 +28,8 @@ namespace xd::uv {
     UVSignal(const UVSignal& other) = delete;
     UVSignal& operator=(const UVSignal& other) = delete;
 
+    void *data;
+
     uv_signal_t *get() { return _signal.get(); };
     bool is_running() const { return _is_running; };
 

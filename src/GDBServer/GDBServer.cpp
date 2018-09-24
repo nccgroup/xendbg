@@ -18,7 +18,23 @@ using xd::uv::UVTCP;
 GDBServer::GDBServer(uv::UVLoop &loop)
     : _tcp(loop), _timer(loop)
 {
+  _tcp.data = this;
 };
+
+GDBServer::GDBServer(GDBServer&& other)
+  : _tcp(std::move(other._tcp)),
+    _timer(std::move(other._timer)),
+    _connections(std::move(other._connections))
+{
+  _tcp.data = this;
+}
+
+GDBServer& GDBServer::operator=(GDBServer&& other) {
+  _tcp = std::move(other._tcp);
+  _tcp.data = this;
+  _timer = std::move(other._timer);
+  _connections = std::move(other._connections);
+}
 
 void GDBServer::run(const std::string& address, uint16_t port,
     size_t max_connections, OnAcceptFn on_accept, OnErrorFn on_error)

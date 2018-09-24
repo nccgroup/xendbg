@@ -6,6 +6,7 @@
 #define XENDBG_GDBPACKETINTERPRETER_HPP
 
 #include "GDBConnection.hpp"
+#include "GDBServer.hpp"
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
 
@@ -25,7 +26,8 @@ namespace xd::gdbsrv {
 
   void interpret_packet(
       xd::dbg::DebugSession &debugger,
-      xd::gdbsrv::GDBConnection &client,
+      xd::gdbsrv::GDBServer &server,
+      xd::gdbsrv::GDBConnection &connection,
       const xd::gdbsrv::pkt::GDBRequestPacket &packet);
 }
 

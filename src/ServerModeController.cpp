@@ -52,7 +52,7 @@ void ServerModeController::add_instances() {
       const auto domid = domain.get_domid();
       if (!_instances.count(domid)) {
         std::cout << "[+] Domain " << domid << ": port " << _next_port << std::endl;
-        auto [kv, _] = _instances.emplace(domid, Instance(_loop, domain));
+        auto [kv, _] = _instances.emplace(domid, std::move(Instance(_loop, domain)));
         kv->second.run("127.0.0.1", _next_port++);
       }
     });
@@ -83,15 +83,17 @@ ServerModeController::Instance::Instance(UVLoop &loop, xen::Domain domain)
 }
 
 void ServerModeController::Instance::run(const std::string& address_str, uint16_t port) {
-  _server.run(address_str, port, 1, [this](auto &connection) {
+  const auto on_error = [](int error) {
+    std::cout << "Error: " << std::strerror(error) << std::endl;
+  };
+
+  _server.run(address_str, port, 2, [this, on_error](auto &server, auto &connection) {
     _debugger->attach();
 
-    connection.start([this](auto &connection, const auto &packet) {
-      interpret_packet(*_debugger, connection, packet);
+    connection.start([this, &server](auto &connection, const auto &packet) {
+      interpret_packet(*_debugger, server, connection, packet);
     }, [this]() {
       _debugger->detach();
-    }, []() {
-      std::cout << "Error!" << std::endl; // TODO
-    });
-  });
+    }, on_error);
+  }, on_error);
 }

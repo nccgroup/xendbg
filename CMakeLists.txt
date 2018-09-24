@@ -94,6 +94,7 @@ add_executable(xendbg
   src/UV/UVIdle.hpp src/UV/UVIdle.cpp
   src/UV/UVSignal.hpp src/UV/UVSignal.cpp
   src/UV/UVPoll.hpp src/UV/UVPoll.cpp
+  src/UV/UVTCP.hpp src/UV/UVTCP.cpp
   src/UV/UVTimer.hpp src/UV/UVTimer.cpp)
 
 target_link_libraries(xendbg

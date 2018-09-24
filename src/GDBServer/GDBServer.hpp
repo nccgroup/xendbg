@@ -17,38 +17,35 @@
 #include "GDBResponsePacket.hpp"
 #include "GDBRequestPacket.hpp"
 #include "../UV/UVLoop.hpp"
+#include "../UV/UVTCP.hpp"
 #include "../UV/UVTimer.hpp"
 
 namespace xd::gdbsrv {
 
   class GDBServer {
   public:
-    using OnAcceptFn = std::function<void(GDBConnection&)>;
+    using OnAcceptFn = std::function<void(GDBServer&, GDBConnection&)>;
 
   public:
     GDBServer(uv::UVLoop &loop);
 
-    GDBServer(GDBServer&& other);
-    GDBServer& operator=(GDBServer&& other);
+    GDBServer(GDBServer&& other) = default;
+    GDBServer& operator=(GDBServer&& other) = default;
 
     GDBServer(const GDBServer& other) = delete;
     GDBServer& operator=(const GDBServer& other) = delete;
 
-    void run(const std::string& address_str, uint16_t port, size_t max_connections,
-        OnAcceptFn on_accept);
+    void run(const std::string& address, uint16_t port, size_t max_connections,
+        OnAcceptFn on_accept, uv::OnErrorFn on_error);
+
+    void broadcast(const pkt::GDBResponsePacket &packet,
+        uv::OnErrorFn on_error);
 
   private:
-    static void close_server(uv_tcp_t *server);
-
-    uv::UVLoop &_loop;
+    uv::UVTCP _tcp;
     uv::UVTimer _timer;
-    std::unique_ptr<uv_tcp_t, decltype(&close_server)> _server;
-    OnAcceptFn _on_accept;
-    size_t _max_connections;
 
     std::vector<GDBConnection> _connections;
-
-    static void on_connect(uv_stream_t *server, int status);
   };
 
 }

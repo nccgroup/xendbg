@@ -67,6 +67,7 @@ void GDBConnection::start(OnReceiveFn on_receive, OnCloseFn on_close,
 
         if (valid) {
           try { // TODO exception handling
+            std::cout << "RECV: " << raw_packet.contents << std::endl;
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
@@ -84,6 +85,7 @@ void GDBConnection::stop() {
 
 void GDBConnection::send(const pkt::GDBResponsePacket &packet, OnErrorFn on_error)
 {
+  std::cout << "RECV: " << packet.to_string() << std::endl;
   _tcp.write(format_packet(packet), on_error);
 }
 

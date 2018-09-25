@@ -95,9 +95,9 @@ void DebugSessionPV::insert_breakpoint(Address address) {
     std::cout << "[!]: Tried to insert infinite loop where one already exists." << std::endl;
     return; // TODO?
   }
-  std::cout << "Inserting infinite loop at " << std::hex << address << std::endl;
+  //std::cout << "Inserting infinite loop at " << std::hex << address << std::endl;
 
-  const auto mem_handle = get_domain().map_memory(address, 2, PROT_READ | PROT_WRITE);
+  const auto mem_handle = get_domain().map_memory<char>(address, 2, PROT_READ | PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
 
   const auto orig_bytes = *mem;
@@ -111,9 +111,9 @@ void DebugSessionPV::remove_breakpoint(Address address) {
     std::cout << "[!]: Tried to remove infinite loop where one does not exist." << std::endl;
     return; // TODO?
   }
-  std::cout << "Removing infinite loop at " << std::hex << address << std::endl;
+  //std::cout << "Removing infinite loop at " << std::hex << address << std::endl;
 
-  const auto mem_handle = get_domain().map_memory(address, 2, PROT_WRITE);
+  const auto mem_handle = get_domain().map_memory<char>(address, 2, PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
 
   const auto orig_bytes = _infinite_loops.at(address);
@@ -124,7 +124,7 @@ void DebugSessionPV::remove_breakpoint(Address address) {
 
 xd::dbg::DebugSession::MaskedMemory
 DebugSessionPV::read_memory_masking_breakpoints(Address address, size_t length) {
-  const auto mem_handle = get_domain().map_memory(
+  const auto mem_handle = get_domain().map_memory<char>(
       address, length, PROT_READ);
 
   const auto mem_masked = (unsigned char*)malloc(length);
@@ -162,7 +162,7 @@ void DebugSessionPV::write_memory_retaining_breakpoints(Address address, size_t 
     }
   }
 
-  const auto mem_handle = get_domain().map_memory(address, length, PROT_WRITE);
+  const auto mem_handle = get_domain().map_memory<char>(address, length, PROT_WRITE);
   const auto mem_orig = (char*)mem_handle.get() + (length - length_orig);
   memcpy((void*)mem_orig, data, length_orig);
 
@@ -184,7 +184,7 @@ std::optional<Address> DebugSessionPV::check_breakpoint_hit() {
     }
   }, get_domain().get_cpu_context(get_vcpu_id()));
 
-  const auto mem_handle = get_domain().map_memory(address, 2, PROT_READ);
+  const auto mem_handle = get_domain().map_memory<char>(address, 2, PROT_READ);
   const auto mem = (uint16_t*)mem_handle.get();
 
   if (*mem == X86_INFINITE_LOOP && _infinite_loops.count(address))

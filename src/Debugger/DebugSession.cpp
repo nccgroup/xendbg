@@ -55,9 +55,9 @@ void DebugSession::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
 std::pair<std::optional<Address>, std::optional<Address>>
 DebugSession::get_address_of_next_instruction() {
   const auto read_word = [this](Address addr) {
-    const auto mem_handle = _domain.map_memory(addr, sizeof(uint64_t), PROT_READ);
+    const auto mem_handle = _domain.map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
     if (_domain.get_word_size() == sizeof(uint64_t)) {
-      return *((uint64_t*)mem_handle.get());
+      return *mem_handle;
     } else {
       return (uint64_t)(*((uint32_t*)mem_handle.get()));
     }
@@ -73,13 +73,12 @@ DebugSession::get_address_of_next_instruction() {
   const auto address = read_register<reg::x86_32::eip, reg::x86_64::rip>();
 
   const auto read_size = (2*X86_MAX_INSTRUCTION_SIZE);
-  const auto mem_handle = _domain.map_memory(address, read_size, PROT_READ);
-  const auto mem = (uint8_t*)mem_handle.get();
+  const auto mem_handle = _domain.map_memory<uint8_t>(address, read_size, PROT_READ);
 
   cs_insn *instrs;
 	size_t instrs_size;
 
-  instrs_size = cs_disasm(_capstone, mem, read_size-1, address, 0, &instrs);
+  instrs_size = cs_disasm(_capstone, mem_handle.get(), read_size-1, address, 0, &instrs);
 
   if (instrs_size < 2)
     throw std::runtime_error("Failed to read instructions!");

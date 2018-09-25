@@ -86,6 +86,10 @@ void xd::gdbsrv::interpret_packet(
       [&](const QueryMemoryRegionInfoRequest &req) {
         const auto address = req.get_address();
 
+        auto pte = debugger.get_domain().get_page_table_entry(address);
+        std::cout << "PTE: " <<  std::bitset<64>(pte) << std::endl;
+
+        /* TODO: HVM only
         try {
           const auto start = address & XC_PAGE_MASK;
           const auto size = XC_PAGE_SIZE;
@@ -97,6 +101,7 @@ void xd::gdbsrv::interpret_packet(
           error += std::string(": ") + std::strerror(errno);
           connection.send(QueryMemoryRegionInfoErrorResponse(error), on_error);
         }
+        */
       },
       [&](const QueryCurrentThreadIDRequest &req) {
         // TODO

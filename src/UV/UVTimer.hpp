@@ -17,7 +17,7 @@ namespace xd::uv {
 
   class UVTimer {
   public:
-    using OnTickFn = std::function<bool()>;
+    using OnTickFn = std::function<bool(UVTimer&)>;
 
     UVTimer(UVLoop &loop);
     ~UVTimer() = default;

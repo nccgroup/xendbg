@@ -13,6 +13,8 @@
 #include "../Xen/Common.hpp"
 #include "../Xen/Domain.hpp"
 #include "../Util/overloaded.hpp"
+#include "../UV/UVLoop.hpp"
+#include "../UV/UVTimer.hpp"
 
 namespace xd::dbg {
 
@@ -43,7 +45,9 @@ namespace xd::dbg {
     using MaskedMemory = std::unique_ptr<unsigned char>;
 
   public:
-    DebugSession(xen::Domain domain);
+    using OnBreakpointHitFn = std::function<void(xen::Address)>;
+
+    DebugSession(uv::UVLoop &loop, xen::Domain domain);
     virtual ~DebugSession();
 
     const xen::Domain& get_domain() { return _domain; };
@@ -55,6 +59,7 @@ namespace xd::dbg {
     virtual void continue_() = 0;
     virtual xen::Address single_step() = 0;
     virtual std::optional<xen::Address> check_breakpoint_hit() = 0;
+    void notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit); // TODO
 
     virtual std::vector<xen::Address> get_breakpoints() = 0;
     virtual void insert_breakpoint(xen::Address address) = 0;
@@ -82,6 +87,7 @@ namespace xd::dbg {
 
   private:
     const xen::Domain _domain;
+    uv::UVTimer _timer;
 
     csh _capstone;
     xen::VCPU_ID _vcpu_id;

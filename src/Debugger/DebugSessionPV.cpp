@@ -16,12 +16,13 @@ using xd::dbg::DebugSessionPV;
 using xd::dbg::NoSuchSymbolException;
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
+using xd::uv::UVLoop;
 using xd::xen::Address;
 using xd::xen::Domain;
 using xd::xen::DomID;
 
-DebugSessionPV::DebugSessionPV(xen::Domain domain)
-  : DebugSession(std::move(domain))
+DebugSessionPV::DebugSessionPV(UVLoop &loop, xen::Domain domain)
+  : DebugSession(loop, std::move(domain))
 {
 }
 
@@ -106,12 +107,16 @@ void DebugSessionPV::insert_breakpoint(Address address) {
 }
 
 void DebugSessionPV::remove_breakpoint(Address address) {
+  if (!_infinite_loops.count(address)) {
+    std::cout << "[!]: Tried to remove infinite loop where one does not exist." << std::endl;
+    return; // TODO?
+  }
   std::cout << "Removing infinite loop at " << std::hex << address << std::endl;
 
   const auto mem_handle = get_domain().map_memory(address, 2, PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
 
-  const auto orig_bytes = _infinite_loops[address];
+  const auto orig_bytes = _infinite_loops.at(address);
   *mem = orig_bytes;
 
   _infinite_loops.erase(_infinite_loops.find(address));

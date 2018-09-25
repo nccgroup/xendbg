@@ -16,6 +16,7 @@
 #include "DebugSession.hpp"
 #include "../Xen/Domain.hpp"
 #include "../Util/overloaded.hpp"
+#include "../UV/UVLoop.hpp"
 
 namespace xd::dbg {
 
@@ -24,7 +25,7 @@ namespace xd::dbg {
     using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
 
   public:
-    DebugSessionPV(xen::Domain domain);
+    DebugSessionPV(uv::UVLoop &loop, xen::Domain domain);
     ~DebugSessionPV() override;
 
     void continue_() override;

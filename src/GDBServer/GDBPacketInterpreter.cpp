@@ -30,9 +30,8 @@ void xd::gdbsrv::interpret_packet(
 
   const auto visitor = util::overloaded {
       [&](const InterruptRequest &req) {
-        // TODO: actually interrupt the guest
+        debugger.get_domain().pause();
         server.broadcast(StopReasonSignalResponse(SIGSTOP, 1), on_error); // TODO
-        //connection.send(StopReasonSignalResponse(SIGSTOP, 1), on_error); // TODO
       },
       [&](const StartNoAckModeRequest &req) {
         connection.disable_ack_mode();
@@ -111,12 +110,10 @@ void xd::gdbsrv::interpret_packet(
       },
       [&](const StopReasonRequest &req) {
         server.broadcast(StopReasonSignalResponse(SIGTRAP, 1), on_error); // TODO
-        //connection.send(StopReasonSignalResponse(SIGTRAP, 1), on_error); // TODO
       },
       [&](const KillRequest &req) {
         debugger.get_domain().destroy();
         server.broadcast(TerminatedResponse(SIGKILL), on_error);
-        //connection.send(TerminatedResponse(SIGKILL), on_error);
       },
       [&](const SetThreadRequest &req) {
         connection.send(OKResponse(), on_error);
@@ -159,14 +156,6 @@ void xd::gdbsrv::interpret_packet(
             [&](const auto &regs) {
               connection.send(GeneralRegistersBatchReadResponse(regs), on_error);
             }
-            /*
-            [&](const RegistersX86_32 &regs) {
-              connection.send(GeneralRegistersBatchReadResponse(regs), on_error);
-            },
-            [&](const RegistersX86_64 &regs) {
-              connection.send(GeneralRegistersBatchReadResponse(regs), on_error);
-            }
-            */
         }, regs);
       },
       [&](const GeneralRegistersBatchWriteRequest &req) {
@@ -215,18 +204,10 @@ void xd::gdbsrv::interpret_packet(
       },
       [&](const ContinueRequest &req) {
         debugger.continue_();
-
-        // TODO
-        /*
-        connection.add_timer().start([&]() {
-          bool hit = debugger.check_breakpoint_hit().has_value();
-          if (hit) {
-            debugger.get_domain().pause();
-            connection.send(StopReasonSignalResponse(SIGTRAP, 1)); // TODO
-          }
-          return hit;
-        }, 0, 100);
-        */
+        debugger.notify_breakpoint_hit([&](auto /*address*/) {
+          debugger.get_domain().pause();
+          connection.send(StopReasonSignalResponse(SIGTRAP, 1), on_error); // TODO
+        });
 
         connection.send(OKResponse(), on_error);
       },

@@ -78,7 +78,7 @@ void ServerModeController::prune_instances() {
 
 ServerModeController::Instance::Instance(UVLoop &loop, xen::Domain domain)
   : _domid(domain.get_domid()),  _server(loop),
-    _debugger(new dbg::DebugSessionPV(std::move(domain)))
+    _debugger(new dbg::DebugSessionPV(loop, std::move(domain)))
 {
 }
 

@@ -34,6 +34,7 @@ GDBServer& GDBServer::operator=(GDBServer&& other) {
   _tcp.data = this;
   _timer = std::move(other._timer);
   _connections = std::move(other._connections);
+  return *this;
 }
 
 void GDBServer::run(const std::string& address, uint16_t port,

@@ -39,7 +39,7 @@ void UVTimer::start(OnTickFn on_tick, uint64_t initial_delay, uint64_t interval)
 
   uv_timer_start(_timer.get(), [](uv_timer_t *timer) {
     auto self = (UVTimer*) timer->data;
-    if (self->_on_tick())
+    if (self->_on_tick(*self))
       self->stop();
   }, initial_delay, interval);
 }

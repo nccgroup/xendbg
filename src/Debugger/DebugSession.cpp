@@ -7,12 +7,15 @@
 #include "DebugSession.hpp"
 
 using xd::dbg::DebugSession;
-using xd::xen::Address ;
+using xd::uv::UVLoop;
+using xd::xen::Address;
 using xd::xen::DomID;
 
-DebugSession::DebugSession(xen::Domain domain)
-  : _domain(std::move(domain)), _vcpu_id(0)
+DebugSession::DebugSession(UVLoop &loop, xen::Domain domain)
+  : _domain(std::move(domain)), _timer(loop), _vcpu_id(0)
 {
+  _timer.data = this; // TODO
+
   const auto mode =
       (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
 
@@ -37,8 +40,16 @@ void DebugSession::detach() {
   _domain.unpause();
 }
 
-std::optional<Address> DebugSession::check_breakpoint_hit() {
-  return std::optional<Address>();
+void DebugSession::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
+  _timer.start([on_breakpoint_hit](auto &timer) {
+    auto self = (DebugSession*) timer.data;
+    auto address = self->check_breakpoint_hit();
+    if (address) {
+      timer.stop();
+      on_breakpoint_hit(*address);
+    }
+    return address.has_value();
+  }, 100, 100);
 }
 
 std::pair<std::optional<Address>, std::optional<Address>>
@@ -51,13 +62,12 @@ DebugSession::get_address_of_next_instruction() {
       return (uint64_t)(*((uint32_t*)mem_handle.get()));
     }
   };
-  const auto read_reg_cs = [this](auto cs_reg)
+
+  // TODO: need functionality to get register by name
+  const auto read_regs_from_cs_reg = [this](const auto &regs, auto cs_reg)
   {
     const auto reg_name = cs_reg_name(_capstone, cs_reg);
-    assert(reg_name != nullptr);
-    // TODO:regs --- should implement register context iterator for this
     return 0;
-    //return _domain->read_register(std::string(reg_name));
   };
 
   const auto address = read_register<reg::x86_32::eip, reg::x86_64::rip>();
@@ -95,10 +105,11 @@ DebugSession::get_address_of_next_instruction() {
       const auto dest = base + (op.mem.scale * index); // TODO: is this right?
       std::cout << "mem disp: " << op.mem.disp << std::endl;
       */
-      throw std::runtime_error("JMP/CALL(MEM) not supported!");
+      throw std::runtime_error("JMP/CALL(MEM) not supported!"); // TODO
     } else if (op.type == X86_OP_REG) {
-      const auto reg_value = read_reg_cs(op.reg);
-      return std::make_pair(std::nullopt, reg_value);
+      //const auto reg_value = read_regs_from_cs_reg(op.reg);
+      //return std::make_pair(std::nullopt, reg_value);
+      throw std::runtime_error("JMP/CALL(REG) not supported!"); // TODO
     } else {
       throw std::runtime_error("JMP/CALL operand type not supported?");
     }

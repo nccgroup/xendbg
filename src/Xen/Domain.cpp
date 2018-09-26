@@ -96,14 +96,10 @@ MemoryPermissions Domain::get_memory_permissions(Address address) const {
 
 #define READ_PAGETABLE_LEVEL(level, virtual_address, mfn, next_mfn, flags) \
 { \
-  std::cout << std::hex << "vaddr = " << (virtual_address) << std::endl; \
-  std::cout << "mfn = " << (mfn) << std::endl; \
   const auto table = _xen->get_xen_foreign_memory().map_mfn<PTE>(\
       *this, (mfn), 0, XC_PAGE_SIZE, PROT_READ); \
   const auto offset = PTE_OFFSET(level, (virtual_address)); \
-  std::cout << "offset = " << offset << std::endl; \
   const auto pte = (table.get())[offset]; \
-  std::cout << std::hex << "pte = " << std::bitset<64>(pte) << std::endl; \
   next_mfn = GET_PTE_MFN(pte); \
   flags = GET_PTE_FLAGS(pte); \
 }
@@ -120,27 +116,23 @@ xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
 
   READ_PAGETABLE_LEVEL(4, address, cr3 >> XC_PAGE_SHIFT, mfn, flags);
 
-  std::cout << "L4: " << std::bitset<64>(flags) << std::endl;
   if (!(flags & _PAGE_PRESENT))
     throw std::runtime_error("No such page!");
 
   READ_PAGETABLE_LEVEL(3, address, mfn, mfn, flags);
 
-  std::cout << "L3: " << std::bitset<64>(flags) << std::endl;
   if (!(flags & _PAGE_PRESENT) || (flags & _PAGE_PSE))
     throw std::runtime_error("No such page!");
 
   READ_PAGETABLE_LEVEL(2, address, mfn, mfn, flags);
 
-  std::cout << "L2: " << std::bitset<64>(flags) << std::endl;
   if (!(flags & _PAGE_PRESENT) || (flags & _PAGE_PSE))
     throw std::runtime_error("No such page!");
 
   READ_PAGETABLE_LEVEL(1, address, mfn, mfn, flags);
 
-  std::cout << "L1: " << std::bitset<64>(flags) << std::endl;
-
   PageTableEntry pte;
+
   pte.present = (flags & _PAGE_PRESENT);
   pte.rw = (flags & _PAGE_RW);
   pte.user = (flags & _PAGE_USER);
@@ -154,12 +146,6 @@ xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
   pte.nx = (flags & _PAGE_NX);
   pte.gnttab = (flags & _PAGE_GNTTAB);
   pte.guest_kernel = (flags & _PAGE_GUEST_KERNEL);
-
-  std::cout << ((pte.nx) ? "" : "~") << "NX" << std::endl;
-  std::cout << ((pte.rw) ? "" : "~") << "RW" << std::endl;
-  std::cout << ((pte.user) ? "" : "~") << "user" << std::endl;
-  std::cout << ((pte.accessed) ? "" : "~") << "accessed" << std::endl;
-  std::cout << ((pte.present) ? "" : "~") << "present" << std::endl;
 
   return pte;
 }
@@ -206,6 +192,7 @@ void Domain::reboot() const {
 }
 */
 
+/*
 void Domain::read_memory(Address address, void *data, size_t size) const {
   hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio, [address, data, size](auto u) {
     auto& memio = u->gdbsx_guest_memio;
@@ -253,3 +240,4 @@ xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
     return (mfn == ~0U) ? INVALID_MFN : mfn;
   }
 }
+*/

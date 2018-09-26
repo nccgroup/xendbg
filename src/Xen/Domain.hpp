@@ -57,9 +57,11 @@ namespace xd::xen {
     void shutdown(int reason) const;
     void destroy() const;
 
-    //void reboot() const;
+    /*
+    void reboot() const;
     void read_memory(Address address, void *data, size_t size) const;
     void write_memory(Address address, void *data, size_t size) const;
+    */
 
     xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
 

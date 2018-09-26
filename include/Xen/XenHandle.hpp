@@ -9,6 +9,7 @@
 
 #include "PrivCmd.hpp"
 #include "XenCtrl.hpp"
+#include "XenEventChannel.hpp"
 #include "XenForeignMemory.hpp"
 #include "XenStore.hpp"
 
@@ -25,10 +26,12 @@ namespace xd::xen {
     XenCtrl& get_xenctrl() { return _xenctrl; };
     XenForeignMemory& get_xen_foreign_memory() { return _xen_foreign_memory; };
     XenStore& get_xenstore() { return _xenstore; };
+    XenEventChannel& get_event_channel() { return _xen_event_channel; };
 
   private:
     PrivCmd _privcmd;
     XenCtrl _xenctrl;
+    XenEventChannel _xen_event_channel;
     XenForeignMemory _xen_foreign_memory;
     XenStore _xenstore;
   };

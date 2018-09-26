@@ -20,8 +20,8 @@ using xd::xen::Domain;
 using xd::xen::MemInfo;
 using xd::xen::WordSize;
 using xd::xen::XenCtrl;
+using xd::xen::XenEventChannel;
 using xd::xen::XenException;
-using xd::xen::MemoryPermissions;
 
 #define GET_HVM(_regs, _hvm, _reg) \
   _regs.get<_reg>() = _hvm._reg;
@@ -41,6 +41,7 @@ using xd::xen::MemoryPermissions;
   _pv.user_regs._reg = _regs.get<_reg>();
 
 static RegistersX86Any convert_from_hvm(const struct hvm_hw_cpu &hvm) {
+  using namespace xd::reg::x86;
   using namespace xd::reg::x86_64;
 
   RegistersX86_64 regs;
@@ -68,15 +69,14 @@ static RegistersX86Any convert_from_hvm(const struct hvm_hw_cpu &hvm) {
   GET_HVM2(regs, hvm, cs, cs_base);
   GET_HVM2(regs, hvm, ds, ds_base);
   GET_HVM2(regs, hvm, ss, ss_base);
+  GET_HVM(regs, hvm, cr3);
 
   return regs;
 }
 
-static hvm_hw_cpu convert_to_hvm(const RegistersX86_64 &regs) {
+static hvm_hw_cpu convert_to_hvm(const RegistersX86_64 &regs, hvm_hw_cpu hvm) {
+  using namespace xd::reg::x86;
   using namespace xd::reg::x86_64;
-
-  struct hvm_hw_cpu hvm;
-  memset(&hvm, 0x00, sizeof(struct hvm_hw_cpu));
 
   SET_HVM(regs, hvm, rax);
   SET_HVM(regs, hvm, rbx);
@@ -101,6 +101,7 @@ static hvm_hw_cpu convert_to_hvm(const RegistersX86_64 &regs) {
   SET_HVM2(regs, hvm, cs, cs_base);
   SET_HVM2(regs, hvm, ds, ds_base);
   SET_HVM2(regs, hvm, ss, ss_base);
+  SET_HVM(regs, hvm, cr3);
 
   return hvm;
 }
@@ -261,7 +262,7 @@ DomInfo XenCtrl::get_domain_info(const Domain &domain) const {
 RegistersX86Any XenCtrl::get_domain_cpu_context(const Domain &domain,
     VCPU_ID vcpu_id) const
 {
-  if (domain.get_info().hvm == 1) {
+  if (domain.get_info().hvm) {
     auto context = get_domain_cpu_context_hvm(domain, vcpu_id);
     return convert_from_hvm(context);
   } else {
@@ -282,13 +283,11 @@ RegistersX86Any XenCtrl::get_domain_cpu_context(const Domain &domain,
 void XenCtrl::set_domain_cpu_context(const Domain &domain,
     const RegistersX86Any& regs, VCPU_ID vcpu_id) const
 {
-  if (domain.get_info().hvm == 1) {
-    /*
-    const auto regs64 = std::get<RegistersX86_64>(regs); // TODO
-    const auto new_context = convert_to_hvm(regs64);
+  if (domain.get_info().hvm) {
+    const auto regs64 = std::get<RegistersX86_64>(regs);
+    const auto old_context = get_domain_cpu_context_hvm(domain, vcpu_id);
+    const auto new_context = convert_to_hvm(regs64, old_context);
     set_domain_cpu_context_hvm(domain, new_context, vcpu_id);
-    */
-    throw std::runtime_error("Not yet supported!");
   } else {
     auto old_context = get_domain_cpu_context_pv(domain, vcpu_id);
     const int word_size = get_domain_word_size(domain);
@@ -340,6 +339,7 @@ MemInfo XenCtrl::map_domain_meminfo(const Domain &domain) const {
   return meminfo;
 }
 
+/*
 MemoryPermissions XenCtrl::get_domain_memory_permissions(
     const Domain &domain, Address address) const
 {
@@ -355,6 +355,7 @@ MemoryPermissions XenCtrl::get_domain_memory_permissions(
 
   return permissions;
 }
+*/
 
 void XenCtrl::set_domain_debugging(const Domain &domain, bool enable, VCPU_ID vcpu_id) const {
   if (vcpu_id > domain.get_info().max_vcpu_id)
@@ -441,6 +442,52 @@ struct hvm_hw_cpu XenCtrl::get_domain_cpu_context_hvm(const Domain &domain, VCPU
         std::to_string(domain.get_domid()), -err);
   }
   return cpu_context;
+}
+
+XenEventChannel::RingPageAndPort XenCtrl::enable_monitor_for_domain(const Domain &domain) const {
+  uint32_t port;
+  void *ring_page = xc_monitor_enable(_xenctrl.get(), domain.get_domid(), &port);
+
+  if (!ring_page) {
+    switch (errno) {
+      case EBUSY:
+        throw XenException("Monitoring is already active for this domain!");
+      case ENODEV:
+        throw XenException("This domain does not support EPT!");
+      default:
+        throw XenException("Failed to enable monitoring: "
+            + std::string(std::strerror(errno)));
+    }
+  }
+
+  return {
+    .ring_page = ring_page,
+    .port = port
+  };
+}
+
+void XenCtrl::disable_monitor_for_domain(const Domain &domain) const {
+  xc_monitor_disable(_xenctrl.get(), domain.get_domid());
+}
+
+void XenCtrl::monitor_software_breakpoint_for_domain(const Domain &domain, bool enable) {
+  xc_monitor_software_breakpoint(_xenctrl.get(), domain.get_domid(), enable);
+}
+
+void XenCtrl::monitor_debug_exceptions_for_domain(const Domain &domain, bool enable, bool sync) {
+  xc_monitor_debug_exceptions(_xenctrl.get(), domain.get_domid(), enable, sync);
+}
+
+void XenCtrl::monitor_cpuid_for_domain(const Domain &domain, bool enable) {
+  xc_monitor_cpuid(_xenctrl.get(), domain.get_domid(), enable);
+}
+
+void XenCtrl::monitor_descriptor_access_for_domain(const Domain &domain, bool enable) {
+  xc_monitor_descriptor_access(_xenctrl.get(), domain.get_domid(), enable);
+}
+
+void XenCtrl::monitor_privileged_call_for_domain(const Domain &domain, bool enable) {
+  xc_monitor_privileged_call(_xenctrl.get(), domain.get_domid(), enable);
 }
 
 void XenCtrl::set_domain_cpu_context_hvm(const Domain &domain, struct hvm_hw_cpu context,

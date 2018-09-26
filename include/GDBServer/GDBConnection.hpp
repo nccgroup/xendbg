@@ -8,11 +8,11 @@
 #include <functional>
 
 #include <uv.h>
+#include <UV/UVTCP.hpp>
 
 #include "GDBPacketQueue.hpp"
 #include "GDBRequestPacket.hpp"
 #include "GDBResponsePacket.hpp"
-#include "../UV/UVTCP.hpp"
 
 namespace xd::gdbsrv {
 

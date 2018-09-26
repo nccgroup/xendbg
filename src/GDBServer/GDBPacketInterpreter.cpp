@@ -89,11 +89,10 @@ void xd::gdbsrv::interpret_packet(
         auto pte = debugger.get_domain().get_page_table_entry(address);
         auto length = XC_PAGE_SIZE;
 
-
-        if (pte.present ) {
+        if (pte.is_present() ) {
           connection.send(pkt::QueryMemoryRegionInfoResponse(
                 address & XC_PAGE_MASK, length,
-                true, pte.rw, !pte.nx), on_error);
+                true, pte.is_rw(), !pte.is_nx()), on_error);
 
         } else {
 
@@ -105,7 +104,7 @@ void xd::gdbsrv::interpret_packet(
           do {
             address2 += XC_PAGE_SIZE;
             pte = debugger.get_domain().get_page_table_entry(address2);
-          } while (!pte.present);
+          } while (!pte.is_present());
 
           length = address2 - address;
           connection.send(pkt::QueryMemoryRegionInfoResponse(

@@ -12,13 +12,13 @@
 #include <unordered_map>
 
 #include <uv.h>
+#include <UV/UVLoop.hpp>
+#include <UV/UVTCP.hpp>
+#include <UV/UVTimer.hpp>
 
 #include "GDBConnection.hpp"
 #include "GDBResponsePacket.hpp"
 #include "GDBRequestPacket.hpp"
-#include "../UV/UVLoop.hpp"
-#include "../UV/UVTCP.hpp"
-#include "../UV/UVTimer.hpp"
 
 namespace xd::gdbsrv {
 

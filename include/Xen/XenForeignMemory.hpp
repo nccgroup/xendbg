@@ -9,11 +9,10 @@
 #include <errno.h>
 #include <memory>
 
-#include "../../src/Xen/BridgeHeaders/xenctrl.h"
-
-// NOTE: This needs to be declared after xenctrl.h.
-// For some reason, including xenforeignmemory.h before xenctrl.h will fail.
-#include "../../src/Xen/BridgeHeaders/xenforeignmemory.h"
+// NOTE: This order is necessary. For some reason, including
+// xenforeignmemory.h before xenctrl.h will fail.
+#include "BridgeHeaders/xenctrl.h"
+#include "BridgeHeaders/xenforeignmemory.h"
 
 #include "Common.hpp"
 #include "XenException.hpp"
@@ -34,11 +33,11 @@ namespace xd::xen {
     template <typename Memory_t, typename Domain_t>
     MappedMemory<Memory_t> map(const Domain_t &domain, Address address, size_t size, int prot) const {
       xen_pfn_t base_mfn = domain.pfn_to_mfn_pv(address >> XC_PAGE_SHIFT);
-      return map_mfn<Memory_t, Domain_t>(domain, base_mfn, address % XC_PAGE_SIZE, size, prot);
+      return map_by_mfn<Memory_t, Domain_t>(domain, base_mfn, address % XC_PAGE_SIZE, size, prot);
     }
 
     template <typename Memory_t, typename Domain_t>
-    MappedMemory<Memory_t> map_mfn(const Domain_t &domain, Address base_mfn, Address offset, size_t size, int prot) const {
+    MappedMemory<Memory_t> map_by_mfn(const Domain_t &domain, Address base_mfn, Address offset, size_t size, int prot) const {
       size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
       auto pages = (xen_pfn_t*)malloc(num_pages * sizeof(xen_pfn_t));

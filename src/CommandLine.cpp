@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 9/19/18.
 //
 
-#include "../include/Debugger/DebugSessionPV.hpp"
-#include "../include/GDBServer/GDBServer.hpp"
+#include <Debugger/DebugSessionPV.hpp>
+#include <GDBServer/GDBServer.hpp>
 #include "ServerModeController.hpp"
 
 #include "CommandLine.hpp"

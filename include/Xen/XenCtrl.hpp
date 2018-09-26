@@ -10,12 +10,12 @@
 #include <memory>
 #include <sys/ioctl.h>
 
-#include "../../src/Xen/BridgeHeaders/xenctrl.h"
-#include "../../src/Xen/BridgeHeaders/xenguest.h"
+#include <Registers/RegistersX86Any.hpp>
 
+#include "BridgeHeaders/xenctrl.h"
+#include "BridgeHeaders/xenguest.h"
 #include "Common.hpp"
-#include "../../src/Xen/MemoryPermissions.hpp"
-#include "../../src/Registers/RegistersX86Any.hpp"
+#include "XenEventChannel.hpp"
 
 namespace xd::xen {
 
@@ -40,8 +40,10 @@ namespace xd::xen {
     WordSize get_domain_word_size(const Domain &domain) const;
 
     MemInfo map_domain_meminfo(const Domain &domain) const;
+    /*
     MemoryPermissions get_domain_memory_permissions(
         const Domain &domain, Address address) const;
+    */
 
     void set_domain_debugging(const Domain &domain, bool enable,
         VCPU_ID vcpu_id) const;
@@ -53,6 +55,15 @@ namespace xd::xen {
 
     void destroy_domain(const Domain &domain) const;
     void shutdown_domain(const Domain &domain, int reason) const;
+
+    XenEventChannel::RingPageAndPort enable_monitor_for_domain(const Domain &domain) const;
+    void disable_monitor_for_domain(const Domain &domain) const;
+
+    void monitor_software_breakpoint_for_domain(const Domain &domain, bool enabled);
+    void monitor_debug_exceptions_for_domain(const Domain &domain, bool enabled, bool sync);
+    void monitor_cpuid_for_domain(const Domain &domain, bool enabled);
+    void monitor_descriptor_access_for_domain(const Domain &domain, bool enabled);
+    void monitor_privileged_call_for_domain(const Domain &domain, bool enabled);
 
   private:
     struct hvm_hw_cpu get_domain_cpu_context_hvm(const Domain &domain, VCPU_ID vcpu_id) const;

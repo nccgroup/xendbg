@@ -1,9 +1,10 @@
 #include <iostream>
 
-#include "../include/GDBServer/GDBPacketInterpreter.hpp"
+#include <GDBServer/GDBPacketInterpreter.hpp>
+#include <UV/UVPoll.hpp>
+#include <UV/UVSignal.hpp>
+
 #include "ServerModeController.hpp"
-#include "../include/UV/UVPoll.hpp"
-#include "../include/UV/UVSignal.hpp"
 
 using xd::gdbsrv::interpret_packet;
 using xd::ServerModeController;

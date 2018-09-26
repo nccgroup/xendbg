@@ -1,6 +1,6 @@
-#include <include/UV/UVCast.hpp>
-#include <include/UV/UVLoop.hpp>
-#include <include/UV/UVTimer.hpp>
+#include <UV/UVCast.hpp>
+#include <UV/UVLoop.hpp>
+#include <UV/UVTimer.hpp>
 
 using uvcast::uv_upcast;
 using xd::uv::close_and_free_handle;

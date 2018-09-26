@@ -26,3 +26,9 @@
   - [x] Expressions
     - [x] Parsing (incl. variables, memory access, symbols, etc.)
     - [x] Evaluation
+
+## Final feature set
+- [x] PV support
+- [ ] HVM support
+- [ ] Sub-registers? (rax -> eax -> ax...)
+- [ ] REPL (redo with CLI11)

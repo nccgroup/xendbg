@@ -2,52 +2,6 @@
 // Created by Spencer Michaels on 8/13/18.
 //
 
-// See tools/libxc/xg_private.h
-#define _PAGE_PRESENT   0x001
-#define _PAGE_RW        0x002
-#define _PAGE_USER      0x004
-#define _PAGE_PWT       0x008
-#define _PAGE_PCD       0x010
-#define _PAGE_ACCESSED  0x020
-#define _PAGE_DIRTY     0x040
-#define _PAGE_PAT       0x080
-#define _PAGE_PSE       0x080
-#define _PAGE_GLOBAL    0x100
-#define _PAGE_GNTTAB    (1U<<22)
-#define _PAGE_NX        (1U<<23)
-#define _PAGE_GUEST_KERNEL (1U<<12)
-
-// See xen/include/asm-x86/x86_64/page.h
-#define PAGETABLE_ORDER 9
-#define PAGETABLE_ENTRIES (1<<PAGETABLE_ORDER)
-
-#define L1_PAGETABLE_SHIFT 12
-#define L2_PAGETABLE_SHIFT 21
-#define L3_PAGETABLE_SHIFT 30
-#define L4_PAGETABLE_SHIFT 39
-
-#define PADDR_BITS (64 - XC_PAGE_SHIFT)
-#define PADDR_MASK ((1ULL << PADDR_BITS)-1)
-
-#define GET_PTE_MFN(pte) \
-  ((unsigned long)((pte & (PADDR_MASK & XC_PAGE_MASK))) >> XC_PAGE_SHIFT)
-
-#define PTE_OFFSET_L1(addr) \
-  (((addr) >> L1_PAGETABLE_SHIFT) & (PAGETABLE_ENTRIES - 1))
-#define PTE_OFFSET_L2(addr) \
-  (((addr) >> L2_PAGETABLE_SHIFT) & (PAGETABLE_ENTRIES - 1))
-#define PTE_OFFSET_L3(addr) \
-  (((addr) >> L3_PAGETABLE_SHIFT) & (PAGETABLE_ENTRIES - 1))
-#define PTE_OFFSET_L4(addr) \
-  (((addr) >> L4_PAGETABLE_SHIFT) & (PAGETABLE_ENTRIES - 1))
-#define PTE_OFFSET(level, address) \
-  PTE_OFFSET_L ## level(address)
-
-#define GET_PTE_FLAGS(pte) (((int)((pte) >> 40) & ~0xFFF) | ((int)(pte) & 0xFFF))
-#define PUT_PTE_FLAGS(pte) (((intpte_t)((pte) & ~0xFFF) << 40) | ((pte) & 0xFFF))
-
-#include <BridgeHeaders/libxl.h>
-
 #include <Xen/Domain.hpp>
 #include <Util/overloaded.hpp>
 #include <Registers/RegistersX86.hpp>
@@ -57,8 +11,8 @@ using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::MemInfo;
 using xd::xen::XenCtrl;
+using xd::xen::XenEventChannel;
 using xd::xen::XenHandlePtr;
-using xd::xen::MemoryPermissions;
 
 Domain::Domain(XenHandlePtr xen, DomID domid)
     : _xen(std::move(xen)), _domid(domid)
@@ -90,64 +44,33 @@ MemInfo Domain::map_meminfo() const {
   return _xen->get_xenctrl().map_domain_meminfo(*this);
 }
 
-MemoryPermissions Domain::get_memory_permissions(Address address) const {
-  return _xen->get_xenctrl().get_domain_memory_permissions(*this, address);
-}
-
-#define READ_PAGETABLE_LEVEL(level, virtual_address, mfn, next_mfn, flags) \
-{ \
-  const auto table = _xen->get_xen_foreign_memory().map_mfn<PTE>(\
-      *this, (mfn), 0, XC_PAGE_SIZE, PROT_READ); \
-  const auto offset = PTE_OFFSET(level, (virtual_address)); \
-  const auto pte = (table.get())[offset]; \
-  next_mfn = GET_PTE_MFN(pte); \
-  flags = GET_PTE_FLAGS(pte); \
-}
-
 xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
-  using PTE = uint64_t;
-  uint64_t flags, mfn;
-
   // FYI: "cr3" is the register that holds the base address of the page table
   const auto cr3 = std::visit(util::overloaded {
     [](const auto &regs) {
       return regs.template get<reg::x86::cr3>();
     }}, get_cpu_context());
 
-  READ_PAGETABLE_LEVEL(4, address, cr3 >> XC_PAGE_SHIFT, mfn, flags);
+  const auto l4 = PageTableEntry::read_level(*this, address, cr3 >> XC_PAGE_SHIFT,
+      PageTableEntry::Level::L4);
 
-  if (!(flags & _PAGE_PRESENT))
-    throw std::runtime_error("No such page!");
+  if (!(l4.is_present()))
+    throw std::runtime_error("L4: No such page!");
 
-  READ_PAGETABLE_LEVEL(3, address, mfn, mfn, flags);
+  const auto l3 = PageTableEntry::read_level(*this, address, l4.get_mfn(),
+      PageTableEntry::Level::L3);
 
-  if (!(flags & _PAGE_PRESENT) || (flags & _PAGE_PSE))
-    throw std::runtime_error("No such page!");
+  if (!(l3.is_present()))
+    throw std::runtime_error("L3: No such page!");
 
-  READ_PAGETABLE_LEVEL(2, address, mfn, mfn, flags);
+  const auto l2 = PageTableEntry::read_level(*this, address, l3.get_mfn(),
+      PageTableEntry::Level::L2);
 
-  if (!(flags & _PAGE_PRESENT) || (flags & _PAGE_PSE))
-    throw std::runtime_error("No such page!");
+  if (!(l2.is_present()))
+    throw std::runtime_error("L2: No such page!");
 
-  READ_PAGETABLE_LEVEL(1, address, mfn, mfn, flags);
-
-  PageTableEntry pte;
-
-  pte.present = (flags & _PAGE_PRESENT);
-  pte.rw = (flags & _PAGE_RW);
-  pte.user = (flags & _PAGE_USER);
-  pte.pwt = (flags & _PAGE_PWT);
-  pte.pcd = (flags & _PAGE_PCD);
-  pte.accessed = (flags & _PAGE_ACCESSED);
-  pte.dirty = (flags & _PAGE_DIRTY);
-  pte.pat = (flags & _PAGE_PAT);
-  pte.pse = (flags & _PAGE_PSE);
-  pte.global = (flags & _PAGE_GLOBAL);
-  pte.nx = (flags & _PAGE_NX);
-  pte.gnttab = (flags & _PAGE_GNTTAB);
-  pte.guest_kernel = (flags & _PAGE_GUEST_KERNEL);
-
-  return pte;
+  return PageTableEntry::read_level(*this, address, l2.get_mfn(),
+      PageTableEntry::Level::L1);
 }
 
 RegistersX86Any Domain::get_cpu_context(VCPU_ID vcpu_id) const {
@@ -166,6 +89,34 @@ void Domain::set_single_step(bool enabled, VCPU_ID vcpu_id) const {
   _xen->get_xenctrl().set_domain_single_step(*this, enabled, vcpu_id);
 }
 
+XenEventChannel::RingPageAndPort Domain::enable_monitor() const {
+  return _xen->get_xenctrl().enable_monitor_for_domain(*this);
+}
+
+void Domain::disable_monitor() const {
+  _xen->get_xenctrl().disable_monitor_for_domain(*this);
+}
+
+void Domain::monitor_software_breakpoint(bool enable) {
+  _xen->get_xenctrl().monitor_software_breakpoint_for_domain(*this, enable);
+}
+
+void Domain::monitor_debug_exceptions(bool enable, bool sync) {
+  _xen->get_xenctrl().monitor_debug_exceptions_for_domain(*this, enable, sync);
+}
+
+void Domain::monitor_cpuid(bool enable) {
+  _xen->get_xenctrl().monitor_cpuid_for_domain(*this, enable);
+}
+
+void Domain::monitor_descriptor_access(bool enable) {
+  _xen->get_xenctrl().monitor_descriptor_access_for_domain(*this, enable);
+}
+
+void Domain::monitor_privileged_call(bool enable) {
+  _xen->get_xenctrl().monitor_privileged_call_for_domain(*this, enable);
+}
+
 void Domain::pause() const {
   _xen->get_xenctrl().pause_domain(*this);
 }
@@ -180,6 +131,22 @@ void Domain::shutdown(int reason) const {
 
 void Domain::destroy() const {
   _xen->get_xenctrl().destroy_domain(*this);
+}
+
+// See xen/tools/libxc/xc_offline_page.c:389
+xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
+  const auto meminfo = map_meminfo();
+  const auto word_size = get_word_size();
+
+  if (pfn > meminfo->p2m_size)
+    throw XenException("Invalid PFN!");
+
+  if (word_size == sizeof(uint64_t)) {
+    return ((uint64_t*)meminfo->p2m_table)[pfn];
+  } else {
+    uint32_t mfn = ((uint32_t*)meminfo->p2m_table)[pfn];
+    return (mfn == ~0U) ? INVALID_MFN : mfn;
+  }
 }
 
 // TODO: This doesn't seem to have any effect.
@@ -223,21 +190,5 @@ void Domain::write_memory(Address address, void *data, size_t size) const {
   }, [data, size]() {
     munlock(data, size);
   });
-}
-
-// See xen/tools/libxc/xc_offline_page.c:389
-xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
-  const auto meminfo = map_meminfo();
-  const auto word_size = get_word_size();
-
-  if (pfn > meminfo->p2m_size)
-    throw XenException("Invalid PFN!");
-
-  if (word_size == sizeof(uint64_t)) {
-    return ((uint64_t*)meminfo->p2m_table)[pfn];
-  } else {
-    uint32_t mfn = ((uint32_t*)meminfo->p2m_table)[pfn];
-    return (mfn == ~0U) ? INVALID_MFN : mfn;
-  }
 }
 */

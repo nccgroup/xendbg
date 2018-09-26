@@ -8,11 +8,11 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "../include/Debugger/DebugSessionPV.hpp"
-#include "../include/GDBServer/GDBServer.hpp"
-#include "../include/UV/UVLoop.hpp"
-#include "../include/Xen/Domain.hpp"
-#include "../include/Xen/XenHandle.hpp"
+#include <Debugger/DebugSessionPV.hpp>
+#include <GDBServer/GDBServer.hpp>
+#include <UV/UVLoop.hpp>
+#include <Xen/Domain.hpp>
+#include <Xen/XenHandle.hpp>
 
 namespace xd {
 

@@ -7,10 +7,12 @@
 
 #include <string>
 
+#include <Registers/RegistersX86Any.hpp>
+
 #include "Common.hpp"
+#include "PageTableEntry.hpp"
+#include "XenEventChannel.hpp"
 #include "XenHandle.hpp"
-#include "../../src/Registers/RegistersX86Any.hpp"
-#include "../../src/Xen/MemoryPermissions.hpp"
 
 namespace xd::xen {
 
@@ -37,11 +39,15 @@ namespace xd::xen {
     }
 
     MemInfo map_meminfo() const;
-    MemoryPermissions get_memory_permissions(Address address) const;
 
     template <typename Memory_t>
     XenForeignMemory::MappedMemory<Memory_t> map_memory(Address address, size_t size, int prot) const {
       return _xen->get_xen_foreign_memory().map<Memory_t>(*this, address, size, prot);
+    };
+
+    template <typename Memory_t>
+    XenForeignMemory::MappedMemory<Memory_t> map_memory_by_mfn(Address mfn, Address offset, size_t size, int prot) const {
+      return _xen->get_xen_foreign_memory().map_by_mfn<Memory_t>(*this, mfn, offset, size, prot);
     };
 
     PageTableEntry get_page_table_entry(Address address) const; // TODO
@@ -52,18 +58,27 @@ namespace xd::xen {
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
     void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;
 
+    XenEventChannel::RingPageAndPort enable_monitor() const;
+    void disable_monitor() const;
+
+    void monitor_software_breakpoint(bool enable);
+    void monitor_debug_exceptions(bool enable, bool sync);
+    void monitor_cpuid(bool enable);
+    void monitor_descriptor_access(bool enable);
+    void monitor_privileged_call(bool enable);
+
     void pause() const;
     void unpause() const;
     void shutdown(int reason) const;
     void destroy() const;
+
+    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
 
     /*
     void reboot() const;
     void read_memory(Address address, void *data, size_t size) const;
     void write_memory(Address address, void *data, size_t size) const;
     */
-
-    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
 
   private:
     XenHandlePtr _xen;
@@ -73,4 +88,3 @@ namespace xd::xen {
 }
 
 #endif //XENDBG_DOMAIN_HPP
-

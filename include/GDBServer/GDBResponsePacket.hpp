@@ -12,10 +12,9 @@
 #include <variant>
 #include <vector>
 
-#include "../../include/Xen/Common.hpp"
-#include "../Xen/MemoryPermissions.hpp"
-#include "../Registers/RegistersX86Any.hpp"
-#include "../Util/overloaded.hpp"
+#include <Xen/Common.hpp>
+#include <Registers/RegistersX86Any.hpp>
+#include <Util/overloaded.hpp>
 
 namespace xd::gdbsrv::pkt {
 

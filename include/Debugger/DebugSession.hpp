@@ -10,11 +10,11 @@
 
 #include <capstone/capstone.h>
 
-#include "../Xen/Common.hpp"
-#include "../Xen/Domain.hpp"
-#include "../../src/Util/overloaded.hpp"
-#include "../UV/UVLoop.hpp"
-#include "../UV/UVTimer.hpp"
+#include <Util/overloaded.hpp>
+#include <UV/UVLoop.hpp>
+#include <UV/UVTimer.hpp>
+#include <Xen/Common.hpp>
+#include <Xen/Domain.hpp>
 
 namespace xd::dbg {
 

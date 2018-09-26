@@ -9,7 +9,7 @@
 #include <elfio/elfio.hpp>
 
 #include "DebuggerREPL.hpp"
-#include "../Xen/XenException.hpp"
+#include "../../include/Xen/XenException.hpp"
 #include "../Parser/Parser.hpp"
 #include "Command/Argument.hpp"
 #include "Command/Flag.hpp"

@@ -6,16 +6,17 @@ set(CLANG_DEFAULT_CXX_STDLIB "libc++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
 include_directories(
+  include
   third_party/CLI11/include
   third_party/ELFIO/include)
 
 add_executable(xendbg
   src/Debugger/DebugSession.cpp
-  src/Debugger/DebugSession.hpp
+        include/Debugger/DebugSession.hpp
   src/Debugger/DebugSessionPV.cpp
-  src/Debugger/DebugSessionPV.hpp
-  src/GDBServer/GDBRequestPacket.hpp
-  src/GDBServer/GDBResponsePacket.hpp
+        include/Debugger/DebugSessionPV.hpp
+        include/GDBServer/GDBRequestPacket.hpp
+        include/GDBServer/GDBResponsePacket.hpp
   src/REPL/Command/Action.hpp
   src/REPL/Command/ArgsHandle.cpp
   src/REPL/Command/ArgsHandle.hpp
@@ -54,48 +55,46 @@ add_executable(xendbg
   src/REPL/Parser/Tokenizer.hpp
   src/REPL/REPL.cpp
   src/REPL/REPL.hpp
-  src/Registers/Register.hpp
-  src/Registers/RegisterContext.hpp
-        src/Registers/RegistersX86Any.hpp
-  src/Registers/RegistersX86_64.hpp
-  src/Util/IndentHelper.cpp
-  src/Util/IndentHelper.hpp
-  src/Util/clear.hpp
-  src/Util/overloaded.hpp
-  src/Util/pop_ret.hpp
-        src/Util/string.hpp
-  src/Xen/BridgeHeaders/domctl.h
-  src/Xen/BridgeHeaders/xenctrl.h
-  src/Xen/BridgeHeaders/xenforeignmemory.h
-  src/Xen/BridgeHeaders/xenguest.h
-  src/Xen/BridgeHeaders/xenstore.h
-  src/Xen/Common.hpp
+        include/Registers/Register.hpp
+        include/Registers/RegisterContext.hpp
+        include/Registers/RegistersX86Any.hpp
+        include/Registers/RegistersX86_64.hpp
+        include/Util/clear.hpp
+        include/Util/overloaded.hpp
+        include/Util/pop_ret.hpp
+        include/Util/string.hpp
+        include/Xen/BridgeHeaders/domctl.h
+        include/Xen/BridgeHeaders/xenctrl.h
+        include/Xen/BridgeHeaders/xenforeignmemory.h
+        include/Xen/BridgeHeaders/xenguest.h
+        include/Xen/BridgeHeaders/xenstore.h
+        include/Xen/Common.hpp
   src/Xen/Domain.cpp
-  src/Xen/Domain.hpp
+        include/Xen/Domain.hpp
   src/Xen/MemoryPermissions.cpp
   src/Xen/PrivCmd.cpp
-  src/Xen/PrivCmd.hpp
+        include/Xen/PrivCmd.hpp
   src/Xen/XenCtrl.cpp
-  src/Xen/XenCtrl.hpp
-  src/Xen/XenException.hpp
+        include/Xen/XenCtrl.hpp
+        include/Xen/XenException.hpp
   src/Xen/XenForeignMemory.cpp
-  src/Xen/XenForeignMemory.hpp
-  src/Xen/XenHandle.hpp
+        include/Xen/XenForeignMemory.hpp
+        include/Xen/XenHandle.hpp
   src/Xen/XenStore.cpp
-  src/Xen/XenStore.hpp
+        include/Xen/XenStore.hpp
   src/main.cpp src/Xen/XenHandle.cpp src/CommandLine.cpp src/CommandLine.hpp
-  src/Debugger/DebugSession.cpp src/Debugger/DebugSession.hpp
-  src/GDBServer/GDBPacketQueue.cpp src/GDBServer/GDBPacketQueue.hpp
-  src/GDBServer/GDBServer.cpp src/GDBServer/GDBServer.hpp
-  src/GDBServer/GDBPacketInterpreter.cpp src/GDBServer/GDBPacketInterpreter.hpp
-  src/GDBServer/GDBConnection.cpp src/GDBServer/GDBConnection.hpp
+  src/Debugger/DebugSession.cpp include/Debugger/DebugSession.hpp
+  src/GDBServer/GDBPacketQueue.cpp include/GDBServer/GDBPacketQueue.hpp
+  src/GDBServer/GDBServer.cpp include/GDBServer/GDBServer.hpp
+  src/GDBServer/GDBPacketInterpreter.cpp include/GDBServer/GDBPacketInterpreter.hpp
+  src/GDBServer/GDBConnection.cpp include/GDBServer/GDBConnection.hpp
   src/ServerModeController.hpp src/ServerModeController.cpp
-  src/UV/UVLoop.hpp src/UV/UVLoop.cpp
-  src/UV/UVIdle.hpp src/UV/UVIdle.cpp
-  src/UV/UVSignal.hpp src/UV/UVSignal.cpp
-  src/UV/UVPoll.hpp src/UV/UVPoll.cpp
-  src/UV/UVTCP.hpp src/UV/UVTCP.cpp
-  src/UV/UVTimer.hpp src/UV/UVTimer.cpp src/Registers/RegistersX86.hpp)
+        include/UV/UVLoop.hpp src/UV/UVLoop.cpp
+        include/UV/UVIdle.hpp src/UV/UVIdle.cpp
+        include/UV/UVSignal.hpp src/UV/UVSignal.cpp
+        include/UV/UVPoll.hpp src/UV/UVPoll.cpp
+        include/UV/UVTCP.hpp src/UV/UVTCP.cpp
+        include/UV/UVTimer.hpp src/UV/UVTimer.cpp include/Registers/RegistersX86.hpp)
 
 target_link_libraries(xendbg
   capstone

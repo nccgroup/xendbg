@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 9/19/18.
 //
 
-#include "Domain.hpp"
-#include "XenHandle.hpp"
+#include <Xen/Domain.hpp>
+#include <Xen/XenHandle.hpp>
 
 using xd::xen::Domain;
 using xd::xen::XenHandlePtr;

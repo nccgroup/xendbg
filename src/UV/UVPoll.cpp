@@ -1,7 +1,6 @@
-#include "../uvcast.hpp"
-
-#include "UVLoop.hpp"
-#include "UVPoll.hpp"
+#include <UV/UVCast.hpp>
+#include <UV/UVLoop.hpp>
+#include <UV/UVPoll.hpp>
 
 using uvcast::uv_upcast;
 using xd::uv::close_and_free_handle;

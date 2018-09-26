@@ -5,10 +5,10 @@
 #include <cstring>
 #include <iostream>
 
-#include "Domain.hpp"
-#include "XenCtrl.hpp"
-#include "XenException.hpp"
-#include "../Util/overloaded.hpp"
+#include <Util/overloaded.hpp>
+#include <Xen/Domain.hpp>
+#include <Xen/XenCtrl.hpp>
+#include <Xen/XenException.hpp>
 
 #include <sys/mman.h>
 

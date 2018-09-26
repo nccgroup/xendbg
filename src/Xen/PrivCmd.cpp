@@ -6,7 +6,7 @@
 #include <sys/errno.h>
 #include <unistd.h>
 
-#include "PrivCmd.hpp"
+#include <Xen/PrivCmd.hpp>
 
 using xd::xen::PrivCmd;
 using xd::xen::XenException;

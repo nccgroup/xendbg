@@ -10,12 +10,12 @@
 #include <memory>
 #include <sys/ioctl.h>
 
-#include "BridgeHeaders/xenctrl.h"
-#include "BridgeHeaders/xenguest.h"
+#include "../../src/Xen/BridgeHeaders/xenctrl.h"
+#include "../../src/Xen/BridgeHeaders/xenguest.h"
 
 #include "Common.hpp"
-#include "MemoryPermissions.hpp"
-#include "../Registers/RegistersX86Any.hpp"
+#include "../../src/Xen/MemoryPermissions.hpp"
+#include "../../src/Registers/RegistersX86Any.hpp"
 
 namespace xd::xen {
 

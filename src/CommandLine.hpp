@@ -7,7 +7,7 @@
 
 #include <CLI/CLI.hpp>
 
-#include "Xen/Common.hpp"
+#include "../include/Xen/Common.hpp"
 
 namespace xd {
 

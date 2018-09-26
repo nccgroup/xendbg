@@ -1,7 +1,7 @@
 # xendbg - The Xen debugger that actually works
 
 ## Feature list
-- [ ] Debugging
+- [x] Debugging
   - [x] Core
     - [x] Attach to Xen domain
     - [x] Registers
@@ -10,11 +10,11 @@
     - [x] Memory
       - [x] Read
       - [x] Write
-  - [ ] Advanced
-      - [ ] Breakpoints
-        - [ ] Set/unset
-        - [ ] Check if hit
-        - [ ] Reset after continuin
+  - [x] Advanced
+      - [x] Breakpoints
+        - [x] Set/unset
+        - [x] Check if hit
+        - [x] Reset after continuin
 - [x] Interface (REPL)
   - [x] Autocomplete
   - [x] Command tree

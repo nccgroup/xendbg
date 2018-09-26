@@ -9,8 +9,8 @@
 
 #include "Common.hpp"
 #include "XenHandle.hpp"
-#include "../Registers/RegistersX86Any.hpp"
-#include "MemoryPermissions.hpp"
+#include "../../src/Registers/RegistersX86Any.hpp"
+#include "../../src/Xen/MemoryPermissions.hpp"
 
 namespace xd::xen {
 

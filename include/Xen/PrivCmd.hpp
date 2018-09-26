@@ -19,8 +19,8 @@
 #include "Common.hpp"
 #include "XenException.hpp"
 
-#include "BridgeHeaders/domctl.h"
-#include "BridgeHeaders/privcmd.h"
+#include "../../src/Xen/BridgeHeaders/domctl.h"
+#include "../../src/Xen/BridgeHeaders/privcmd.h"
 
 namespace xd::xen {
 

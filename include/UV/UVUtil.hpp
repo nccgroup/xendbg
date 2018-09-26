@@ -9,7 +9,7 @@
 
 #include <uv.h>
 
-#include "../uvcast.hpp"
+#include "UVCast.hpp"
 
 namespace xd::uv {
 

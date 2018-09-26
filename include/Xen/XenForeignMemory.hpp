@@ -9,11 +9,11 @@
 #include <errno.h>
 #include <memory>
 
-#include "BridgeHeaders/xenctrl.h"
+#include "../../src/Xen/BridgeHeaders/xenctrl.h"
 
 // NOTE: This needs to be declared after xenctrl.h.
 // For some reason, including xenforeignmemory.h before xenctrl.h will fail.
-#include "BridgeHeaders/xenforeignmemory.h"
+#include "../../src/Xen/BridgeHeaders/xenforeignmemory.h"
 
 #include "Common.hpp"
 #include "XenException.hpp"

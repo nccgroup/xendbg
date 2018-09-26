@@ -4,8 +4,8 @@
 
 #include <iostream>
 
-#include "GDBPacketQueue.hpp"
-#include "../Util/pop_ret.hpp"
+#include <GDBServer/GDBPacketQueue.hpp>
+#include <Util/pop_ret.hpp>
 
 #define CHECKSUM_LENGTH 2
 

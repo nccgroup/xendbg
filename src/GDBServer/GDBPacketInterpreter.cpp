@@ -2,12 +2,12 @@
 // Created by Spencer Michaels on 9/20/18.
 //
 
-#include "GDBConnection.hpp"
-#include "GDBPacketInterpreter.hpp"
-#include "GDBResponsePacket.hpp"
-#include "../Registers/RegistersX86Any.hpp"
-#include "../Xen/XenException.hpp"
-#include "../Debugger/DebugSession.hpp"
+#include <GDBServer/GDBConnection.hpp>
+#include <GDBServer/GDBPacketInterpreter.hpp>
+#include <GDBServer/GDBResponsePacket.hpp>
+#include <Registers/RegistersX86Any.hpp>
+#include <Xen/XenException.hpp>
+#include <Debugger/DebugSession.hpp>
 
 using xd::dbg::DebugSession;
 using xd::reg::RegistersX86Any;

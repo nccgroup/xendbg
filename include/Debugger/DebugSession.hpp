@@ -12,7 +12,7 @@
 
 #include "../Xen/Common.hpp"
 #include "../Xen/Domain.hpp"
-#include "../Util/overloaded.hpp"
+#include "../../src/Util/overloaded.hpp"
 #include "../UV/UVLoop.hpp"
 #include "../UV/UVTimer.hpp"
 

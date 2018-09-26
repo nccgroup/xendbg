@@ -1,9 +1,9 @@
 #include <iostream>
 #include <vector>
 
-#include "UVLoop.hpp"
-#include "UVTCP.hpp"
-#include "../uvcast.hpp"
+#include <UV/UVLoop.hpp>
+#include <UV/UVTCP.hpp>
+#include <UV/UVCast.hpp>
 
 using uvcast::uv_upcast;
 using xd::uv::close_and_free_handle;

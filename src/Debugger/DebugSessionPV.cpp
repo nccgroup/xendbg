@@ -7,8 +7,8 @@
 
 #include <capstone/capstone.h>
 
-#include "DebugSessionPV.hpp"
-#include "../Util/overloaded.hpp"
+#include <Debugger/DebugSessionPV.hpp>
+#include <Util/overloaded.hpp>
 
 #define X86_INFINITE_LOOP 0xFEEB
 

@@ -12,7 +12,7 @@
 #include <variant>
 #include <vector>
 
-#include "../Xen/Common.hpp"
+#include "../../include/Xen/Common.hpp"
 #include "../Xen/MemoryPermissions.hpp"
 #include "../Registers/RegistersX86Any.hpp"
 #include "../Util/overloaded.hpp"

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
-#include "UVLoop.hpp"
-#include "../uvcast.hpp"
+#include <UV/UVLoop.hpp>
+#include <UV/UVCast.hpp>
 
 using uvcast::uv_upcast;
 using xd::uv::UVLoop;

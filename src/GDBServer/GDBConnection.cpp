@@ -2,10 +2,9 @@
 #include <numeric>
 #include <stdexcept>
 
-#include "../uvcast.hpp"
-
-#include "GDBConnection.hpp"
-#include "../Util/string.hpp"
+#include <GDBServer/GDBConnection.hpp>
+#include <Util/string.hpp>
+#include <UV/UVCast.hpp>
 
 using uvcast::uv_upcast;
 using xd::gdbsrv::GDBConnection;

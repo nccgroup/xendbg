@@ -4,9 +4,9 @@
 
 #include <iostream>
 
-#include "../Util/pop_ret.hpp"
-#include "XenException.hpp"
-#include "XenStore.hpp"
+#include <Util/pop_ret.hpp>
+#include <Xen/XenException.hpp>
+#include <Xen/XenStore.hpp>
 
 using xd::util::pop_ret;
 using xd::xen::DomID;

@@ -4,7 +4,7 @@
 
 #define X86_MAX_INSTRUCTION_SIZE 0x10
 
-#include "DebugSession.hpp"
+#include <Debugger/DebugSession.hpp>
 
 using xd::dbg::DebugSession;
 using xd::uv::UVLoop;

@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "BridgeHeaders/xenstore.h"
-
 #include "Common.hpp"
 
 namespace xd::xen {

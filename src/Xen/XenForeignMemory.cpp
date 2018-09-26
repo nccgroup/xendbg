@@ -5,9 +5,9 @@
 #include <cstring>
 #include <iostream>
 
-#include "Domain.hpp"
-#include "XenForeignMemory.hpp"
-#include "XenException.hpp"
+#include <Xen/Domain.hpp>
+#include <Xen/XenForeignMemory.hpp>
+#include <Xen/XenException.hpp>
 
 using xd::xen::WordSize;
 using xd::xen::XenForeignMemory;

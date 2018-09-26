@@ -4,8 +4,8 @@
 
 #include <numeric>
 
-#include "GDBServer.hpp"
-#include "../uvcast.hpp"
+#include <GDBServer/GDBServer.hpp>
+#include <UV/UVCast.hpp>
 
 using uvcast::uv_upcast;
 using xd::gdbsrv::GDBConnection;

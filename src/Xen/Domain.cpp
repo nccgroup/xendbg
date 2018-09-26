@@ -46,11 +46,11 @@
 #define GET_PTE_FLAGS(pte) (((int)((pte) >> 40) & ~0xFFF) | ((int)(pte) & 0xFFF))
 #define PUT_PTE_FLAGS(pte) (((intpte_t)((pte) & ~0xFFF) << 40) | ((pte) & 0xFFF))
 
-#include "BridgeHeaders/libxl.h"
+#include <BridgeHeaders/libxl.h>
 
-#include "Domain.hpp"
-#include "../Util/overloaded.hpp"
-#include "../Registers/RegistersX86.hpp"
+#include <Xen/Domain.hpp>
+#include <Util/overloaded.hpp>
+#include <Registers/RegistersX86.hpp>
 
 using xd::reg::RegistersX86Any;
 using xd::xen::Domain;

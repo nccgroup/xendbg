@@ -15,7 +15,7 @@
 
 #include "DebugSession.hpp"
 #include "../Xen/Domain.hpp"
-#include "../Util/overloaded.hpp"
+#include "../../src/Util/overloaded.hpp"
 #include "../UV/UVLoop.hpp"
 
 namespace xd::dbg {

@@ -19,6 +19,22 @@ namespace xd::xen {
   using MemInfo = std::unique_ptr<xc_domain_meminfo, std::function<void(xc_domain_meminfo *p)>>;
   using VCPU_ID = uint32_t;
   using WordSize = unsigned int;
+
+  struct PageTableEntry {
+    bool present;
+    bool rw;
+    bool user;
+    bool pwt;
+    bool pcd;
+    bool accessed;
+    bool dirty;
+    bool pat;
+    bool pse;
+    bool global;
+    bool nx;
+    bool gnttab;
+    bool guest_kernel;
+  };
 }
 
 #endif //XENDBG_COMMON_HPP

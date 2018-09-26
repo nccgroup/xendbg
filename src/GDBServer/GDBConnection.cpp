@@ -85,7 +85,7 @@ void GDBConnection::stop() {
 
 void GDBConnection::send(const pkt::GDBResponsePacket &packet, OnErrorFn on_error)
 {
-  std::cout << "RECV: " << packet.to_string() << std::endl;
+  std::cout << "SEND: " << packet.to_string() << std::endl;
   _tcp.write(format_packet(packet), on_error);
 }
 

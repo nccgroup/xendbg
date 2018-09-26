@@ -44,7 +44,7 @@ namespace xd::xen {
       return _xen->get_xen_foreign_memory().map<Memory_t>(*this, address, size, prot);
     };
 
-    uint64_t get_page_table_entry(Address address) const; // TODO
+    PageTableEntry get_page_table_entry(Address address) const; // TODO
 
     xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const;
     void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const;
@@ -60,6 +60,8 @@ namespace xd::xen {
     //void reboot() const;
     void read_memory(Address address, void *data, size_t size) const;
     void write_memory(Address address, void *data, size_t size) const;
+
+    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
 
   private:
     XenHandlePtr _xen;

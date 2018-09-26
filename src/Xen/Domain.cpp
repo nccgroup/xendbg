@@ -13,6 +13,9 @@
 #define _PAGE_PAT       0x080
 #define _PAGE_PSE       0x080
 #define _PAGE_GLOBAL    0x100
+#define _PAGE_GNTTAB    (1U<<22)
+#define _PAGE_NX        (1U<<23)
+#define _PAGE_GUEST_KERNEL (1U<<12)
 
 // See xen/include/asm-x86/x86_64/page.h
 #define PAGETABLE_ORDER 9
@@ -26,8 +29,8 @@
 #define PADDR_BITS (64 - XC_PAGE_SHIFT)
 #define PADDR_MASK ((1ULL << PADDR_BITS)-1)
 
-#define GET_PTE_ADDRESS(pte) \
-  (unsigned long)((pte & (PADDR_MASK & XC_PAGE_MASK)))
+#define GET_PTE_MFN(pte) \
+  ((unsigned long)((pte & (PADDR_MASK & XC_PAGE_MASK))) >> XC_PAGE_SHIFT)
 
 #define PTE_OFFSET_L1(addr) \
   (((addr) >> L1_PAGETABLE_SHIFT) & (PAGETABLE_ENTRIES - 1))
@@ -91,49 +94,74 @@ MemoryPermissions Domain::get_memory_permissions(Address address) const {
   return _xen->get_xenctrl().get_domain_memory_permissions(*this, address);
 }
 
-#define READ_PAGETABLE_LEVEL(level, virtual_address, pte_address, next_pte_address, flags) \
+#define READ_PAGETABLE_LEVEL(level, virtual_address, mfn, next_mfn, flags) \
 { \
-  std::cout << "table @ " << pte_address << std::endl; \
-  const auto table = map_memory<PTE>(pte_address, XC_PAGE_SIZE, PROT_READ); \
-  const auto pte = (table.get())[PTE_OFFSET(level, virtual_address)]; \
-  std::cout << "pte = " << std::bitset<64>(pte) << std::endl; \
+  std::cout << std::hex << "vaddr = " << (virtual_address) << std::endl; \
+  std::cout << "mfn = " << (mfn) << std::endl; \
+  const auto table = _xen->get_xen_foreign_memory().map_mfn<PTE>(\
+      *this, (mfn), 0, XC_PAGE_SIZE, PROT_READ); \
+  const auto offset = PTE_OFFSET(level, (virtual_address)); \
+  std::cout << "offset = " << offset << std::endl; \
+  const auto pte = (table.get())[offset]; \
+  std::cout << std::hex << "pte = " << std::bitset<64>(pte) << std::endl; \
+  next_mfn = GET_PTE_MFN(pte); \
   flags = GET_PTE_FLAGS(pte); \
-  next_pte_address = GET_PTE_ADDRESS(pte); \
 }
 
-uint64_t Domain::get_page_table_entry(Address address) const {
+xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
   using PTE = uint64_t;
+  uint64_t flags, mfn;
 
-
-  uint64_t flags, pte_address;
   // FYI: "cr3" is the register that holds the base address of the page table
-  auto base = std::visit(util::overloaded {
+  const auto cr3 = std::visit(util::overloaded {
     [](const auto &regs) {
-      return regs.get<reg::x86::cr3>();
-    }, get_cpu_context() });
+      return regs.template get<reg::x86::cr3>();
+    }}, get_cpu_context());
 
-  READ_PAGETABLE_LEVEL(4, address, base, pte_address, flags);
+  READ_PAGETABLE_LEVEL(4, address, cr3 >> XC_PAGE_SHIFT, mfn, flags);
 
   std::cout << "L4: " << std::bitset<64>(flags) << std::endl;
   if (!(flags & _PAGE_PRESENT))
-    return ~0;
+    throw std::runtime_error("No such page!");
 
-  READ_PAGETABLE_LEVEL(3, address, pte_address, pte_address, flags);
+  READ_PAGETABLE_LEVEL(3, address, mfn, mfn, flags);
 
   std::cout << "L3: " << std::bitset<64>(flags) << std::endl;
   if (!(flags & _PAGE_PRESENT) || (flags & _PAGE_PSE))
-    return ~0;
+    throw std::runtime_error("No such page!");
 
-  READ_PAGETABLE_LEVEL(2, address, pte_address, pte_address, flags);
+  READ_PAGETABLE_LEVEL(2, address, mfn, mfn, flags);
 
   std::cout << "L2: " << std::bitset<64>(flags) << std::endl;
   if (!(flags & _PAGE_PRESENT) || (flags & _PAGE_PSE))
-    return ~0;
+    throw std::runtime_error("No such page!");
+
+  READ_PAGETABLE_LEVEL(1, address, mfn, mfn, flags);
 
   std::cout << "L1: " << std::bitset<64>(flags) << std::endl;
-  READ_PAGETABLE_LEVEL(1, address, pte_address, pte_address, flags);
 
-  return flags;
+  PageTableEntry pte;
+  pte.present = (flags & _PAGE_PRESENT);
+  pte.rw = (flags & _PAGE_RW);
+  pte.user = (flags & _PAGE_USER);
+  pte.pwt = (flags & _PAGE_PWT);
+  pte.pcd = (flags & _PAGE_PCD);
+  pte.accessed = (flags & _PAGE_ACCESSED);
+  pte.dirty = (flags & _PAGE_DIRTY);
+  pte.pat = (flags & _PAGE_PAT);
+  pte.pse = (flags & _PAGE_PSE);
+  pte.global = (flags & _PAGE_GLOBAL);
+  pte.nx = (flags & _PAGE_NX);
+  pte.gnttab = (flags & _PAGE_GNTTAB);
+  pte.guest_kernel = (flags & _PAGE_GUEST_KERNEL);
+
+  std::cout << ((pte.nx) ? "" : "~") << "NX" << std::endl;
+  std::cout << ((pte.rw) ? "" : "~") << "RW" << std::endl;
+  std::cout << ((pte.user) ? "" : "~") << "user" << std::endl;
+  std::cout << ((pte.accessed) ? "" : "~") << "accessed" << std::endl;
+  std::cout << ((pte.present) ? "" : "~") << "present" << std::endl;
+
+  return pte;
 }
 
 RegistersX86Any Domain::get_cpu_context(VCPU_ID vcpu_id) const {
@@ -208,4 +236,20 @@ void Domain::write_memory(Address address, void *data, size_t size) const {
   }, [data, size]() {
     munlock(data, size);
   });
+}
+
+// See xen/tools/libxc/xc_offline_page.c:389
+xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
+  const auto meminfo = map_meminfo();
+  const auto word_size = get_word_size();
+
+  if (pfn > meminfo->p2m_size)
+    throw XenException("Invalid PFN!");
+
+  if (word_size == sizeof(uint64_t)) {
+    return ((uint64_t*)meminfo->p2m_table)[pfn];
+  } else {
+    uint32_t mfn = ((uint32_t*)meminfo->p2m_table)[pfn];
+    return (mfn == ~0U) ? INVALID_MFN : mfn;
+  }
 }

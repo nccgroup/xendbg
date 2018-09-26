@@ -33,8 +33,12 @@ namespace xd::xen {
 
     template <typename Memory_t, typename Domain_t>
     MappedMemory<Memory_t> map(const Domain_t &domain, Address address, size_t size, int prot) const {
-      xen_pfn_t base_mfn = pfn_to_mfn_pv(domain, address >> XC_PAGE_SHIFT);
-      std::cout << "base_mfn = " << base_mfn << std::endl;
+      xen_pfn_t base_mfn = domain.pfn_to_mfn_pv(address >> XC_PAGE_SHIFT);
+      return map_mfn<Memory_t, Domain_t>(domain, base_mfn, address % XC_PAGE_SIZE, size, prot);
+    }
+
+    template <typename Memory_t, typename Domain_t>
+    MappedMemory<Memory_t> map_mfn(const Domain_t &domain, Address base_mfn, Address offset, size_t size, int prot) const {
       size_t num_pages = (size + XC_PAGE_SIZE - 1) >> XC_PAGE_SHIFT;
 
       auto pages = (xen_pfn_t*)malloc(num_pages * sizeof(xen_pfn_t));
@@ -51,7 +55,7 @@ namespace xd::xen {
 
       char *mem_page_base = (char*)xenforeignmemory_map(_xen_foreign_memory.get(),
           domain.get_domid(), prot, num_pages, pages, errors);
-      Memory_t *mem = (Memory_t*)(mem_page_base + address % XC_PAGE_SIZE);
+      Memory_t *mem = (Memory_t*)(mem_page_base + offset);
 
       for (size_t i = 0; i < num_pages; ++i) {
         if (errors[i])
@@ -70,8 +74,6 @@ namespace xd::xen {
   private:
     std::shared_ptr<xenforeignmemory_handle> _xen_foreign_memory;
 
-  private:
-    static xen_pfn_t pfn_to_mfn_pv(const Domain &domain, xen_pfn_t pfn);
   };
 
 }

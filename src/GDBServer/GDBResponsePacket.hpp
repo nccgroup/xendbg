@@ -335,9 +335,10 @@ namespace xd::gdbsrv::pkt {
   class QueryMemoryRegionInfoResponse : public GDBResponsePacket {
   public:
     QueryMemoryRegionInfoResponse(xd::xen::Address start_address, size_t size,
-        xd::xen::MemoryPermissions permissions, std::string name = "")
+        bool read, bool write, bool execute, std::string name = "")
       : _start_address(start_address), _size(size),
-        _permissions(permissions), _name(std::move(name))
+        _read(read), _write(write), _execute(execute),
+        _name(std::move(name))
     {};
 
     std::string to_string() const override {
@@ -345,27 +346,27 @@ namespace xd::gdbsrv::pkt {
       ss << std::hex;
       add_list_entry(ss, "start", _start_address);
       add_list_entry(ss, "size", _size);
-      add_list_entry(ss, "permissions", make_permissions_string(_permissions));
+      add_list_entry(ss, "permissions", make_permissions_string());
       if (!_name.empty())
         add_list_entry(ss, "name", _start_address);
       return ss.str();
     };
 
   private:
-    static std::string make_permissions_string(xd::xen::MemoryPermissions permissions) {
+    std::string make_permissions_string() const {
       std::string s;
-      if (permissions.read)
+      if (_read)
         s += "r";
-      if (permissions.write)
+      if (_write)
         s += "w";
-      if (permissions.execute)
-        s += "e";
+      if (_execute)
+        s += "x";
       return s;
     }
 
     xd::xen::Address _start_address;
     size_t _size;
-    xd::xen::MemoryPermissions _permissions;
+    bool _read, _write, _execute;
     std::string _name;
   };
 

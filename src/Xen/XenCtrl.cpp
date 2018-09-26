@@ -205,12 +205,9 @@ static RegistersX86_32 convert_from_pv32(const vcpu_guest_context_any_t &pv) {
   return regs;
 }
 
-static vcpu_guest_context_any_t convert_to_pv32(const RegistersX86_32 &regs) {
+static vcpu_guest_context_any_t convert_to_pv32(const RegistersX86_32 &regs, vcpu_guest_context_any_t pv) {
   using namespace xd::reg::x86;
   using namespace xd::reg::x86_32;
-
-  vcpu_guest_context_any_t pv;
-  memset(&pv, 0x00, sizeof(vcpu_guest_context_x86_32_t));
 
   auto &pv32 = pv.x32;
 
@@ -271,9 +268,9 @@ RegistersX86Any XenCtrl::get_domain_cpu_context(const Domain &domain,
     auto context_any = get_domain_cpu_context_pv(domain, vcpu_id);
     const int word_size = get_domain_word_size(domain);
     if (word_size == sizeof(uint64_t)) {
-      return convert_from_pv64(context_any.x64);
+      return convert_from_pv64(context_any);
     } else if (word_size == sizeof(uint32_t)) {
-      return convert_from_pv32(context_any.x32);
+      return convert_from_pv32(context_any);
     } else {
       throw XenException(
           "Unsupported word size " + std::to_string(word_size) + " for domain " +
@@ -286,24 +283,25 @@ void XenCtrl::set_domain_cpu_context(const Domain &domain,
     const RegistersX86Any& regs, VCPU_ID vcpu_id) const
 {
   if (domain.get_info().hvm == 1) {
+    /*
     const auto regs64 = std::get<RegistersX86_64>(regs); // TODO
     const auto new_context = convert_to_hvm(regs64);
     set_domain_cpu_context_hvm(domain, new_context, vcpu_id);
+    */
+    throw std::runtime_error("Not yet supported!");
   } else {
-    auto new_context = get_domain_cpu_context_pv(domain, vcpu_id);
+    auto old_context = get_domain_cpu_context_pv(domain, vcpu_id);
     const int word_size = get_domain_word_size(domain);
     std::visit(util::overloaded {
       [&](const RegistersX86_64 &regs64) {
         if (word_size != sizeof(uint64_t))
           throw XenException("Mismatched word size!");
-        const auto new_regs = convert_to_pv64(regs64);
-        new_context.x64.user_regs = new_regs.user_regs;
+        const auto new_context = convert_to_pv64(regs64, old_context);
         set_domain_cpu_context_pv(domain, new_context, vcpu_id);
       }, [&](const RegistersX86_32 &regs32) {
         if (word_size != sizeof(uint32_t))
           throw XenException("Mismatched word size!");
-        const auto new_regs = convert_to_pv32(regs32);
-        new_context.x32.user_regs = new_regs.user_regs;
+        const auto new_context = convert_to_pv32(regs32, old_context);
         set_domain_cpu_context_pv(domain, new_context, vcpu_id);
       }}, regs);
   }

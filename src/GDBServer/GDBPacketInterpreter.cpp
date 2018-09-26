@@ -87,9 +87,26 @@ void xd::gdbsrv::interpret_packet(
         const auto address = req.get_address();
 
         auto pte = debugger.get_domain().get_page_table_entry(address);
-        std::cout << "PTE: " <<  std::bitset<64>(pte) << std::endl;
+        auto length = XC_PAGE_SIZE;
 
-        /* TODO: HVM only
+        /* If the current region (page) isn't present, LLDB expects that we
+         * provide a region that represents the space before the next
+         * one that IS present.
+         */
+        if (!pte.present) {
+          auto address2 = address;
+          do {
+            address2 += XC_PAGE_SIZE;
+            pte = debugger.get_domain().get_page_table_entry(address2);
+          } while (!pte.present);
+          length = address2 - address;
+        }
+
+        connection.send(pkt::QueryMemoryRegionInfoResponse(
+              address & XC_PAGE_MASK, length,
+              true, pte.rw, !pte.nx), on_error);
+
+        /* TODO: HVM only --- needs update
         try {
           const auto start = address & XC_PAGE_MASK;
           const auto size = XC_PAGE_SIZE;

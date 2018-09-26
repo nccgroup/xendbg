@@ -89,22 +89,31 @@ void xd::gdbsrv::interpret_packet(
         auto pte = debugger.get_domain().get_page_table_entry(address);
         auto length = XC_PAGE_SIZE;
 
-        /* If the current region (page) isn't present, LLDB expects that we
-         * provide a region that represents the space before the next
-         * one that IS present.
-         */
-        if (!pte.present) {
+
+        if (pte.present ) {
+          connection.send(pkt::QueryMemoryRegionInfoResponse(
+                address & XC_PAGE_MASK, length,
+                true, pte.rw, !pte.nx), on_error);
+
+        } else {
+
+          /* If the current region (page) isn't present, LLDB expects that we
+           * provide a region that represents the space before the next
+           * one that IS present.
+           */
           auto address2 = address;
           do {
             address2 += XC_PAGE_SIZE;
             pte = debugger.get_domain().get_page_table_entry(address2);
           } while (!pte.present);
+
           length = address2 - address;
+          connection.send(pkt::QueryMemoryRegionInfoResponse(
+                address & XC_PAGE_MASK, length,
+                false, false, false), on_error);
         }
 
-        connection.send(pkt::QueryMemoryRegionInfoResponse(
-              address & XC_PAGE_MASK, length,
-              true, pte.rw, !pte.nx), on_error);
+
 
         /* TODO: HVM only --- needs update
         try {

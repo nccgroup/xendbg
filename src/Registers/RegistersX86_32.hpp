@@ -8,6 +8,7 @@
 
 #include "Register.hpp"
 #include "RegisterContext.hpp"
+#include "RegistersX86.hpp"
 
 namespace xd::reg::x86_32 {
 
@@ -28,12 +29,9 @@ namespace xd::reg::x86_32 {
   DECLARE_REGISTER(fs,     uint16_t, -1);
   DECLARE_REGISTER(gs,     uint16_t, -1);
 
-  // TODO
-  DECLARE_REGISTER(cr3,    uint64_t, -1);
-
   using RegistersX86_32 = RegisterContext<
     eax, ebx, ecx, edx, esp, ss, ebp, esi, edi,
-    eip, eflags, cs, ds, es, fs, gs>;
+    eip, eflags, cs, ds, es, fs, gs, x86::cr3>;
 
 }
 

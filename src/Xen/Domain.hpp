@@ -9,7 +9,7 @@
 
 #include "Common.hpp"
 #include "XenHandle.hpp"
-#include "../Registers/RegistersX86.hpp"
+#include "../Registers/RegistersX86Any.hpp"
 #include "MemoryPermissions.hpp"
 
 namespace xd::xen {
@@ -46,8 +46,8 @@ namespace xd::xen {
 
     uint64_t get_page_table_entry(Address address) const; // TODO
 
-    xd::reg::RegistersX86 get_cpu_context(VCPU_ID vcpu_id = 0) const;
-    void set_cpu_context(xd::reg::RegistersX86 regs, VCPU_ID vcpu_id = 0) const;
+    xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const;
+    void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const;
 
     void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
     void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;

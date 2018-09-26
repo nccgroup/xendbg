@@ -12,7 +12,7 @@
 
 #include <sys/mman.h>
 
-using xd::reg::RegistersX86;
+using xd::reg::RegistersX86Any;
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::DomInfo;
@@ -40,7 +40,7 @@ using xd::xen::MemoryPermissions;
 #define SET_PV_USER(_regs, _pv, _reg) \
   _pv.user_regs._reg = _regs.get<_reg>();
 
-static RegistersX86 convert_from_hvm(const struct hvm_hw_cpu &hvm) {
+static RegistersX86Any convert_from_hvm(const struct hvm_hw_cpu &hvm) {
   using namespace xd::reg::x86_64;
 
   RegistersX86_64 regs;
@@ -105,118 +105,133 @@ static hvm_hw_cpu convert_to_hvm(const RegistersX86_64 &regs) {
   return hvm;
 }
 
-static RegistersX86_64 convert_from_pv64(const vcpu_guest_context_x86_64_t &pv) {
+static RegistersX86_64 convert_from_pv64(const vcpu_guest_context_any_t &pv) {
+  using namespace xd::reg::x86;
   using namespace xd::reg::x86_64;
 
+  const auto &pv64 = pv.x64;
   RegistersX86_64 regs;
 
-  GET_PV_USER(regs, pv, rax);
-  GET_PV_USER(regs, pv, rbx);
-  GET_PV_USER(regs, pv, rcx);
-  GET_PV_USER(regs, pv, rdx);
-  GET_PV_USER(regs, pv, rsp);
-  GET_PV_USER(regs, pv, rbp);
-  GET_PV_USER(regs, pv, rsi);
-  GET_PV_USER(regs, pv, rdi);
-  GET_PV_USER(regs, pv, r8);
-  GET_PV_USER(regs, pv, r9);
-  GET_PV_USER(regs, pv, r10);
-  GET_PV_USER(regs, pv, r11);
-  GET_PV_USER(regs, pv, r12);
-  GET_PV_USER(regs, pv, r13);
-  GET_PV_USER(regs, pv, r14);
-  GET_PV_USER(regs, pv, r15);
-  GET_PV_USER(regs, pv, rip);
-  GET_PV_USER(regs, pv, rflags);
-  GET_PV_USER(regs, pv, fs);
-  GET_PV_USER(regs, pv, gs);
-  GET_PV_USER(regs, pv, cs);
-  GET_PV_USER(regs, pv, ds);
-  GET_PV_USER(regs, pv, ss);
+  GET_PV_USER(regs, pv64, rax);
+  GET_PV_USER(regs, pv64, rbx);
+  GET_PV_USER(regs, pv64, rcx);
+  GET_PV_USER(regs, pv64, rdx);
+  GET_PV_USER(regs, pv64, rsp);
+  GET_PV_USER(regs, pv64, rbp);
+  GET_PV_USER(regs, pv64, rsi);
+  GET_PV_USER(regs, pv64, rdi);
+  GET_PV_USER(regs, pv64, r8);
+  GET_PV_USER(regs, pv64, r9);
+  GET_PV_USER(regs, pv64, r10);
+  GET_PV_USER(regs, pv64, r11);
+  GET_PV_USER(regs, pv64, r12);
+  GET_PV_USER(regs, pv64, r13);
+  GET_PV_USER(regs, pv64, r14);
+  GET_PV_USER(regs, pv64, r15);
+  GET_PV_USER(regs, pv64, rip);
+  GET_PV_USER(regs, pv64, rflags);
+  GET_PV_USER(regs, pv64, fs);
+  GET_PV_USER(regs, pv64, gs);
+  GET_PV_USER(regs, pv64, cs);
+  GET_PV_USER(regs, pv64, ds);
+  GET_PV_USER(regs, pv64, ss);
+
+  regs.get<cr3>() = pv.c.ctrlreg[3];
 
   return regs;
 }
 
-static vcpu_guest_context_x86_64_t convert_to_pv64(const RegistersX86_64 &regs) {
+static vcpu_guest_context_any_t convert_to_pv64(const RegistersX86_64 &regs, vcpu_guest_context_any_t pv) {
+  using namespace xd::reg::x86;
   using namespace xd::reg::x86_64;
 
-  vcpu_guest_context_x86_64_t pv;
-  memset(&pv, 0x00, sizeof(vcpu_guest_context_x86_64_t));
+  auto &pv64 = pv.x64;
 
-  SET_PV_USER(regs, pv, rax);
-  SET_PV_USER(regs, pv, rbx);
-  SET_PV_USER(regs, pv, rcx);
-  SET_PV_USER(regs, pv, rdx);
-  SET_PV_USER(regs, pv, rsp);
-  SET_PV_USER(regs, pv, rbp);
-  SET_PV_USER(regs, pv, rsi);
-  SET_PV_USER(regs, pv, rdi);
-  SET_PV_USER(regs, pv, r8);
-  SET_PV_USER(regs, pv, r9);
-  SET_PV_USER(regs, pv, r10);
-  SET_PV_USER(regs, pv, r11);
-  SET_PV_USER(regs, pv, r12);
-  SET_PV_USER(regs, pv, r13);
-  SET_PV_USER(regs, pv, r14);
-  SET_PV_USER(regs, pv, r15);
-  SET_PV_USER(regs, pv, rip);
-  SET_PV_USER(regs, pv, rflags);
-  SET_PV_USER(regs, pv, fs);
-  SET_PV_USER(regs, pv, gs);
-  SET_PV_USER(regs, pv, cs);
-  SET_PV_USER(regs, pv, ds);
-  SET_PV_USER(regs, pv, ss);
+  SET_PV_USER(regs, pv64, rax);
+  SET_PV_USER(regs, pv64, rbx);
+  SET_PV_USER(regs, pv64, rcx);
+  SET_PV_USER(regs, pv64, rdx);
+  SET_PV_USER(regs, pv64, rsp);
+  SET_PV_USER(regs, pv64, rbp);
+  SET_PV_USER(regs, pv64, rsi);
+  SET_PV_USER(regs, pv64, rdi);
+  SET_PV_USER(regs, pv64, r8);
+  SET_PV_USER(regs, pv64, r9);
+  SET_PV_USER(regs, pv64, r10);
+  SET_PV_USER(regs, pv64, r11);
+  SET_PV_USER(regs, pv64, r12);
+  SET_PV_USER(regs, pv64, r13);
+  SET_PV_USER(regs, pv64, r14);
+  SET_PV_USER(regs, pv64, r15);
+  SET_PV_USER(regs, pv64, rip);
+  SET_PV_USER(regs, pv64, rflags);
+  SET_PV_USER(regs, pv64, fs);
+  SET_PV_USER(regs, pv64, gs);
+  SET_PV_USER(regs, pv64, cs);
+  SET_PV_USER(regs, pv64, ds);
+  SET_PV_USER(regs, pv64, ss);
+
+  pv.c.ctrlreg[3] = regs.get<cr3>();
 
   return pv;
 }
 
-static RegistersX86_32 convert_from_pv32(const vcpu_guest_context_x86_32_t &pv) {
+static RegistersX86_32 convert_from_pv32(const vcpu_guest_context_any_t &pv) {
+  using namespace xd::reg::x86;
   using namespace xd::reg::x86_32;
 
   RegistersX86_32 regs;
+  const auto pv32 = pv.x32;
 
-  GET_PV_USER(regs, pv, eax);
-  GET_PV_USER(regs, pv, ebx);
-  GET_PV_USER(regs, pv, ecx);
-  GET_PV_USER(regs, pv, edx);
-  GET_PV_USER(regs, pv, edi);
-  GET_PV_USER(regs, pv, esi);
-  GET_PV_USER(regs, pv, ebp);
-  GET_PV_USER(regs, pv, esp);
-  GET_PV_USER(regs, pv, ss);
-  GET_PV_USER(regs, pv, eip);
-  GET_PV_USER(regs, pv, eflags);
-  GET_PV_USER(regs, pv, cs);
-  GET_PV_USER(regs, pv, ds);
-  GET_PV_USER(regs, pv, es);
-  GET_PV_USER(regs, pv, fs);
-  GET_PV_USER(regs, pv, gs);
+  GET_PV_USER(regs, pv32, eax);
+  GET_PV_USER(regs, pv32, ebx);
+  GET_PV_USER(regs, pv32, ecx);
+  GET_PV_USER(regs, pv32, edx);
+  GET_PV_USER(regs, pv32, edi);
+  GET_PV_USER(regs, pv32, esi);
+  GET_PV_USER(regs, pv32, ebp);
+  GET_PV_USER(regs, pv32, esp);
+  GET_PV_USER(regs, pv32, ss);
+  GET_PV_USER(regs, pv32, eip);
+  GET_PV_USER(regs, pv32, eflags);
+  GET_PV_USER(regs, pv32, cs);
+  GET_PV_USER(regs, pv32, ds);
+  GET_PV_USER(regs, pv32, es);
+  GET_PV_USER(regs, pv32, fs);
+  GET_PV_USER(regs, pv32, gs);
+
+  regs.get<cr3>() = pv.c.ctrlreg[3];
 
   return regs;
 }
 
-static vcpu_guest_context_x86_32_t convert_to_pv32(const RegistersX86_32 &regs) {
+static vcpu_guest_context_any_t convert_to_pv32(const RegistersX86_32 &regs) {
+  using namespace xd::reg::x86;
   using namespace xd::reg::x86_32;
 
-  vcpu_guest_context_x86_32_t pv;
+  vcpu_guest_context_any_t pv;
   memset(&pv, 0x00, sizeof(vcpu_guest_context_x86_32_t));
 
-  SET_PV_USER(regs, pv, eax);
-  SET_PV_USER(regs, pv, ebx);
-  SET_PV_USER(regs, pv, ecx);
-  SET_PV_USER(regs, pv, edx);
-  SET_PV_USER(regs, pv, edi);
-  SET_PV_USER(regs, pv, esi);
-  SET_PV_USER(regs, pv, ebp);
-  SET_PV_USER(regs, pv, esp);
-  SET_PV_USER(regs, pv, ss);
-  SET_PV_USER(regs, pv, eip);
-  SET_PV_USER(regs, pv, eflags);
-  SET_PV_USER(regs, pv, cs);
-  SET_PV_USER(regs, pv, ds);
-  SET_PV_USER(regs, pv, es);
-  SET_PV_USER(regs, pv, fs);
-  SET_PV_USER(regs, pv, gs);
+  auto &pv32 = pv.x32;
+
+  SET_PV_USER(regs, pv32, eax);
+  SET_PV_USER(regs, pv32, ebx);
+  SET_PV_USER(regs, pv32, ecx);
+  SET_PV_USER(regs, pv32, edx);
+  SET_PV_USER(regs, pv32, edi);
+  SET_PV_USER(regs, pv32, esi);
+  SET_PV_USER(regs, pv32, ebp);
+  SET_PV_USER(regs, pv32, esp);
+  SET_PV_USER(regs, pv32, ss);
+  SET_PV_USER(regs, pv32, eip);
+  SET_PV_USER(regs, pv32, eflags);
+  SET_PV_USER(regs, pv32, cs);
+  SET_PV_USER(regs, pv32, ds);
+  SET_PV_USER(regs, pv32, es);
+  SET_PV_USER(regs, pv32, fs);
+  SET_PV_USER(regs, pv32, gs);
+
+  pv.c.ctrlreg[3] = regs.get<cr3>();
 
   return pv;
 }
@@ -246,7 +261,7 @@ DomInfo XenCtrl::get_domain_info(const Domain &domain) const {
   return dominfo;
 }
 
-RegistersX86 XenCtrl::get_domain_cpu_context(const Domain &domain,
+RegistersX86Any XenCtrl::get_domain_cpu_context(const Domain &domain,
     VCPU_ID vcpu_id) const
 {
   if (domain.get_info().hvm == 1) {
@@ -268,7 +283,7 @@ RegistersX86 XenCtrl::get_domain_cpu_context(const Domain &domain,
 }
 
 void XenCtrl::set_domain_cpu_context(const Domain &domain,
-    const RegistersX86& regs, VCPU_ID vcpu_id) const
+    const RegistersX86Any& regs, VCPU_ID vcpu_id) const
 {
   if (domain.get_info().hvm == 1) {
     const auto regs64 = std::get<RegistersX86_64>(regs); // TODO

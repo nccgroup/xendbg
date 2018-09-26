@@ -14,7 +14,7 @@
 #include <variant>
 #include <vector>
 
-#include "../Registers/RegistersX86.hpp"
+#include "../Registers/RegistersX86Any.hpp"
 #include "../Util/overloaded.hpp"
 
 #define DECLARE_SIMPLE_REQUEST(name, ch) \

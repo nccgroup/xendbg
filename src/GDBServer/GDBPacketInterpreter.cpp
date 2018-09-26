@@ -5,12 +5,12 @@
 #include "GDBConnection.hpp"
 #include "GDBPacketInterpreter.hpp"
 #include "GDBResponsePacket.hpp"
-#include "../Registers/RegistersX86.hpp"
+#include "../Registers/RegistersX86Any.hpp"
 #include "../Xen/XenException.hpp"
 #include "../Debugger/DebugSession.hpp"
 
 using xd::dbg::DebugSession;
-using xd::reg::RegistersX86;
+using xd::reg::RegistersX86Any;
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::XenException;

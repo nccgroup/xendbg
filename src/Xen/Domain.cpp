@@ -47,8 +47,9 @@
 
 #include "Domain.hpp"
 #include "../Util/overloaded.hpp"
+#include "../Registers/RegistersX86.hpp"
 
-using xd::reg::RegistersX86;
+using xd::reg::RegistersX86Any;
 using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::MemInfo;
@@ -106,7 +107,10 @@ uint64_t Domain::get_page_table_entry(Address address) const {
 
   uint64_t flags, pte_address;
   // FYI: "cr3" is the register that holds the base address of the page table
-  auto base = 0; /*TODO: CR3 VALUE HERE*/
+  auto base = std::visit(util::overloaded {
+    [](const auto &regs) {
+      return regs.get<reg::x86::cr3>();
+    }, get_cpu_context() });
 
   READ_PAGETABLE_LEVEL(4, address, base, pte_address, flags);
 
@@ -132,11 +136,11 @@ uint64_t Domain::get_page_table_entry(Address address) const {
   return flags;
 }
 
-RegistersX86 Domain::get_cpu_context(VCPU_ID vcpu_id) const {
+RegistersX86Any Domain::get_cpu_context(VCPU_ID vcpu_id) const {
   return _xen->get_xenctrl().get_domain_cpu_context(*this, vcpu_id);
 }
 
-void Domain::set_cpu_context(RegistersX86 regs, VCPU_ID vcpu_id) const {
+void Domain::set_cpu_context(RegistersX86Any regs, VCPU_ID vcpu_id) const {
   _xen->get_xenctrl().set_domain_cpu_context(*this, regs, vcpu_id);
 }
 

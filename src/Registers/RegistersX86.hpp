@@ -1,21 +1,16 @@
 //
-// Created by Spencer Michaels on 9/10/18.
+// Created by Spencer Michaels on 9/25/18.
 //
 
-#ifndef XENDBG_REGISTERS_HPP
-#define XENDBG_REGISTERS_HPP
+#ifndef XENDBG_REGISTERSX86_HPP
+#define XENDBG_REGISTERSX86_HPP
 
-#include <variant>
+#include "Register.hpp"
 
-#include "RegistersX86_32.hpp"
-#include "RegistersX86_64.hpp"
+namespace xd::reg::x86 {
 
-namespace xd::reg {
-
-  using RegistersX86 = std::variant<
-    x86_32::RegistersX86_32,
-    x86_64::RegistersX86_64>;
+  DECLARE_REGISTER(cr3,    uint64_t, -1);
 
 }
 
-#endif //XENDBG_REGISTERS_HPP
+#endif //XENDBG_REGISTERSX86_HPP

@@ -56,7 +56,7 @@ add_executable(xendbg
   src/REPL/REPL.hpp
   src/Registers/Register.hpp
   src/Registers/RegisterContext.hpp
-        src/Registers/RegistersX86.hpp
+        src/Registers/RegistersX86Any.hpp
   src/Registers/RegistersX86_64.hpp
   src/Util/IndentHelper.cpp
   src/Util/IndentHelper.hpp
@@ -95,7 +95,7 @@ add_executable(xendbg
   src/UV/UVSignal.hpp src/UV/UVSignal.cpp
   src/UV/UVPoll.hpp src/UV/UVPoll.cpp
   src/UV/UVTCP.hpp src/UV/UVTCP.cpp
-  src/UV/UVTimer.hpp src/UV/UVTimer.cpp)
+  src/UV/UVTimer.hpp src/UV/UVTimer.cpp src/Registers/RegistersX86.hpp)
 
 target_link_libraries(xendbg
   capstone

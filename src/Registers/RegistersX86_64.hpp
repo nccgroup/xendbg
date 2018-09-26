@@ -8,6 +8,7 @@
 
 #include "Register.hpp"
 #include "RegisterContext.hpp"
+#include "RegistersX86.hpp"
 
 namespace xd::reg::x86_64 {
 
@@ -38,7 +39,7 @@ namespace xd::reg::x86_64 {
   using RegistersX86_64 = RegisterContext<
     rax, rbx, rcx, rdx, rsp, rbp, rsi, rdi,
     r8, r9, r10, r11, r12, r13, r14, r15,
-    rip, rflags, cs, fs, gs, ds, ss>; 
+    rip, rflags, cs, fs, gs, ds, ss, x86::cr3>;
 
 }
 

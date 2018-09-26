@@ -14,7 +14,7 @@
 
 #include "../Xen/Common.hpp"
 #include "../Xen/MemoryPermissions.hpp"
-#include "../Registers/RegistersX86.hpp"
+#include "../Registers/RegistersX86Any.hpp"
 #include "../Util/overloaded.hpp"
 
 namespace xd::gdbsrv::pkt {
@@ -182,7 +182,7 @@ namespace xd::gdbsrv::pkt {
 
   class GeneralRegistersBatchReadResponse : public GDBResponsePacket {
   public:
-    GeneralRegistersBatchReadResponse(xd::reg::RegistersX86 registers)
+    GeneralRegistersBatchReadResponse(xd::reg::RegistersX86Any registers)
       : _registers(registers) {}
 
   std::string to_string() const override {
@@ -211,7 +211,7 @@ namespace xd::gdbsrv::pkt {
   }
 
   private:
-  xd::reg::RegistersX86 _registers;
+  xd::reg::RegistersX86Any _registers;
   };
 
   class MemoryReadResponse : public GDBResponsePacket {

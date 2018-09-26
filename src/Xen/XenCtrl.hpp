@@ -15,7 +15,7 @@
 
 #include "Common.hpp"
 #include "MemoryPermissions.hpp"
-#include "../Registers/RegistersX86.hpp"
+#include "../Registers/RegistersX86Any.hpp"
 
 namespace xd::xen {
 
@@ -33,10 +33,10 @@ namespace xd::xen {
     XenVersion get_xen_version() const;
 
     DomInfo get_domain_info(const Domain &domain) const;
-    xd::reg::RegistersX86 get_domain_cpu_context(const Domain &domain,
+    xd::reg::RegistersX86Any get_domain_cpu_context(const Domain &domain,
         VCPU_ID vcpu_id = 0) const;
     void set_domain_cpu_context(const Domain &domain,
-        const xd::reg::RegistersX86& regs, VCPU_ID vcpu_id = 0) const;
+        const xd::reg::RegistersX86Any& regs, VCPU_ID vcpu_id = 0) const;
     WordSize get_domain_word_size(const Domain &domain) const;
 
     MemInfo map_domain_meminfo(const Domain &domain) const;

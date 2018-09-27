@@ -113,6 +113,8 @@ GDBRequestPacket GDBConnection::parse_packet(const GDBPacket &packet) {
   const auto &contents = packet.contents;
 
   switch (contents[0]) {
+    case '\x03':
+      return pkt::InterruptRequest(contents);
     case 'q':
       if (contents == "qfThreadInfo")
         return pkt::QueryThreadInfoStartRequest(contents);

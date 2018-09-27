@@ -547,6 +547,7 @@ namespace xd::gdbsrv::pkt {
 
   using GDBRequestPacket = std::variant<
     StartNoAckModeRequest,
+    InterruptRequest,
     QuerySupportedRequest,
     QueryThreadSuffixSupportedRequest,
     QueryListThreadsInStopReplySupportedRequest,

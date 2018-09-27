@@ -22,8 +22,9 @@ void GDBPacketQueue::append(const std::vector<char> &data) {
    */
   const auto find_checking_interrupts = [this](auto it, auto end, char target) {
     while (it != end && *it != target)
-      if (*it++ == '\x03')
+      if (*it++ == '\x03') {
         _packets.emplace(GDBPacket{"\x03", 0x03});
+      }
     return it;
   };
 

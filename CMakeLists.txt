@@ -76,7 +76,13 @@ add_executable(xendbg
   src/main.cpp
   src/Debugger/DebugSession.cpp
   src/Debugger/DebugSessionPV.cpp
-        include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp)
+        include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
+  src/GDBPacketHandler.hpp
+  src/GDBPacketHandler.cpp
+  src/ServerInstance.hpp
+  src/ServerInstancePV.hpp
+  src/ServerInstancePV.cpp
+        )
 
 target_link_libraries(xendbg
   capstone

@@ -1,13 +1,13 @@
 #include <iostream>
 
-#include <GDBServer/GDBPacketInterpreter.hpp>
 #include <UV/UVPoll.hpp>
 #include <UV/UVSignal.hpp>
 
+#include "ServerInstancePV.hpp"
 #include "ServerModeController.hpp"
 
-using xd::gdbsrv::interpret_packet;
 using xd::ServerModeController;
+using xd::ServerInstancePV;
 using xd::uv::UVLoop;
 using xd::uv::UVPoll;
 using xd::uv::UVSignal;
@@ -43,23 +43,33 @@ void ServerModeController::run() {
   _loop.start();
 }
 
+static xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain) {
+  return std::visit(xd::util::overloaded {
+    [](const auto &domain) {
+      return domain.get_domid();
+    },
+  }, domain);
+}
+
 void ServerModeController::add_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
-  for (const auto &domain : domains) {
+  for (const auto &domain_any : domains) {
+    const auto domid = get_domid_any(domain_any);
+    if (!_instances.count(domid)) {
+      std::cout << "[+] Domain " << domid << ": port " << _next_port << std::endl;
+    }
+
     std::visit(util::overloaded {
       [&](const xen::DomainPV &domain) {
-        auto domid = domain.get_domid();
-        if (!_instances.count(domid)) {
-          std::cout << "[+] Domain " << domid << ": port " << _next_port << std::endl;
-          auto [kv, _] = _instances.emplace(domid, Instance(_loop, domain)); // TODO
-          kv->second.run("127.0.0.1", _next_port++);
-        }
+        auto [kv, _] = _instances.emplace(domid,
+            std::make_unique<ServerInstancePV>(_loop, domain)); // TODO
+        kv->second->run("127.0.0.1", _next_port++);
       },
       [&](const xen::DomainHVM &domain) {
         throw std::runtime_error("HVM domain instances not yet supported!");
       }
-    }, domain);
+    }, domain_any);
   }
 }
 
@@ -70,39 +80,13 @@ void ServerModeController::prune_instances() {
   while (it != _instances.end()) {
     if (std::none_of(domains.begin(), domains.end(),
       [&](const auto &domain) {
-        return std::visit(util::overloaded {
-          [&](const auto &domain) {
-            return domain.get_domid() == it->second.get_domid();
-          }
-        }, domain);
+        return get_domid_any(domain) == it->second->get_domid();
       }))
     {
-      std::cout << "[-] Domain " << it->second.get_domid() << std::endl;
+      std::cout << "[-] Domain " << it->second->get_domid() << std::endl;
       it = _instances.erase(it);
     } else {
       ++it;
     }
   }
-}
-
-ServerModeController::Instance::Instance(UVLoop &loop, xen::DomainPV domain)
-  : _domid(domain.get_domid()), _domain(std::move(domain)),  _server(loop),
-    _debugger(new dbg::DebugSessionPV(loop, _domain))
-{
-}
-
-void ServerModeController::Instance::run(const std::string& address_str, uint16_t port) {
-  const auto on_error = [](int error) {
-    std::cout << "Error: " << std::strerror(error) << std::endl;
-  };
-
-  _server.run(address_str, port, 1, [this, on_error](auto &server, auto &connection) {
-    _debugger->attach();
-
-    connection.start([this, &server](auto &connection, const auto &packet) {
-      interpret_packet(_domain, *_debugger, server, connection, packet);
-    }, [this]() {
-      _debugger->detach();
-    }, on_error);
-  }, on_error);
 }

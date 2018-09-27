@@ -13,6 +13,8 @@
 #include <UV/UVLoop.hpp>
 #include <Xen/DomainAny.hpp>
 
+#include "ServerInstance.hpp"
+
 namespace xd {
 
   class ServerModeController {
@@ -22,8 +24,6 @@ namespace xd {
     void run();
 
   private:
-    class Instance;
-
     xen::XenEventChannel _xenevtchn;
     xen::XenCtrl _xenctrl;
     xen::XenForeignMemory _xenforeignmemory;
@@ -31,30 +31,11 @@ namespace xd {
 
     uv::UVLoop _loop;
     uint16_t _next_port;
-    std::unordered_map<xen::DomID, Instance> _instances;
+    std::unordered_map<xen::DomID, std::unique_ptr<ServerInstance>> _instances;
 
+  private:
     void add_instances();
     void prune_instances();
-
-    class Instance {
-    public:
-      Instance(uv::UVLoop &loop, xen::DomainPV domain);
-
-      Instance(Instance&& other) = default;
-      Instance(const Instance& other) = delete;
-      Instance& operator=(Instance&& other) = default;
-      Instance& operator=(const Instance& other) = delete;
-
-      xen::DomID get_domid() const { return _domid; };
-
-      void run(const std::string& address_str, uint16_t port);
-
-    private:
-      xen::DomID _domid;
-      xen::DomainPV _domain;
-      xd::gdbsrv::GDBServer _server;
-      std::unique_ptr<xd::dbg::DebugSession> _debugger;
-    };
   };
 
 }

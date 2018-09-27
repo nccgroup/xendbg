@@ -6,13 +6,15 @@
 
 #include <Debugger/DebugSession.hpp>
 
+#include <sys/mman.h>
+
 using xd::dbg::DebugSession;
 using xd::uv::UVLoop;
 using xd::xen::Address;
 using xd::xen::DomID;
 
-DebugSession::DebugSession(UVLoop &loop, xen::Domain domain)
-  : _domain(std::move(domain)), _timer(loop), _vcpu_id(0)
+DebugSession::DebugSession(UVLoop &loop, xen::Domain &domain)
+  : _domain(domain), _timer(loop), _vcpu_id(0)
 {
   _timer.data = this; // TODO
 
@@ -30,7 +32,6 @@ DebugSession::~DebugSession() {
 }
 
 void DebugSession::attach() {
-  _domain.set_debugging(true);
   _domain.pause();
 }
 
@@ -70,8 +71,8 @@ DebugSession::get_address_of_next_instruction() {
     return 0;
   };
 
-  const auto address = read_register<reg::x86_32::eip, reg::x86_64::rip>();
-
+  const auto ctx = _domain.get_cpu_context();
+  const auto address = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(ctx);
   const auto read_size = (2*X86_MAX_INSTRUCTION_SIZE);
   const auto mem_handle = _domain.map_memory<uint8_t>(address, read_size, PROT_READ);
 
@@ -118,7 +119,7 @@ DebugSession::get_address_of_next_instruction() {
   else if (cs_insn_group(_capstone, &cur_instr, X86_GRP_RET) ||
              cs_insn_group(_capstone, &cur_instr, X86_GRP_IRET))
   {
-    const auto stack_ptr = read_register<reg::x86_32::esp, reg::x86_64::rsp>();
+    const auto stack_ptr = reg::read_register<reg::x86_32::esp, reg::x86_64::rsp>(_domain.get_cpu_context());
     const auto ret_dest = read_word(stack_ptr);
     return std::make_pair(std::nullopt, ret_dest);
   }

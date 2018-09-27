@@ -16,6 +16,7 @@ using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::XenException;
 
 void xd::gdbsrv::interpret_packet(
+      xd::xen::Domain &domain,
       xd::dbg::DebugSession &debugger,
       xd::gdbsrv::GDBServer &server,
       xd::gdbsrv::GDBConnection &connection,
@@ -30,7 +31,7 @@ void xd::gdbsrv::interpret_packet(
 
   const auto visitor = util::overloaded {
       [&](const InterruptRequest &req) {
-        debugger.get_domain().pause();
+        domain.pause();
         server.broadcast(StopReasonSignalResponse(SIGSTOP, 1), on_error); // TODO
       },
       [&](const StartNoAckModeRequest &req) {
@@ -52,14 +53,13 @@ void xd::gdbsrv::interpret_packet(
         connection.send(OKResponse(), on_error);
       },
       [&](const QueryHostInfoRequest &req) {
-        const auto domain = debugger.get_domain();
         const auto name = domain.get_name();
         const auto word_size = domain.get_word_size();
         connection.send(QueryHostInfoResponse(word_size, name), on_error);
       },
       [&](const QueryRegisterInfoRequest &req) {
         const auto id = req.get_register_id();
-        const auto word_size = debugger.get_domain().get_word_size();
+        const auto word_size = domain.get_word_size();
 
         if (word_size == sizeof(uint64_t)) {
           RegistersX86_64::find_metadata_by_id(id, [&](const auto &md) {
@@ -86,7 +86,7 @@ void xd::gdbsrv::interpret_packet(
       [&](const QueryMemoryRegionInfoRequest &req) {
         const auto address = req.get_address();
 
-        auto pte = debugger.get_domain().get_page_table_entry(address);
+        auto pte = domain.get_page_table_entry(address);
         auto length = XC_PAGE_SIZE;
 
         if (pte.is_present() ) {
@@ -103,7 +103,7 @@ void xd::gdbsrv::interpret_packet(
           auto address2 = address;
           do {
             address2 += XC_PAGE_SIZE;
-            pte = debugger.get_domain().get_page_table_entry(address2);
+            pte = domain.get_page_table_entry(address2);
           } while (!pte.is_present());
 
           length = address2 - address;
@@ -118,7 +118,7 @@ void xd::gdbsrv::interpret_packet(
         try {
           const auto start = address & XC_PAGE_MASK;
           const auto size = XC_PAGE_SIZE;
-          const auto perms = debugger.get_domain().get_memory_permissions(address);
+          const auto perms = domain.get_memory_permissions(address);
 
           connection.send(QueryMemoryRegionInfoResponse(start, size, perms), on_error);
         } catch (const XenException &e) {
@@ -142,7 +142,7 @@ void xd::gdbsrv::interpret_packet(
         server.broadcast(StopReasonSignalResponse(SIGTRAP, 1), on_error); // TODO
       },
       [&](const KillRequest &req) {
-        debugger.get_domain().destroy();
+        domain.destroy();
         server.broadcast(TerminatedResponse(SIGKILL), on_error);
       },
       [&](const SetThreadRequest &req) {
@@ -151,7 +151,7 @@ void xd::gdbsrv::interpret_packet(
       [&](const RegisterReadRequest &req) {
         const auto id = req.get_register_id();
         const auto thread_id = req.get_thread_id();
-        const auto regs = debugger.get_domain().get_cpu_context(thread_id-1);
+        const auto regs = domain.get_cpu_context(thread_id-1);
 
         std::visit(util::overloaded {
             [&](const auto &regs) {
@@ -167,7 +167,7 @@ void xd::gdbsrv::interpret_packet(
         const auto id = req.get_register_id();
         const auto value = req.get_value();
 
-        auto regs = debugger.get_domain().get_cpu_context();
+        auto regs = domain.get_cpu_context();
         std::visit(util::overloaded {
             [&](auto &regs) {
               regs.find_by_id(id, [&value](const auto&, auto &reg) {
@@ -177,11 +177,11 @@ void xd::gdbsrv::interpret_packet(
               });
             }
         }, regs);
-        debugger.get_domain().set_cpu_context(regs);
+        domain.set_cpu_context(regs);
         connection.send(OKResponse(), on_error);
       },
       [&](const GeneralRegistersBatchReadRequest &req) {
-        const auto regs = debugger.get_domain().get_cpu_context();
+        const auto regs = domain.get_cpu_context();
         std::visit(util::overloaded {
             [&](const auto &regs) {
               connection.send(GeneralRegistersBatchReadResponse(regs), on_error);
@@ -189,7 +189,7 @@ void xd::gdbsrv::interpret_packet(
         }, regs);
       },
       [&](const GeneralRegistersBatchWriteRequest &req) {
-        auto orig_regs_any = debugger.get_domain().get_cpu_context();
+        auto orig_regs_any = domain.get_cpu_context();
         auto values = req.get_values();
 
         std::visit(util::overloaded {
@@ -235,7 +235,7 @@ void xd::gdbsrv::interpret_packet(
       [&](const ContinueRequest &req) {
         debugger.continue_();
         debugger.notify_breakpoint_hit([&](auto /*address*/) {
-          debugger.get_domain().pause();
+          domain.pause();
           connection.send(StopReasonSignalResponse(SIGTRAP, 1), on_error); // TODO
         });
 

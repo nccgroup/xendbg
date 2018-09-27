@@ -5,6 +5,7 @@
 #ifndef XENDBG_GDBPACKETINTERPRETER_HPP
 #define XENDBG_GDBPACKETINTERPRETER_HPP
 
+#include <Xen/Domain.hpp>
 #include "GDBConnection.hpp"
 #include "GDBServer.hpp"
 #include "GDBRequestPacket.hpp"
@@ -25,6 +26,7 @@ namespace xd::dbg {
 namespace xd::gdbsrv {
 
   void interpret_packet(
+      xd::xen::Domain &domain,
       xd::dbg::DebugSession &debugger,
       xd::gdbsrv::GDBServer &server,
       xd::gdbsrv::GDBConnection &connection,

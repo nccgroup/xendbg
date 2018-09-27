@@ -5,6 +5,7 @@
 #include <Xen/XenCtrl.hpp>
 #include <Xen/XenException.hpp>
 
+using xd::xen::XenCtrl;
 using xd::xen::XenException;
 
 xd::xen::XenCtrl::XenCtrl()

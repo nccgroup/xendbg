@@ -13,7 +13,7 @@
 
 #include <capstone/capstone.h>
 
-#include <Xen/Domain.hpp>
+#include <Xen/DomainPV.hpp>
 #include <Util/overloaded.hpp>
 #include <UV/UVLoop.hpp>
 
@@ -26,7 +26,7 @@ namespace xd::dbg {
     using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
 
   public:
-    DebugSessionPV(uv::UVLoop &loop, xen::Domain domain);
+    DebugSessionPV(uv::UVLoop &loop, xen::DomainPV& domain);
     ~DebugSessionPV() override;
 
     void continue_() override;
@@ -41,6 +41,7 @@ namespace xd::dbg {
     void write_memory_retaining_breakpoints(xen::Address address, size_t length, void *data) override;
 
   private:
+    xen::DomainPV &_domain;
     InfiniteLoopMap _infinite_loops;
   };
 

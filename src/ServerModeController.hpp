@@ -11,8 +11,7 @@
 #include <Debugger/DebugSessionPV.hpp>
 #include <GDBServer/GDBServer.hpp>
 #include <UV/UVLoop.hpp>
-#include <Xen/Domain.hpp>
-#include <Xen/XenHandle.hpp>
+#include <Xen/DomainAny.hpp>
 
 namespace xd {
 
@@ -25,7 +24,11 @@ namespace xd {
   private:
     class Instance;
 
-    xen::XenHandlePtr _xen;
+    xen::XenEventChannel _xenevtchn;
+    xen::XenCtrl _xenctrl;
+    xen::XenForeignMemory _xenforeignmemory;
+    xen::XenStore _xenstore;
+
     uv::UVLoop _loop;
     uint16_t _next_port;
     std::unordered_map<xen::DomID, Instance> _instances;
@@ -35,7 +38,7 @@ namespace xd {
 
     class Instance {
     public:
-      Instance(uv::UVLoop &loop, xen::Domain domain);
+      Instance(uv::UVLoop &loop, xen::DomainPV domain);
 
       Instance(Instance&& other) = default;
       Instance(const Instance& other) = delete;
@@ -48,6 +51,7 @@ namespace xd {
 
     private:
       xen::DomID _domid;
+      xen::DomainPV _domain;
       xd::gdbsrv::GDBServer _server;
       std::unique_ptr<xd::dbg::DebugSession> _debugger;
     };

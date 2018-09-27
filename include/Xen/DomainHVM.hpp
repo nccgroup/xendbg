@@ -30,13 +30,11 @@ namespace xd::xen {
     void monitor_privileged_call(bool enable);
 
   private:
-    struct hvm_hw_cpu get_cpu_context_hvm(VCPU_ID vcpu_id) const;
-    void set_cpu_context_hvm(struct hvm_hw_cpu context, VCPU_ID vcpu_id) const;
+    struct hvm_hw_cpu get_cpu_context_raw(VCPU_ID vcpu_id) const;
+    void set_cpu_context_raw(struct hvm_hw_cpu context, VCPU_ID vcpu_id) const;
 
-    static RegistersX86_64 convert_regs_from_pv64(const vcpu_guest_context_any_t &pv);
-    static vcpu_guest_context_any_t convert_regs_to_pv64(const RegistersX86_64 &regs, vcpu_guest_context_any_t pv);
-    static RegistersX86_32 convert_regs_from_pv32(const vcpu_guest_context_any_t &pv);
-    static vcpu_guest_context_any_t convert_regs_to_pv32(const RegistersX86_32 &regs, vcpu_guest_context_any_t pv);
+    static reg::RegistersX86Any convert_regs_from_hvm(const struct hvm_hw_cpu &hvm);
+    static struct hvm_hw_cpu convert_regs_to_hvm(const reg::x86_64::RegistersX86_64 &regs, hvm_hw_cpu hvm);
   };
 
 }

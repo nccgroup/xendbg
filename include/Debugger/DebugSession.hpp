@@ -47,7 +47,7 @@ namespace xd::dbg {
   public:
     using OnBreakpointHitFn = std::function<void(xen::Address)>;
 
-    DebugSession(uv::UVLoop &loop, xen::Domain domain);
+    DebugSession(uv::UVLoop &loop, xen::Domain &domain);
     virtual ~DebugSession();
 
     const xen::Domain& get_domain() { return _domain; };
@@ -73,20 +73,7 @@ namespace xd::dbg {
               std::optional<xen::Address>> get_address_of_next_instruction();
 
   private:
-    template <typename Reg32_t, typename Reg64_t>
-    uint64_t read_register() {
-      return std::visit(util::overloaded {
-          [](const reg::x86_32::RegistersX86_32 regs) {
-            return (uint64_t)regs.get<Reg32_t>();
-          },
-          [](const reg::x86_64::RegistersX86_64 regs) {
-            return (uint64_t)regs.get<Reg64_t>();
-          }
-      }, _domain.get_cpu_context(_vcpu_id));
-    }
-
-  private:
-    const xen::Domain _domain;
+    xen::Domain &_domain;
     uv::UVTimer _timer;
 
     csh _capstone;

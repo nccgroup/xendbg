@@ -14,8 +14,11 @@ namespace xd::xen {
 
   using DomainAny = std::variant<DomainPV, DomainHVM>;
 
-  static DomainAny init_domain(DomID domid, XenEventChannel &xenevtchn,
-      XenCtrl &xenctrl, XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
+  DomainAny init_domain(DomID domid, XenEventChannel &xenevtchn,
+      XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore);
+
+  std::vector<DomainAny> get_domains(XenEventChannel &xenevtchn,
+      XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore);
 
 }
 

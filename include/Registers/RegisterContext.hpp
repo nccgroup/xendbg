@@ -5,6 +5,7 @@
 #ifndef XENDBG_REGISTER_CONTEXT_HPP
 #define XENDBG_REGISTER_CONTEXT_HPP
 
+#include <iostream>
 #include <string>
 
 namespace xd::reg {

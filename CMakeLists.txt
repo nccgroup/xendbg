@@ -42,13 +42,14 @@ add_executable(xendbg
   include/Xen/BridgeHeaders/xenstore.h
   include/Xen/Common.hpp
   include/Xen/Domain.hpp
+  include/Xen/DomainAny.hpp
   include/Xen/PageTableEntry.hpp
   include/Xen/PrivCmd.hpp
   include/Xen/XenCtrl.hpp
   include/Xen/XenEventChannel.hpp
   include/Xen/XenException.hpp
   include/Xen/XenForeignMemory.hpp
-        include/Xen/XenStore.hpp
+  include/Xen/XenStore.hpp
   src/CommandLine.cpp
   src/CommandLine.hpp
   src/Debugger/DebugSession.cpp
@@ -65,12 +66,12 @@ add_executable(xendbg
   src/UV/UVTCP.cpp
   src/UV/UVTimer.cpp
   src/Xen/Domain.cpp
+  src/Xen/DomainAny.cpp
   src/Xen/PageTableEntry.cpp
   src/Xen/PrivCmd.cpp
   src/Xen/XenCtrl.cpp
   src/Xen/XenEventChannel.cpp
   src/Xen/XenForeignMemory.cpp
-  src/Xen/XenHandle.cpp
   src/Xen/XenStore.cpp
   src/main.cpp
   src/Debugger/DebugSession.cpp

@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 9/19/18.
 //
 
-#ifndef XENDBG_SERVERMODECONTROLLER_HPP
-#define XENDBG_SERVERMODECONTROLLER_HPP
+#ifndef XENDBG_SERVER_HPP
+#define XENDBG_SERVER_HPP
 
 #include <cstdint>
 #include <unordered_map>
@@ -17,9 +17,9 @@
 
 namespace xd {
 
-  class ServerModeController {
+  class Server {
   public:
-    ServerModeController(uint16_t base_port);
+    Server(uint16_t base_port);
 
     void run();
 
@@ -40,4 +40,4 @@ namespace xd {
 
 }
 
-#endif //XENDBG_SERVERMODECONTROLLER_HPP
+#endif //XENDBG_SERVER_HPP

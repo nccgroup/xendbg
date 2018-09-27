@@ -4,21 +4,21 @@
 #include <UV/UVSignal.hpp>
 
 #include "ServerInstancePV.hpp"
-#include "ServerModeController.hpp"
+#include "Server.hpp"
 
-using xd::ServerModeController;
+using xd::Server;
 using xd::ServerInstancePV;
 using xd::uv::UVLoop;
 using xd::uv::UVPoll;
 using xd::uv::UVSignal;
 using xd::xen::get_domains;
 
-ServerModeController::ServerModeController(uint16_t base_port)
+Server::Server(uint16_t base_port)
   : _next_port(base_port)
 {
 }
 
-void ServerModeController::run() {
+void Server::run() {
   UVSignal signal(_loop);
   signal.start([this]() {
     _loop.stop();
@@ -51,7 +51,7 @@ static xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain) {
   }, domain);
 }
 
-void ServerModeController::add_instances() {
+void Server::add_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   for (const auto &domain_any : domains) {
@@ -73,7 +73,7 @@ void ServerModeController::add_instances() {
   }
 }
 
-void ServerModeController::prune_instances() {
+void Server::prune_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   auto it = _instances.begin();

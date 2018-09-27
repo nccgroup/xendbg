@@ -11,10 +11,7 @@
 #include <string>
 #include <unordered_map>
 
-#include <uv.h>
-#include <UV/UVLoop.hpp>
-#include <UV/UVTCP.hpp>
-#include <UV/UVTimer.hpp>
+#include <uvw.hpp>
 
 #include "GDBConnection.hpp"
 #include "GDBResponsePacket.hpp"
@@ -22,18 +19,12 @@
 
 namespace xd::gdbsrv {
 
-  class GDBServer {
+  class GDBServer : std::enable_shared_from_this<GDBServer> {
   public:
     using OnAcceptFn = std::function<void(GDBServer&, GDBConnection&)>;
 
   public:
-    GDBServer(uv::UVLoop &loop);
-
-    GDBServer(GDBServer&& other);
-    GDBServer& operator=(GDBServer&& other);
-
-    GDBServer(const GDBServer& other) = delete;
-    GDBServer& operator=(const GDBServer& other) = delete;
+    explicit GDBServer(uvw::Loop &loop);
 
     void run(const std::string& address, uint16_t port, size_t max_connections,
         OnAcceptFn on_accept, uv::OnErrorFn on_error);
@@ -42,10 +33,7 @@ namespace xd::gdbsrv {
         uv::OnErrorFn on_error);
 
   private:
-    uv::UVTCP _tcp;
-    uv::UVTimer _timer;
-
-    std::vector<GDBConnection> _connections;
+    std::shared_ptr<uvw::TcpHandle> _tcp;
   };
 
 }

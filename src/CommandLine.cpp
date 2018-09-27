@@ -4,7 +4,7 @@
 
 #include <Debugger/DebugSessionPV.hpp>
 #include <GDBServer/GDBServer.hpp>
-#include "ServerModeController.hpp"
+#include "Server/Server.hpp"
 
 #include "CommandLine.hpp"
 
@@ -22,10 +22,10 @@ CommandLine::CommandLine()
 
   _app.callback([this, server_mode] {
     if (server_mode->count()) {
-      xd::ServerModeController smc(_base_port);
-      smc.run();
+      xd::Server server(_base_port);
+      server.run();
     } else {
-      // TODO
+      // TODO: repl mode
     }
   });
 };
@@ -39,20 +39,3 @@ int CommandLine::parse(int argc, char **argv) {
   return 0;
 }
 
-/*
-void CommandLine::start_gdb_server(uv::UVLoop &loop, XenHandle &xen,
-    DomID domid, uint16_t port)
-{
-  DebugSessionPV debugger(xen, domid);
-
-  GDBServer server(loop, "127.0.0.1", port); // TODO: this gets destroyed
-  server.start([&](auto &connection) {
-    connection.start([&](auto &packet) {
-      interpret_packet(debugger, connection, packet);
-    });
-  });
-
-  std::cout << "Port " << port << ": domain #" << domid << std::endl;
-  loop.start(); // TODO
-}
-*/

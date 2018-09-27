@@ -8,15 +8,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 include_directories(
   include
   third_party/CLI11/include
-  third_party/ELFIO/include)
+  third_party/ELFIO/include
+  third_party/uvw/src)
 
 add_executable(xendbg
   include/Debugger/DebugSession.hpp
   include/Debugger/DebugSession.hpp
   include/Debugger/DebugSessionPV.hpp
   include/GDBServer/GDBConnection.hpp
-  include/GDBServer/GDBPacketInterpreter.hpp
-  include/GDBServer/GDBPacketQueue.hpp
+        include/GDBServer/GDBPacketQueue.hpp
   include/GDBServer/GDBRequestPacket.hpp
   include/GDBServer/GDBResponsePacket.hpp
   include/GDBServer/GDBServer.hpp
@@ -25,12 +25,6 @@ add_executable(xendbg
   include/Registers/RegistersX86.hpp
   include/Registers/RegistersX86Any.hpp
   include/Registers/RegistersX86_64.hpp
-  include/UV/UVIdle.hpp
-  include/UV/UVLoop.hpp
-  include/UV/UVPoll.hpp
-  include/UV/UVSignal.hpp
-  include/UV/UVTCP.hpp
-  include/UV/UVTimer.hpp
   include/Util/clear.hpp
   include/Util/overloaded.hpp
   include/Util/pop_ret.hpp
@@ -54,17 +48,10 @@ add_executable(xendbg
   src/CommandLine.hpp
   src/Debugger/DebugSession.cpp
   src/GDBServer/GDBConnection.cpp
-  src/GDBServer/GDBPacketInterpreter.cpp
-  src/GDBServer/GDBPacketQueue.cpp
+        src/GDBServer/GDBPacketQueue.cpp
   src/GDBServer/GDBServer.cpp
-  src/ServerModeController.cpp
-  src/ServerModeController.hpp
-  src/UV/UVIdle.cpp
-  src/UV/UVLoop.cpp
-  src/UV/UVPoll.cpp
-  src/UV/UVSignal.cpp
-  src/UV/UVTCP.cpp
-  src/UV/UVTimer.cpp
+        src/Server/Server.cpp
+        src/Server/Server.hpp
   src/Xen/Domain.cpp
   src/Xen/DomainAny.cpp
   src/Xen/PageTableEntry.cpp
@@ -77,11 +64,11 @@ add_executable(xendbg
   src/Debugger/DebugSession.cpp
   src/Debugger/DebugSessionPV.cpp
         include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
-  src/GDBPacketHandler.hpp
-  src/GDBPacketHandler.cpp
-  src/ServerInstance.hpp
-  src/ServerInstancePV.hpp
-  src/ServerInstancePV.cpp
+        src/Server/GDBPacketHandler.hpp
+        src/Server/GDBPacketHandler.cpp
+        src/Server/ServerInstance.hpp
+        src/Server/ServerInstancePV.hpp
+        src/Server/ServerInstancePV.cpp
         )
 
 target_link_libraries(xendbg

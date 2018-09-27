@@ -23,6 +23,7 @@ namespace xd::xen {
 
     XenEventChannel();
 
+    xenevtchn_handle *get() const { return _xenevtchn.get(); };
     int get_fd();
 
     Port get_next_pending_channel();

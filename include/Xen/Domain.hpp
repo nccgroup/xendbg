@@ -16,9 +16,20 @@
 
 namespace xd::xen {
 
+  DomInfo get_domain_info(DomID domid) const {
+    xc_dominfo_t dominfo;
+    int ret = xc_domain_getinfo(_xenctrl.get(), _domid, 1, &dominfo);
+
+    if (ret != 1 || dominfo.domid != _domid)
+      throw XenException("Failed to get domain info!", errno);
+
+    return dominfo;
+  }
+
   class Domain {
   public:
-    Domain(XenHandlePtr xen, DomID domid);
+    Domain(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+        XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
 
     bool operator==(const Domain &other) const {
       return _domid == other._domid;
@@ -33,12 +44,24 @@ namespace xd::xen {
     DomInfo get_info() const;
     int get_word_size() const;
 
+    MemInfo map_meminfo() const;
+    PageTableEntry get_page_table_entry(Address address) const;
+
+    PageTableEntry get_page_table_entry(Address address);
+    virtual xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const = 0;
+    virtual void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const = 0;
+
+    void pause() const;
+    void unpause() const;
+    void shutdown(int reason) const;
+    void destroy() const;
+
+    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
+
     template<typename InitFn_t, typename CleanupFn_t>
     void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) const {
       _xen->get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
     }
-
-    MemInfo map_meminfo() const;
 
     template <typename Memory_t>
     XenForeignMemory::MappedMemory<Memory_t> map_memory(Address address, size_t size, int prot) const {
@@ -50,39 +73,18 @@ namespace xd::xen {
       return _xen->get_xen_foreign_memory().map_by_mfn<Memory_t>(*this, mfn, offset, size, prot);
     };
 
-    PageTableEntry get_page_table_entry(Address address) const; // TODO
-
-    xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const;
-    void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const;
-
-    void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
-    void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;
-
-    XenEventChannel::RingPageAndPort enable_monitor() const;
-    void disable_monitor() const;
-
-    void monitor_software_breakpoint(bool enable);
-    void monitor_debug_exceptions(bool enable, bool sync);
-    void monitor_cpuid(bool enable);
-    void monitor_descriptor_access(bool enable);
-    void monitor_privileged_call(bool enable);
-
-    void pause() const;
-    void unpause() const;
-    void shutdown(int reason) const;
-    void destroy() const;
-
-    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
-
     /*
     void reboot() const;
     void read_memory(Address address, void *data, size_t size) const;
     void write_memory(Address address, void *data, size_t size) const;
     */
 
-  private:
-    XenHandlePtr _xen;
+  protected:
     DomID _domid;
+    XenEventChannel &_xenevtchn;
+    XenCtrl &_xenctrl;
+    XenForeignMemory &_xenforiegnmemory;
+    XenStore &_xenstore;
   };
 
 }

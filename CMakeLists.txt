@@ -48,8 +48,7 @@ add_executable(xendbg
   include/Xen/XenEventChannel.hpp
   include/Xen/XenException.hpp
   include/Xen/XenForeignMemory.hpp
-  include/Xen/XenHandle.hpp
-  include/Xen/XenStore.hpp
+        include/Xen/XenStore.hpp
   src/CommandLine.cpp
   src/CommandLine.hpp
   src/Debugger/DebugSession.cpp
@@ -76,7 +75,7 @@ add_executable(xendbg
   src/main.cpp
   src/Debugger/DebugSession.cpp
   src/Debugger/DebugSessionPV.cpp
-)
+        include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp)
 
 target_link_libraries(xendbg
   capstone

@@ -14,34 +14,72 @@ using xd::xen::XenCtrl;
 using xd::xen::XenEventChannel;
 using xd::xen::XenHandlePtr;
 
-Domain::Domain(XenHandlePtr xen, DomID domid)
-    : _xen(std::move(xen)), _domid(domid)
+DomInfo xd::xen::get_domain_info(DomID domid) const {
+  xc_dominfo_t dominfo;
+  int ret = xc_domain_getinfo(_xenctrl.get(), domid, 1, &dominfo);
+
+  if (ret != 1 || dominfo.domid != _domid)
+    throw XenException("Failed to get domain info!", errno);
+
+  return dominfo;
+}
+
+Domain::Domain(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+    XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
+    : _domid(domid), _xenevtchn(xenevtchn), _xenctrl(xenctrl),
+      _xenforeignmemory(xenforeignmemory), _xenstore(xenstore),
+      _is_hvm = get_info().hvm;
 {
-  get_info(); // Make sure the domain is behaving properly
+
 }
 
 std::string Domain::get_name() const {
   const auto path = "/local/domain/" + std::to_string(_domid) + "/name";
-  return _xen->get_xenstore().read(path);
+  return _xenstore.read(path);
 }
 
 std::string Domain::get_kernel_path() const {
   const auto vm_path = "/local/domain/" + std::to_string(_domid) + "/vm";
-  const auto vm = _xen->get_xenstore().read(vm_path);
+  const auto vm = _xenstore().read(vm_path);
   const auto kernel_path = vm + "/image/kernel";
-  return _xen->get_xenstore().read(kernel_path);
+  return _xenstore().read(kernel_path);
 }
 
 DomInfo Domain::get_info() const {
-  return _xen->get_xenctrl().get_domain_info(*this);
+  return get_domain_info(_domid);
 }
 
 int Domain::get_word_size() const {
-  return _xen->get_xenctrl().get_domain_word_size(*this);
+  int err;
+  unsigned int word_size;
+  if ((err = xc_domain_get_guest_width(_xenctrl.get(), _domid, &word_size))) {
+    throw XenException(
+        "Failed to get word size for domain " + std::to_string(_domid),
+        -err);
+  }
+  return word_size;
 }
 
 MemInfo Domain::map_meminfo() const {
-  return _xen->get_xenctrl().map_domain_meminfo(*this);
+  auto xenctrl_ptr = _xenctrl.get();
+  auto deleter = [xenctrl_ptr](xc_domain_meminfo *p) {
+    xc_unmap_domain_meminfo(xenctrl_ptr, p);
+  };
+
+  auto meminfo =
+      std::unique_ptr<xc_domain_meminfo, decltype(deleter)>(
+          new xc_domain_meminfo, deleter);
+  std::memset(meminfo.get(), 0, sizeof(xc_domain_meminfo));
+
+  int err;
+  xc_domain_meminfo minfo;
+  if ((err = xc_map_domain_meminfo(_xenctrl.get(), _domid, meminfo.get()))) {
+    throw XenException(
+        "Failed to map meminfo for domain " + std::to_string(_domid),
+        -err);
+  }
+
+  return meminfo;
 }
 
 xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
@@ -74,64 +112,85 @@ xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
 }
 
 RegistersX86Any Domain::get_cpu_context(VCPU_ID vcpu_id) const {
-  return _xen->get_xenctrl().get_domain_cpu_context(*this, vcpu_id);
+  if (_is_hvm) {
+    auto context = get_cpu_context_hvm(domain, vcpu_id);
+    return convert_from_hvm(context);
+  } else {
+    auto context_any = get_cpu_context_pv(domain, vcpu_id);
+    const int word_size = get_domain_word_size(domain);
+    if (word_size == sizeof(uint64_t)) {
+      return convert_from_pv64(context_any);
+    } else if (word_size == sizeof(uint32_t)) {
+      return convert_from_pv32(context_any);
+    } else {
+      throw XenException(
+          "Unsupported word size " + std::to_string(word_size) + " for domain " +
+          std::to_string(_domid) + "!");
+    }
+  }
 }
 
 void Domain::set_cpu_context(RegistersX86Any regs, VCPU_ID vcpu_id) const {
-  _xen->get_xenctrl().set_domain_cpu_context(*this, regs, vcpu_id);
-}
-
-void Domain::set_debugging(bool enabled, VCPU_ID vcpu_id) const {
-  _xen->get_xenctrl().set_domain_debugging(*this, enabled, vcpu_id);
-}
-
-void Domain::set_single_step(bool enabled, VCPU_ID vcpu_id) const {
-  _xen->get_xenctrl().set_domain_single_step(*this, enabled, vcpu_id);
-}
-
-XenEventChannel::RingPageAndPort Domain::enable_monitor() const {
-  return _xen->get_xenctrl().enable_monitor_for_domain(*this);
-}
-
-void Domain::disable_monitor() const {
-  _xen->get_xenctrl().disable_monitor_for_domain(*this);
-}
-
-void Domain::monitor_software_breakpoint(bool enable) {
-  _xen->get_xenctrl().monitor_software_breakpoint_for_domain(*this, enable);
-}
-
-void Domain::monitor_debug_exceptions(bool enable, bool sync) {
-  _xen->get_xenctrl().monitor_debug_exceptions_for_domain(*this, enable, sync);
-}
-
-void Domain::monitor_cpuid(bool enable) {
-  _xen->get_xenctrl().monitor_cpuid_for_domain(*this, enable);
-}
-
-void Domain::monitor_descriptor_access(bool enable) {
-  _xen->get_xenctrl().monitor_descriptor_access_for_domain(*this, enable);
-}
-
-void Domain::monitor_privileged_call(bool enable) {
-  _xen->get_xenctrl().monitor_privileged_call_for_domain(*this, enable);
+  if (_is_hvm) {
+    const auto regs64 = std::get<RegistersX86_64>(regs);
+    const auto old_context = get_cpu_context_hvm(domain, vcpu_id);
+    const auto new_context = convert_to_hvm(regs64, old_context);
+    set_cpu_context_hvm(domain, new_context, vcpu_id);
+  } else {
+    auto old_context = get_cpu_context_pv(domain, vcpu_id);
+    const int word_size = get_domain_word_size(domain);
+    std::visit(util::overloaded {
+        [&](const RegistersX86_64 &regs64) {
+          if (word_size != sizeof(uint64_t))
+            throw XenException("Mismatched word size!");
+          const auto new_context = convert_to_pv64(regs64, old_context);
+          set_cpu_context_pv(domain, new_context, vcpu_id);
+        }, [&](const RegistersX86_32 &regs32) {
+          if (word_size != sizeof(uint32_t))
+            throw XenException("Mismatched word size!");
+          const auto new_context = convert_to_pv32(regs32, old_context);
+          set_cpu_context_pv(domain, new_context, vcpu_id);
+        }}, regs);
+  }
 }
 
 void Domain::pause() const {
-  _xen->get_xenctrl().pause_domain(*this);
+  const auto dominfo = get_info();
+  if (dominfo.paused)
+    return;
+
+  int err;
+  if ((err = xc_domain_pause(_xenctrl.get(), _domid)))
+    throw XenException(
+        "Failed to pause domain " + std::to_string(_domid), -err);
 }
 
 void Domain::unpause() const {
-  _xen->get_xenctrl().unpause_domain(*this);
+  const auto dominfo = get_info();
+  if (!dominfo.paused)
+    return;
+
+  int err;
+  if ((err = xc_domain_unpause(_xenctrl.get(), _domid)))
+    throw XenException(
+        "Failed to unpause domain " + std::to_string(_domid), -err);
 }
 
 void Domain::shutdown(int reason) const {
-  _xen->get_xenctrl().shutdown_domain(*this, reason);
+  int err;
+  if ((err = xc_domain_shutdown(_xenctrl.get(), _domid, reason)))
+    throw XenException(
+        "Failed to shutdown domain " + std::to_string(_domid), -err);
 }
 
 void Domain::destroy() const {
-  _xen->get_xenctrl().destroy_domain(*this);
-}
+  // Need to send the domain a SHUTDOWN request first to free up resources
+  shutdown_domain(domain, SHUTDOWN_poweroff);
+
+  int err;
+  if ((err = xc_domain_destroy(_xenctrl.get(), _domid)))
+    throw XenException(
+        "Failed to destroy domain " + std::to_string(_domid), -err);}
 
 // See xen/tools/libxc/xc_offline_page.c:389
 xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
@@ -146,6 +205,31 @@ xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
   } else {
     uint32_t mfn = ((uint32_t*)meminfo->p2m_table)[pfn];
     return (mfn == ~0U) ? INVALID_MFN : mfn;
+  }
+}
+
+struct hvm_hw_cpu Domain::get_cpu_context_hvm(VCPU_ID vcpu_id) const {
+  int err;
+  struct hvm_hw_cpu cpu_context;
+  if ((err = xc_domain_hvm_getcontext_partial(_xenctrl.get(), _domid,
+      HVM_SAVE_CODE(CPU), (uint16_t)vcpu_id, &cpu_context, sizeof(cpu_context))))
+  {
+    throw XenException("Failed get HVM CPU context for VCPU " +
+                       std::to_string(vcpu_id) + " of domain " +
+                       std::to_string(_domid), -err);
+  }
+  return cpu_context;
+}
+
+void Domain::set_cpu_context_pv(vcpu_guest_context_any_t context, VCPU_ID vcpu_id) const  {
+  int err;
+  vcpu_guest_context_any_t context_any;
+  if ((err = xc_vcpu_setcontext(_xenctrl.get(), _domid,
+      (uint16_t)vcpu_id, &context)))
+  {
+    throw XenException("Failed get PV CPU context for VCPU " +
+                       std::to_string(vcpu_id) + " of domain " +
+                       td::to_string(_domid), -err);
   }
 }
 

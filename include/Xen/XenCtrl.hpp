@@ -30,6 +30,7 @@ namespace xd::xen {
   public:
     XenCtrl();
 
+    xc_interface *get() const { return _xenctrl.get(); };
     XenVersion get_xen_version() const;
 
     DomInfo get_domain_info(const Domain &domain) const;

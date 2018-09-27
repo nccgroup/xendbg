@@ -30,6 +30,8 @@ namespace xd::xen {
 
     XenForeignMemory();
 
+    xenforeignmemory_handle *get() { return _xen_foreign_memory.get(); };
+
     template <typename Memory_t, typename Domain_t>
     MappedMemory<Memory_t> map(const Domain_t &domain, Address address, size_t size, int prot) const {
       xen_pfn_t base_mfn = domain.pfn_to_mfn_pv(address >> XC_PAGE_SHIFT);

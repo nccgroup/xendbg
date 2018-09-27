@@ -26,6 +26,7 @@ namespace xd::xen {
 
     XenStore();
 
+    struct xs_handle *get() { return _xenstore.get(); };
     int get_fileno() const;
 
     Watch &add_watch();

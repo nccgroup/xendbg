@@ -17,18 +17,13 @@ using xd::dbg::DebugSessionPV;
 using xd::dbg::NoSuchSymbolException;
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
-using xd::uv::UVLoop;
 using xd::xen::Address;
 using xd::xen::DomainPV;
 using xd::xen::DomID;
 
-DebugSessionPV::DebugSessionPV(UVLoop &loop, DomainPV &domain)
+DebugSessionPV::DebugSessionPV(uvw::Loop &loop, DomainPV &domain)
   : DebugSession(loop, domain), _domain(domain)
 {
-}
-
-DebugSessionPV::~DebugSessionPV() {
-
 }
 
 void DebugSessionPV::continue_() {

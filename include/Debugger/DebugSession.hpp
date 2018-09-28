@@ -9,16 +9,15 @@
 #include <vector>
 
 #include <capstone/capstone.h>
+#include <uvw.hpp>
 
 #include <Util/overloaded.hpp>
-#include <UV/UVLoop.hpp>
-#include <UV/UVTimer.hpp>
 #include <Xen/Common.hpp>
 #include <Xen/Domain.hpp>
 
 namespace xd::dbg {
 
-  class NoSuchBreakpointException : public std::exception{
+class NoSuchBreakpointException : public std::exception {
   public:
     explicit NoSuchBreakpointException(const xen::Address address)
         : _address(address) {};
@@ -35,7 +34,7 @@ namespace xd::dbg {
         : std::runtime_error(name) {};
   };
 
-  class DebugSession {
+  class DebugSession : public std::enable_shared_from_this {
   private:
     struct Symbol {
       xen::Address address;
@@ -47,7 +46,7 @@ namespace xd::dbg {
   public:
     using OnBreakpointHitFn = std::function<void(xen::Address)>;
 
-    DebugSession(uv::UVLoop &loop, xen::Domain &domain);
+    DebugSession(uvw::Loop &loop, xen::Domain &domain);
     virtual ~DebugSession();
 
     const xen::Domain& get_domain() { return _domain; };
@@ -74,9 +73,9 @@ namespace xd::dbg {
 
   private:
     xen::Domain &_domain;
-    uv::UVTimer _timer;
-
+    std::shared_ptr<uvw::TimerHandle> _timer;
     csh _capstone;
+
     xen::VCPU_ID _vcpu_id;
   };
 

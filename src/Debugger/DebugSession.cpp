@@ -9,14 +9,13 @@
 #include <sys/mman.h>
 
 using xd::dbg::DebugSession;
-using xd::uv::UVLoop;
 using xd::xen::Address;
 using xd::xen::DomID;
 
-DebugSession::DebugSession(UVLoop &loop, xen::Domain &domain)
-  : _domain(domain), _timer(loop), _vcpu_id(0)
+DebugSession::DebugSession(uvw::Loop &loop, xen::Domain &domain)
+  : _domain(domain), _timer(loop.resource<uvw::TimerHandle>()), _vcpu_id(0)
 {
-  _timer.data = this; // TODO
+  _timer->data = shared_from_this(); // TODO
 
   const auto mode =
       (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
@@ -42,11 +41,11 @@ void DebugSession::detach() {
 }
 
 void DebugSession::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
-  _timer.start([on_breakpoint_hit](auto &timer) {
-    auto self = (DebugSession*) timer.data;
+  _timer->on<uvw::TimerEvent>([on_breakpoint_hit](const auto &event, auto &handle) {
+    auto self = handle->template data<DebugSession>();
     auto address = self->check_breakpoint_hit();
     if (address) {
-      timer.stop();
+      handle->stop();
       on_breakpoint_hit(*address);
     }
     return address.has_value();

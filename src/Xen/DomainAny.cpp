@@ -37,3 +37,11 @@ std::vector<DomainAny> xd::xen::get_domains(XenEventChannel &xenevtchn,
     });
   return domains;
 }
+
+DomID xd::xen::get_domid_any(const xd::xen::DomainAny &domain) {
+  return std::visit(xd::util::overloaded {
+    [](const auto &domain) {
+      return domain.get_domid();
+    },
+  }, domain);
+}

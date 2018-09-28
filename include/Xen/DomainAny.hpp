@@ -20,6 +20,8 @@ namespace xd::xen {
   std::vector<DomainAny> get_domains(XenEventChannel &xenevtchn,
       XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore);
 
+  xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain);
+
 }
 
 #endif //XENDBG_DOMAINANY_HPP

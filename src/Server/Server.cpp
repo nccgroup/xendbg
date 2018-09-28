@@ -6,9 +6,8 @@
 
 using xd::Server;
 using xd::ServerInstancePV;
+using xd::xen::get_domain_any;
 using xd::xen::get_domains;
-
-static xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain);
 
 Server::Server(uint16_t base_port)
   : _loop(uvw::Loop::getDefault()),
@@ -92,12 +91,4 @@ void Server::add_instance(xen::DomainAny domain_any) {
         throw std::runtime_error("HVM domain instances not yet supported!");
       }
   }, domain_any);
-}
-
-static xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain) {
-  return std::visit(xd::util::overloaded {
-    [](const auto &domain) {
-      return domain.get_domid();
-    },
-  }, domain);
 }

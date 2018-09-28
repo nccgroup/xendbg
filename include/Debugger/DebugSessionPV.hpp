@@ -12,10 +12,10 @@
 #include <vector>
 
 #include <capstone/capstone.h>
+#include <uvw.hpp>
 
 #include <Xen/DomainPV.hpp>
 #include <Util/overloaded.hpp>
-#include <UV/UVLoop.hpp>
 
 #include "DebugSession.hpp"
 
@@ -26,8 +26,7 @@ namespace xd::dbg {
     using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
 
   public:
-    DebugSessionPV(uv::UVLoop &loop, xen::DomainPV& domain);
-    ~DebugSessionPV() override;
+    DebugSessionPV(uvw::Loop &loop, xen::DomainPV& domain);
 
     void continue_() override;
     xen::Address single_step() override;

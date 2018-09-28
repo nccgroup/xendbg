@@ -50,7 +50,6 @@ class NoSuchBreakpointException : public std::exception {
     Debugger(uvw::Loop &loop, xen::Domain &domain);
     virtual ~Debugger();
 
-    const xen::Domain& get_domain() { return _domain; };
     size_t get_vcpu_id() { return _vcpu_id; }
 
     virtual void attach();

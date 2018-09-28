@@ -43,7 +43,7 @@ namespace xd {
           _gdb_connection = connection;
           _debugger->attach();
 
-          _packet_handler.emplace(*_debugger, *_gdb_server, *_gdb_connection);
+          _packet_handler.emplace(_domain, *_debugger, *_gdb_server, *_gdb_connection);
           connection->read([this, &server](auto &connection, const auto &packet) {
             std::visit(*_packet_handler, packet);
           }, [this]() {

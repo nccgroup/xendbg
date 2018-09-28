@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "../../include/Debugger/DebugSessionPV.hpp"
+#include "Debugger/DebuggerPV.hpp"
 #include "../Parser/Expression/Expression.hpp"
 #include "REPL.hpp"
 

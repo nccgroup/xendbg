@@ -12,9 +12,9 @@ include_directories(
   third_party/uvw/src)
 
 add_executable(xendbg
-  include/Debugger/DebugSession.hpp
-  include/Debugger/DebugSession.hpp
-  include/Debugger/DebugSessionPV.hpp
+        include/Debugger/Debugger.hpp
+        include/Debugger/Debugger.hpp
+        include/Debugger/DebuggerPV.hpp
   include/GDBServer/GDBConnection.hpp
         include/GDBServer/GDBPacketQueue.hpp
   include/GDBServer/GDBRequestPacket.hpp
@@ -45,7 +45,7 @@ add_executable(xendbg
   include/Xen/XenStore.hpp
   src/CommandLine.cpp
   src/CommandLine.hpp
-  src/Debugger/DebugSession.cpp
+        src/Debugger/Debugger.cpp
   src/GDBServer/GDBConnection.cpp
         src/GDBServer/GDBPacketQueue.cpp
         src/ServerModeController.cpp
@@ -59,15 +59,15 @@ add_executable(xendbg
   src/Xen/XenForeignMemory.cpp
   src/Xen/XenStore.cpp
   src/main.cpp
-  src/Debugger/DebugSession.cpp
-  src/Debugger/DebugSessionPV.cpp
+        src/Debugger/Debugger.cpp
+        src/Debugger/DebuggerPV.cpp
         include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
         include/GDBServer/GDBPacketHandler.hpp
         src/GDBServer/GDBPacketHandler.cpp
         include/GDBServer/GDBServer.hpp
         src/GDBServer/GDBServer.cpp
-        include/GDBServer/GDBServerPV.hpp
-        src/GDBServer/GDBServerPV.cpp)
+        src/DebugSessionPV.hpp
+        src/DebugSessionPV.cpp src/DebugSession.hpp)
 
 target_link_libraries(xendbg
   capstone

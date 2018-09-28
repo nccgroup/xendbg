@@ -25,7 +25,8 @@ namespace xd {
     CLI::App _app;
 
   private:
-    uint16_t _base_port;
+    uint16_t _port;
+    xen::DomID _domid;
   };
 
 }

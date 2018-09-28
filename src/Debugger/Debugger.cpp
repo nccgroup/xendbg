@@ -4,19 +4,17 @@
 
 #define X86_MAX_INSTRUCTION_SIZE 0x10
 
-#include <Debugger/DebugSession.hpp>
+#include <Debugger/Debugger.hpp>
 
 #include <sys/mman.h>
 
-using xd::dbg::DebugSession;
+using xd::dbg::Debugger;
 using xd::xen::Address;
 using xd::xen::DomID;
 
-DebugSession::DebugSession(uvw::Loop &loop, xen::Domain &domain)
+Debugger::Debugger(uvw::Loop &loop, xen::Domain &domain)
   : _domain(domain), _timer(loop.resource<uvw::TimerHandle>()), _vcpu_id(0)
 {
-  _timer->data(shared_from_this()); // TODO
-
   const auto mode =
       (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
 
@@ -26,23 +24,24 @@ DebugSession::DebugSession(uvw::Loop &loop, xen::Domain &domain)
   cs_option(_capstone, CS_OPT_DETAIL, CS_OPT_ON);
 }
 
-DebugSession::~DebugSession() {
+Debugger::~Debugger() {
   cs_close(&_capstone);
 }
 
-void DebugSession::attach() {
+void Debugger::attach() {
   _domain.pause();
 }
 
-void DebugSession::detach() {
+void Debugger::detach() {
   for (const auto address : get_breakpoints())
     remove_breakpoint(address);
   _domain.unpause();
 }
 
-void DebugSession::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
+void Debugger::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
+  _timer->data(shared_from_this()); // TODO
   _timer->on<uvw::TimerEvent>([on_breakpoint_hit](const auto &event, auto &handle) {
-    auto self = handle.template data<DebugSession>();
+    auto self = handle.template data<Debugger>();
     auto address = self->check_breakpoint_hit();
     if (address) {
       handle.stop();
@@ -56,7 +55,7 @@ void DebugSession::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
 }
 
 std::pair<std::optional<Address>, std::optional<Address>>
-DebugSession::get_address_of_next_instruction() {
+Debugger::get_address_of_next_instruction() {
   const auto read_word = [this](Address addr) {
     const auto mem_handle = _domain.map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
     if (_domain.get_word_size() == sizeof(uint64_t)) {

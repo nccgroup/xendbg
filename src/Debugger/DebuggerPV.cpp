@@ -8,12 +8,12 @@
 
 #include <capstone/capstone.h>
 
-#include <Debugger/DebugSessionPV.hpp>
+#include <Debugger/DebuggerPV.hpp>
 #include <Util/overloaded.hpp>
 
 #define X86_INFINITE_LOOP 0xFEEB
 
-using xd::dbg::DebugSessionPV;
+using xd::dbg::DebuggerPV;
 using xd::dbg::NoSuchSymbolException;
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
@@ -21,12 +21,12 @@ using xd::xen::Address;
 using xd::xen::DomainPV;
 using xd::xen::DomID;
 
-DebugSessionPV::DebugSessionPV(uvw::Loop &loop, DomainPV &domain)
-  : DebugSession(loop, domain), _domain(domain)
+DebuggerPV::DebuggerPV(uvw::Loop &loop, DomainPV &domain)
+  : Debugger(loop, domain), _domain(domain)
 {
 }
 
-void DebugSessionPV::continue_() {
+void DebuggerPV::continue_() {
   // Single step first to move beyond the current breakpoint;
   // it will be removed during the step and replaced automatically.
   if (check_breakpoint_hit())
@@ -35,7 +35,7 @@ void DebugSessionPV::continue_() {
   _domain.unpause();
 }
 
-Address DebugSessionPV::single_step() {
+Address DebuggerPV::single_step() {
   _domain.pause();
   // If there's already a breakpoint here, remove it temporarily so we can continue
   std::optional<Address> orig_addr;
@@ -72,7 +72,7 @@ Address DebugSessionPV::single_step() {
   return *address_opt;
 }
 
-std::vector<Address> DebugSessionPV::get_breakpoints() {
+std::vector<Address> DebuggerPV::get_breakpoints() {
   std::vector<Address> addresses;
   std::transform(_infinite_loops.begin(), _infinite_loops.end(),
       std::back_inserter(addresses),
@@ -82,7 +82,7 @@ std::vector<Address> DebugSessionPV::get_breakpoints() {
   return addresses;
 }
 
-void DebugSessionPV::insert_breakpoint(Address address) {
+void DebuggerPV::insert_breakpoint(Address address) {
   if (_infinite_loops.count(address)) {
     std::cout << "[!]: Tried to insert infinite loop where one already exists." << std::endl;
     return; // TODO?
@@ -98,7 +98,7 @@ void DebugSessionPV::insert_breakpoint(Address address) {
   *mem = X86_INFINITE_LOOP;
 }
 
-void DebugSessionPV::remove_breakpoint(Address address) {
+void DebuggerPV::remove_breakpoint(Address address) {
   if (!_infinite_loops.count(address)) {
     std::cout << "[!]: Tried to remove infinite loop where one does not exist." << std::endl;
     return; // TODO?
@@ -114,8 +114,8 @@ void DebugSessionPV::remove_breakpoint(Address address) {
   _infinite_loops.erase(_infinite_loops.find(address));
 }
 
-xd::dbg::DebugSession::MaskedMemory
-DebugSessionPV::read_memory_masking_breakpoints(Address address, size_t length) {
+xd::dbg::Debugger::MaskedMemory
+DebuggerPV::read_memory_masking_breakpoints(Address address, size_t length) {
   const auto mem_handle = _domain.map_memory<char>(
       address, length, PROT_READ);
 
@@ -133,7 +133,7 @@ DebugSessionPV::read_memory_masking_breakpoints(Address address, size_t length) 
   return MaskedMemory(mem_masked);
 }
 
-void DebugSessionPV::write_memory_retaining_breakpoints(Address address, size_t length, void *data) {
+void DebuggerPV::write_memory_retaining_breakpoints(Address address, size_t length, void *data) {
   const auto half_overlap_start_address = address-1;
   const auto half_overlap_end_address = address+length-1;
 
@@ -164,7 +164,7 @@ void DebugSessionPV::write_memory_retaining_breakpoints(Address address, size_t 
     insert_breakpoint(il_address);
 }
 
-std::optional<Address> DebugSessionPV::check_breakpoint_hit() {
+std::optional<Address> DebuggerPV::check_breakpoint_hit() {
   const auto address = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(_domain.get_cpu_context());
   const auto mem_handle = _domain.map_memory<char>(address, 2, PROT_READ);
   const auto mem = (uint16_t*)mem_handle.get();

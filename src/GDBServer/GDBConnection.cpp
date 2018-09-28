@@ -23,12 +23,13 @@ public:
 GDBConnection::GDBConnection(std::shared_ptr<uvw::TcpHandle> tcp)
   : _tcp(tcp), _ack_mode(true), _is_initializing(false)
 {
-  _tcp->data(shared_from_this());
 }
 
 void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
     OnErrorFn on_error)
 {
+  _tcp->data(shared_from_this());
+
   _is_initializing = true;
 
   _tcp->on<uvw::ErrorEvent>([on_error](const auto &event, auto &tcp) {
@@ -74,6 +75,8 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
       }
     }
   });
+
+  _tcp->read();
 }
 
 void GDBConnection::stop() {

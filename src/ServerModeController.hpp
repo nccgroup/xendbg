@@ -10,9 +10,10 @@
 
 #include <uvw.hpp>
 
-#include <Debugger/DebugSessionPV.hpp>
-#include <GDBServer/GDBServer.hpp>
+#include <Debugger/DebuggerPV.hpp>
 #include <Xen/DomainAny.hpp>
+
+#include "DebugSessionPV.hpp"
 
 namespace xd {
 
@@ -20,7 +21,7 @@ namespace xd {
   public:
     explicit ServerModeController(uint16_t base_port);
 
-    void run_single(xen::DomainAny domain);
+    void run_single(xen::DomID domid);
     void run_multi();
 
   private:
@@ -35,7 +36,7 @@ namespace xd {
     std::shared_ptr<uvw::PollHandle> _poll;
 
     uint16_t _next_port;
-    std::unordered_map<xen::DomID, std::unique_ptr<gdbsrv::GDBServer>> _instances;
+    std::unordered_map<xen::DomID, std::unique_ptr<DebugSessionPV>> _instances;
 
   private:
     void run();

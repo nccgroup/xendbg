@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 8/28/18.
 //
 
-#ifndef XENDBG_DEBUGSESSIONPV_HPP
-#define XENDBG_DEBUGSESSIONPV_HPP
+#ifndef XENDBG_DEBUGGERHVM_HPP
+#define XENDBG_DEBUGGERHVM_HPP
 
 #include <optional>
 #include <memory>
@@ -12,21 +12,22 @@
 #include <vector>
 
 #include <capstone/capstone.h>
-#include <uvw.hpp>
 
-#include <Xen/DomainPV.hpp>
+#include <Xen/Domain.hpp>
 #include <Util/overloaded.hpp>
+#include <UV/UVLoop.hpp>
 
-#include "DebugSession.hpp"
+#include "Debugger.hpp"
 
 namespace xd::dbg {
 
-  class DebugSessionPV : public DebugSession {
+  class DebuggerHVM : public Debugger {
   private:
-    using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
+    using BreakpointMap = std::unordered_map<xen::Address, uint8_t>;
 
   public:
-    DebugSessionPV(uvw::Loop &loop, xen::DomainPV& domain);
+    DebuggerHVM(uv::UVLoop &loop, xen::Domain domain);
+    ~DebuggerHVM() override;
 
     void continue_() override;
     xen::Address single_step() override;
@@ -40,11 +41,10 @@ namespace xd::dbg {
     void write_memory_retaining_breakpoints(xen::Address address, size_t length, void *data) override;
 
   private:
-    xen::DomainPV &_domain;
-    InfiniteLoopMap _infinite_loops;
+    BreakpointMap _breakpoints;
   };
 
 }
 
 
-#endif //XENDBG_DEBUGSESSIONPV_HPP
+#endif //XENDBG_DEBUGGERHVM_HPP

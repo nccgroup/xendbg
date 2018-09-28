@@ -10,10 +10,11 @@ using xd::gdbsrv::GDBServer;
 GDBServer::GDBServer(uvw::Loop &loop)
   : _server(loop.resource<uvw::TcpHandle>())
 {
-  _server->data(shared_from_this());
 }
 
 void GDBServer::listen(const std::string &address, uint16_t port, OnAcceptFn on_accept, OnErrorFn on_error) {
+  _server->data(shared_from_this());
+
   _server->once<uvw::ErrorEvent>([on_error](const auto &event, auto &tcp) {
     on_error(event);
   });
@@ -30,8 +31,7 @@ void GDBServer::listen(const std::string &address, uint16_t port, OnAcceptFn on_
 
     tcp.accept(*client);
 
-    self->_connection = std::make_unique<GDBConnection>(client);
-    on_accept(*self, *self->_connection);
+    on_accept(*self, std::make_shared<GDBConnection>(client));
   });
 
   _server->bind(address, port);

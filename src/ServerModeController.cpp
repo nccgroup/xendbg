@@ -1,11 +1,11 @@
 #include <csignal>
 #include <iostream>
 
-#include "GDBServer/GDBServerPV.hpp"
+#include "DebugSessionPV.hpp"
 #include "ServerModeController.hpp"
 
 using xd::ServerModeController;
-using xd::gdbsrv::GDBServerPV;
+using xd::DebugSession;
 using xd::xen::get_domid_any;
 using xd::xen::get_domains;
 
@@ -17,7 +17,8 @@ ServerModeController::ServerModeController(uint16_t base_port)
 {
 }
 
-void ServerModeController::run_single(xen::DomainAny domain) {
+void ServerModeController::run_single(xen::DomID domid) {
+  auto domain = xen::init_domain(domid, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
   add_instance(std::move(domain));
   run();
 }
@@ -88,7 +89,9 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   std::visit(util::overloaded {
       [&](xen::DomainPV domain) {
         auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<GDBServerPV>(*_loop, domain)); // TODO
+            std::make_unique<DebugSessionPV>(*_loop, domain)); // TODO
+
+        std::cout << "[+] Domain " << kv->first << ": port " << _next_port << std::endl;
         kv->second->run("127.0.0.1", _next_port++);
       },
       [&](xen::DomainHVM domain) {

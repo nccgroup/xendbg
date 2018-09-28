@@ -18,7 +18,7 @@ namespace xd::gdbsrv {
 
   struct GDBPacket; // TODO
 
-  class GDBConnection : std::enable_shared_from_this<GDBConnection> {
+  class GDBConnection : public std::enable_shared_from_this<GDBConnection> {
   public:
     using OnReceiveFn = std::function<void(GDBConnection&, const pkt::GDBRequestPacket&)>;
     using OnCloseFn = std::function<void()>;

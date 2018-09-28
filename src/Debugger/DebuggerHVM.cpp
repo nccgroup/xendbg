@@ -7,7 +7,7 @@
 
 #include <capstone/capstone.h>
 
-#include <Debugger/DebugSessionPV.hpp>
+#include <Debugger/DebuggerPV.hpp>
 #include <Util/overloaded.hpp>
 
 #define X86_DEBUG_BREAKPOINT 0xCC

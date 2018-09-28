@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 9/20/18.
 //
 
-#ifndef XENDBG_DEBUGSESSION_HPP
-#define XENDBG_DEBUGSESSION_HPP
+#ifndef XENDBG_DEBUGGER_HPP
+#define XENDBG_DEBUGGER_HPP
 
 #include <memory>
 #include <stdexcept>
@@ -35,7 +35,7 @@ class NoSuchBreakpointException : public std::exception {
         : std::runtime_error(name) {};
   };
 
-  class DebugSession : public std::enable_shared_from_this<DebugSession> {
+  class Debugger : public std::enable_shared_from_this<Debugger> {
   private:
     struct Symbol {
       xen::Address address;
@@ -47,8 +47,8 @@ class NoSuchBreakpointException : public std::exception {
   public:
     using OnBreakpointHitFn = std::function<void(xen::Address)>;
 
-    DebugSession(uvw::Loop &loop, xen::Domain &domain);
-    virtual ~DebugSession();
+    Debugger(uvw::Loop &loop, xen::Domain &domain);
+    virtual ~Debugger();
 
     const xen::Domain& get_domain() { return _domain; };
     size_t get_vcpu_id() { return _vcpu_id; }
@@ -83,4 +83,4 @@ class NoSuchBreakpointException : public std::exception {
 }
 
 
-#endif //XENDBG_DEBUGSESSION_HPP
+#endif //XENDBG_DEBUGGER_HPP

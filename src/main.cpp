@@ -1,3 +1,4 @@
+#include <uvw.hpp>
 #include "CommandLine.hpp"
 
 using xd::CommandLine;

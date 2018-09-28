@@ -1,29 +1,27 @@
-//
-// Created by Spencer Michaels on 9/19/18.
-//
-
-#include <Debugger/DebugSessionPV.hpp>
-#include <GDBServer/GDBServer.hpp>
+#include "CommandLine.hpp"
 #include "ServerModeController.hpp"
 
-#include "CommandLine.hpp"
-
 using xd::CommandLine;
-using xd::dbg::DebugSessionPV;
 using xd::gdbsrv::GDBServer;
 using xd::xen::DomID;
 using xd::xen::XenException;
 
 CommandLine::CommandLine()
-    : _app{"xendbg"}, _base_port(0)
+    : _app{"xendbg"}, _port(0)
 {
-  auto server_mode = _app.add_option("-s,--server", _base_port,
-      "Start server with base port.");
+  auto server_mode = _app.add_option("-s,--server", _port, "Server.");
+  auto attach = _app.add_option("-a,--attach", _domid, "Attach.");
 
-  _app.callback([this, server_mode] {
+  attach->needs(server_mode);
+
+  _app.callback([this, server_mode, attach] {
     if (server_mode->count()) {
-      xd::ServerModeController server(_base_port);
-      server.run_multi();
+      xd::ServerModeController server(_port);
+      if (attach->count()) {
+        server.run_single(_domid);
+      } else {
+        server.run_multi();
+      }
     } else {
       // TODO: repl mode
     }

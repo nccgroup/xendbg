@@ -1,18 +1,18 @@
 #include <csignal>
 #include <iostream>
 
-#include "GDBServer/GDBServerInstancePV.hpp"
+#include "GDBServer/GDBServerPV.hpp"
 #include "ServerModeController.hpp"
 
 using xd::ServerModeController;
-using xd::ServerInstancePV;
+using xd::gdbsrv::GDBServerPV;
 using xd::xen::get_domid_any;
 using xd::xen::get_domains;
 
 ServerModeController::ServerModeController(uint16_t base_port)
   : _loop(uvw::Loop::getDefault()),
-    _poll(_loop->resource<uvw::PollHandle>(_xenstore.get_fileno())),
     _signal(_loop->resource<uvw::SignalHandle>()),
+    _poll(_loop->resource<uvw::PollHandle>(_xenstore.get_fileno())),
     _next_port(base_port)
 {
 }
@@ -34,15 +34,19 @@ void ServerModeController::run_multi() {
       add_new_instances();
     else if (watch_release.check())
       prune_instances();
-  }, uvw::PollHandle::Event::READABLE);
+  });
+
+  _poll->start(uvw::PollHandle::Event::READABLE);
 
   run();
 }
 
 void ServerModeController::run() {
-  _signal->on([&](const auto &event, auto &handle) {
-    _loop->stop();
-  }, SIGINT);
+  _signal->once<uvw::SignalEvent>([](const auto &event, auto &handle) {
+    handle.loop().stop();
+  });
+  
+  _signal->start(SIGINT);
 
   _loop->run();
 }
@@ -64,10 +68,10 @@ void ServerModeController::prune_instances() {
   while (it != _instances.end()) {
     if (std::none_of(domains.begin(), domains.end(),
       [&](const auto &domain) {
-        return get_domid_any(domain) == it->second->get_domid();
+        return get_domid_any(domain) == it->first;
       }))
     {
-      std::cout << "[-] Domain " << it->second->get_domid() << std::endl;
+      std::cout << "[-] Domain " << it->first << std::endl;
       it = _instances.erase(it);
     } else {
       ++it;
@@ -84,7 +88,7 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   std::visit(util::overloaded {
       [&](xen::DomainPV domain) {
         auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<ServerInstancePV>(_loop, domain)); // TODO
+            std::make_unique<GDBServerPV>(*_loop, domain)); // TODO
         kv->second->run("127.0.0.1", _next_port++);
       },
       [&](xen::DomainHVM domain) {

@@ -8,26 +8,32 @@
 using xd::gdbsrv::GDBServer;
 
 GDBServer::GDBServer(uvw::Loop &loop)
-  : _tcp(loop.resource<uvw::TcpHandle>())
+  : _server(loop.resource<uvw::TcpHandle>())
 {
+  _server->data(shared_from_this());
 }
 
 void GDBServer::listen(const std::string &address, uint16_t port, OnAcceptFn on_accept, OnErrorFn on_error) {
-  _tcp->once<uvw::ErrorEvent>([on_error](const auto &event, auto &tcp) {
+  _server->once<uvw::ErrorEvent>([on_error](const auto &event, auto &tcp) {
     on_error(event);
   });
 
   // Only accept one connection; LLDB doesn't handle multiple clients attached to she same stub
-  _tcp->once<uvw::ListenEvent>([on_accept](const auto &event, auto &tcp) {
+  _server->once<uvw::ListenEvent>([on_accept](const auto &event, auto &tcp) {
+    auto self = tcp.template data<GDBServer>();
     auto client = tcp.loop().template resource<uvw::TcpHandle>();
 
-    client->on<uvw::CloseEvent>([ptr = tcp.shared_from_this()](const auto&, auto&) { ptr->close(); });
-    client->on<uvw::EndEvent>([](const auto&, auto &client) { client.close(); });
+    client->template on<uvw::CloseEvent>(
+        [ptr = tcp.shared_from_this()](const auto&, auto&) { ptr->close(); });
+    client->template on<uvw::EndEvent>(
+        [](const auto&, auto &client) { client.close(); });
 
     tcp.accept(*client);
-    on_accept(GDBConnection(client));
+
+    self->_connection = std::make_unique<GDBConnection>(client);
+    on_accept(*self, *self->_connection);
   });
 
-  _tcp->bind(address, port);
-  _tcp->listen();
+  _server->bind(address, port);
+  _server->listen();
 }

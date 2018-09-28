@@ -11,6 +11,7 @@
 
 #include <uvw.hpp>
 
+#include <GDBServer/GDBConnection.hpp>
 #include <Xen/Common.hpp>
 
 namespace xd::gdbsrv {
@@ -19,16 +20,21 @@ namespace xd::gdbsrv {
 
   class GDBServer : std::enable_shared_from_this<GDBServer> {
   public:
-    using OnAcceptFn = std::function<void(GDBServer&, GDBConnection)>;
+    using OnAcceptFn = std::function<void(GDBServer&, GDBConnection&)>;
     using OnErrorFn = std::function<void(const uvw::ErrorEvent&)>;
 
     explicit GDBServer(uvw::Loop &loop);
     virtual ~GDBServer() = default;
 
-    void listen(const std::string& address, uint16_t port, OnAcceptFn on_accept, OnErrorFn on_error);
+    virtual void run(const std::string& address_str, uint16_t port) = 0;
+
+  protected:
+    void listen(const std::string& address, uint16_t port,
+        OnAcceptFn on_accept, OnErrorFn on_error);
 
   private:
-    std::shared_ptr<uvw::TcpHandle> _tcp;
+    std::shared_ptr<uvw::TcpHandle> _server;
+    std::unique_ptr<GDBConnection> _connection;
   };
 
 }

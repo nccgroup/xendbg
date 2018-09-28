@@ -7,28 +7,26 @@
 
 #include <optional>
 
+#include <uvw.hpp>
+
 #include <Debugger/DebugSessionPV.hpp>
 #include <GDBServer/GDBServer.hpp>
-#include <UV/UVLoop.hpp>
 #include <Xen/DomainPV.hpp>
 
 #include "GDBPacketHandler.hpp"
 #include "GDBServer/GDBServer.hpp"
 
-namespace xd {
+namespace xd::gdbsrv {
 
-  class ServerInstancePV : public GDBServerInstance {
+  class GDBServerPV : public GDBServer {
   public:
-    ServerInstancePV(uv::UVLoop &loop, xen::DomainPV domain);
-
-    xen::DomID get_domid() const override { return _domain.get_domid(); };
+    GDBServerPV(uvw::Loop &loop, xen::DomainPV domain);
 
     void run(const std::string& address_str, uint16_t port) override;
 
   private:
     xen::DomainPV _domain;
     xd::dbg::DebugSessionPV _debugger;
-    xd::gdbsrv::GDBServer _server;
     std::optional<GDBPacketHandler> _packet_handler;
   };
 

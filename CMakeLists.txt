@@ -62,12 +62,12 @@ add_executable(xendbg
   src/Debugger/DebugSession.cpp
   src/Debugger/DebugSessionPV.cpp
         include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
-        src/GDBServer/GDBPacketHandler.hpp
+        include/GDBServer/GDBPacketHandler.hpp
         src/GDBServer/GDBPacketHandler.cpp
         include/GDBServer/GDBServer.hpp
-        src/GDBServer/GDBServerInstancePV.hpp
-        src/GDBServer/GDBServerInstancePV.cpp
-        src/GDBServer/GDBServer.cpp)
+        src/GDBServer/GDBServer.cpp
+        include/GDBServer/GDBServerPV.hpp
+        src/GDBServer/GDBServerPV.cpp)
 
 target_link_libraries(xendbg
   capstone

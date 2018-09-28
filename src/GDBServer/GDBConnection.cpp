@@ -11,6 +11,9 @@ using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
 
+static char ACK_OK[] = "+";
+static char ACK_ERROR[] = "+";
+
 class UnknownPacketTypeException : public std::runtime_error {
 public:
   explicit UnknownPacketTypeException(const std::string &data)
@@ -33,18 +36,22 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
     tcp.close();
   });
 
+  _tcp->on<uvw::CloseEvent>([on_close](const auto &event, auto &tcp) {
+    on_close();
+  });
+
   /*
   _tcp->on<uvw::ConnectEvent>([](const auto &error) {
   });
   */
 
-  _tcp->on<uvw::DataEvent>([on_receive](const auto &event, auto &tcp) {
-    auto self = tcp->template data<GDBConnection>();
+  _tcp->template on<uvw::DataEvent>([on_receive](const auto &event, auto &tcp) {
+    auto self = tcp.template data<GDBConnection>();
 
-    std::vector<char> data(event.data.get(), event.length);
+    std::vector<char> data(event.data.get(), event.data.get() + event.length);
 
     if (self->_is_initializing && data.size() == 1 && data.front() == '+') {
-      tcp.write("+");
+      tcp.write(ACK_OK, 1);
     } else {
       self->_input_queue.append(std::move(data));
       while (!self->_input_queue.empty()) {
@@ -53,7 +60,7 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
         bool valid = validate_packet_checksum(raw_packet);
 
         if (self->_ack_mode)
-          tcp.write(valid ? "+" : "-", 1);
+          tcp.write(valid ? ACK_OK : ACK_ERROR, 1);
 
         if (valid) {
           try { // TODO exception handling
@@ -78,7 +85,7 @@ void GDBConnection::send(const pkt::GDBResponsePacket &packet)
   std::cout << "SEND: " << packet.to_string() << std::endl;
 
   const auto s = format_packet(packet);
-  _tcp->write(s.c_str(), s.size());
+  _tcp->write((char*)s.c_str(), s.size());
 }
 
 bool GDBConnection::validate_packet_checksum(const GDBPacket &packet) {
@@ -171,4 +178,6 @@ GDBRequestPacket GDBConnection::parse_packet(const GDBPacket &packet) {
     default:
       throw UnknownPacketTypeException(contents);
   }
+
+  throw UnknownPacketTypeException(contents);
 }

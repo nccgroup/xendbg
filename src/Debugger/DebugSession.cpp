@@ -15,7 +15,7 @@ using xd::xen::DomID;
 DebugSession::DebugSession(uvw::Loop &loop, xen::Domain &domain)
   : _domain(domain), _timer(loop.resource<uvw::TimerHandle>()), _vcpu_id(0)
 {
-  _timer->data = shared_from_this(); // TODO
+  _timer->data(shared_from_this()); // TODO
 
   const auto mode =
       (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
@@ -42,14 +42,17 @@ void DebugSession::detach() {
 
 void DebugSession::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
   _timer->on<uvw::TimerEvent>([on_breakpoint_hit](const auto &event, auto &handle) {
-    auto self = handle->template data<DebugSession>();
+    auto self = handle.template data<DebugSession>();
     auto address = self->check_breakpoint_hit();
     if (address) {
-      handle->stop();
+      handle.stop();
       on_breakpoint_hit(*address);
     }
     return address.has_value();
-  }, 100, 100);
+  });
+
+  // TODO: is this 100 ms?
+  _timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
 }
 
 std::pair<std::optional<Address>, std::optional<Address>>

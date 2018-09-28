@@ -11,9 +11,8 @@
 #include <uvw.hpp>
 
 #include <Debugger/DebugSessionPV.hpp>
+#include <GDBServer/GDBServer.hpp>
 #include <Xen/DomainAny.hpp>
-
-#include "GDBServer/GDBServer.hpp"
 
 namespace xd {
 
@@ -36,7 +35,7 @@ namespace xd {
     std::shared_ptr<uvw::PollHandle> _poll;
 
     uint16_t _next_port;
-    std::unordered_map<xen::DomID, std::unique_ptr<GDBServerInstance>> _instances;
+    std::unordered_map<xen::DomID, std::unique_ptr<gdbsrv::GDBServer>> _instances;
 
   private:
     void run();

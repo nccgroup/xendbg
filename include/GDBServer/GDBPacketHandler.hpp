@@ -11,11 +11,8 @@
 #include <Registers/RegistersX86_64.hpp>
 #include <Xen/Domain.hpp>
 
-namespace xd {
+namespace xd::gdbsrv {
 
-  namespace dbg {
-    class DebugSession;
-  }
   namespace gdbsrv {
     class GDBServer;
     class GDBConnection;
@@ -26,38 +23,32 @@ namespace xd {
     using OnErrorFn = std::function<void(int)>;
 
     GDBPacketHandler(xen::Domain &domain, dbg::DebugSession &debugger,
-        gdbsrv::GDBServer &server, gdbsrv::GDBConnection &connection)
+        GDBServer &server, GDBConnection &connection)
       : _domain(domain), _debugger(debugger), _server(server),
-        _connection(connection),
-        _on_error([this](int error) {
-          _connection.send(
-              gdbsrv::pkt::ErrorResponse(error),
-              [](int){ /* do nothing */ });
-        })
+        _connection(connection)
     {
     }
 
-    void send(const gdbsrv::pkt::GDBResponsePacket &packet) const {
-      _connection.send(packet, _on_error);
+    void send(const pkt::GDBResponsePacket &packet) const {
+      _connection.send(packet);
     }
 
-    void broadcast(const gdbsrv::pkt::GDBResponsePacket &packet) const {
-      _connection.send(packet, _on_error);
+    void broadcast(const pkt::GDBResponsePacket &packet) const {
+      _connection.send(packet);
     }
 
   private:
     xen::Domain &_domain;
-    dbg::DebugSession &_debugger;
-    gdbsrv::GDBServer &_server;
-    gdbsrv::GDBConnection &_connection;
-    OnErrorFn _on_error;
+    xd::dbg::DebugSession &_debugger;
+    GDBServer &_server;
+    GDBConnection &_connection;
 
   public:
     // Default to a "not supported" response
     // Specialize for specific supported packets
     template <typename Packet_t>
     void operator()(const Packet_t &) const {
-      send(gdbsrv::pkt::NotSupportedResponse());
+      send(pkt::NotSupportedResponse());
     };
 
   };

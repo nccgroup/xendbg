@@ -3,6 +3,7 @@
 //
 
 #include <Xen/DomainHVM.hpp>
+#include <Xen/BridgeHeaders/hvm_save.h>
 
 using xd::reg::RegistersX86Any;
 using xd::reg::x86_32::RegistersX86_32;
@@ -141,8 +142,52 @@ struct hvm_hw_cpu DomainHVM::get_cpu_context_raw(VCPU_ID vcpu_id) const {
   return context;
 }
 
+// from tools/libxc/xc_dom_x86.c
+// TODO: does this even work??
 void DomainHVM::set_cpu_context_raw(struct hvm_hw_cpu context, VCPU_ID vcpu_id) const {
-  throw std::runtime_error("Not yet implemented!"); // TODO
+  struct {
+      struct hvm_save_descriptor header_d;
+      HVM_SAVE_TYPE(HEADER) header;
+      struct hvm_save_descriptor cpu_d;
+      HVM_SAVE_TYPE(CPU) cpu;
+      struct hvm_save_descriptor end_d;
+      HVM_SAVE_TYPE(END) end;
+  } context_update;
+
+  int size = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, nullptr, 0);
+  if (size <= 0)
+    throw std::runtime_error("Failed to get HVM domain context!");
+
+  std::unique_ptr<uint8_t> full_context((uint8_t*)calloc(1, size));
+
+  int ret = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, full_context.get(), 0);
+  if (ret <= 0)
+    throw std::runtime_error("Failed to get HVM domain context!");
+
+  memset(&context_update, 0, sizeof(context_update));
+  memcpy(&context_update, full_context.get(),
+      sizeof(struct hvm_save_descriptor) + HVM_SAVE_LENGTH(HEADER));
+
+  /*
+  context_update.header_d.typecode = HVM_SAVE_CODE(HEADER);
+  context_update.header_d.instance = vcpu_id;
+  context_update.header_d.length = HVM_SAVE_LENGTH(HEADER);
+  */
+
+  context_update.cpu_d.typecode = HVM_SAVE_CODE(CPU);
+  context_update.cpu_d.instance = vcpu_id;
+  context_update.cpu_d.length = HVM_SAVE_LENGTH(CPU);
+
+  context_update.cpu = context;
+
+  context_update.end_d.typecode = HVM_SAVE_CODE(END);
+  context_update.end_d.instance = vcpu_id;
+  context_update.end_d.length = HVM_SAVE_LENGTH(END);
+
+  ret = xc_domain_hvm_setcontext(_xenctrl.get(), _domid,
+      (uint8_t*)&context_update, sizeof(context_update));
+  if (ret <= 0)
+    throw std::runtime_error("Failed to get HVM domain context!");
 }
 
 RegistersX86Any DomainHVM::convert_regs_from_hvm(const struct hvm_hw_cpu &hvm) {

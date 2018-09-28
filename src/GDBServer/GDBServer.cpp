@@ -22,7 +22,6 @@ void GDBServer::run(const std::string& address, uint16_t port,
   _tcp->bind(address, port);
   _tcp->once<uvw::ListenEvent>([](const auto &event, auto &tcp) {
     auto client = tcp.loop().template resource<uvw::TcpHandle>();
-
   });
 
   _tcp->listen([this, on_accept, max_connections](auto &server) {

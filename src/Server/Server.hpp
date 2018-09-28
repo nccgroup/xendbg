@@ -8,9 +8,9 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include <uvw.hpp>
+
 #include <Debugger/DebugSessionPV.hpp>
-#include <GDBServer/GDBServer.hpp>
-#include <UV/UVLoop.hpp>
 #include <Xen/DomainAny.hpp>
 
 #include "ServerInstance.hpp"
@@ -19,9 +19,10 @@ namespace xd {
 
   class Server {
   public:
-    Server(uint16_t base_port);
+    explicit Server(uint16_t base_port);
 
-    void run();
+    void run_single(xen::DomainAny domain);
+    void run_multi();
 
   private:
     xen::XenEventChannel _xenevtchn;
@@ -29,13 +30,20 @@ namespace xd {
     xen::XenForeignMemory _xenforeignmemory;
     xen::XenStore _xenstore;
 
-    uv::UVLoop _loop;
+    std::shared_ptr<uvw::Loop> _loop;
+    std::shared_ptr<uvw::SignalHandle> _signal;
+    std::shared_ptr<uvw::PollHandle> _poll;
+
     uint16_t _next_port;
     std::unordered_map<xen::DomID, std::unique_ptr<ServerInstance>> _instances;
 
   private:
-    void add_instances();
+    void run();
+
+    void add_new_instances();
     void prune_instances();
+
+    void add_instance(xen::DomainAny domain_any);
   };
 
 }

@@ -1,75 +1,60 @@
+#include <csignal>
 #include <iostream>
-
-#include <UV/UVPoll.hpp>
-#include <UV/UVSignal.hpp>
 
 #include "ServerInstancePV.hpp"
 #include "Server.hpp"
 
 using xd::Server;
 using xd::ServerInstancePV;
-using xd::uv::UVLoop;
-using xd::uv::UVPoll;
-using xd::uv::UVSignal;
 using xd::xen::get_domains;
 
+static xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain);
+
 Server::Server(uint16_t base_port)
-  : _next_port(base_port)
+  : _loop(uvw::Loop::getDefault()),
+    _poll(_loop->resource<uvw::PollHandle>(_xenstore.get_fileno())),
+    _signal(_loop->resource<uvw::SignalHandle>()),
+    _next_port(base_port)
 {
 }
 
-void Server::run() {
-  UVSignal signal(_loop);
-  signal.start([this]() {
-    _loop.stop();
-  }, SIGINT);
+void Server::run_single(xen::DomainAny domain) {
+  add_instance(std::move(domain));
+  run();
+}
 
+void Server::run_multi() {
   auto &watch_introduce = _xenstore.add_watch();
   watch_introduce.add_path("@introduceDomain");
 
   auto &watch_release = _xenstore.add_watch();
   watch_release.add_path("@releaseDomain");
 
-  uv::UVPoll poll(_loop, _xenstore.get_fileno());
-  poll.start([&](const auto &event) {
-    if (event.readable) {
-      if (watch_introduce.check())
-        add_instances();
-      else if (watch_release.check())
-        prune_instances();
-    }
-  });
+  _poll->on<uvw::PollEvent>([&](const auto &event, auto &handle) {
+    if (watch_introduce.check())
+      add_new_instances();
+    else if (watch_release.check())
+      prune_instances();
+  }, uvw::PollHandle::Event::READABLE);
 
-  _loop.start();
+  run();
 }
 
-static xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain) {
-  return std::visit(xd::util::overloaded {
-    [](const auto &domain) {
-      return domain.get_domid();
-    },
-  }, domain);
+void Server::run() {
+  _signal->on([&](const auto &event, auto &handle) {
+    _loop->stop();
+  }, SIGINT);
+
+  _loop->run();
 }
 
-void Server::add_instances() {
+void Server::add_new_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   for (const auto &domain_any : domains) {
     const auto domid = get_domid_any(domain_any);
-    if (!_instances.count(domid)) {
-      std::cout << "[+] Domain " << domid << ": port " << _next_port << std::endl;
-    }
-
-    std::visit(util::overloaded {
-      [&](const xen::DomainPV &domain) {
-        auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<ServerInstancePV>(_loop, domain)); // TODO
-        kv->second->run("127.0.0.1", _next_port++);
-      },
-      [&](const xen::DomainHVM &domain) {
-        throw std::runtime_error("HVM domain instances not yet supported!");
-      }
-    }, domain_any);
+    if (!_instances.count(domid))
+      add_instance(domain_any);
   }
 }
 
@@ -89,4 +74,30 @@ void Server::prune_instances() {
       ++it;
     }
   }
+}
+
+void Server::add_instance(xen::DomainAny domain_any) {
+  const auto domid = get_domid_any(domain_any);
+
+  if (_instances.count(domid))
+    throw std::runtime_error("Domain already added!");
+
+  std::visit(util::overloaded {
+      [&](xen::DomainPV domain) {
+        auto [kv, _] = _instances.emplace(domid,
+            std::make_unique<ServerInstancePV>(_loop, domain)); // TODO
+        kv->second->run("127.0.0.1", _next_port++);
+      },
+      [&](xen::DomainHVM domain) {
+        throw std::runtime_error("HVM domain instances not yet supported!");
+      }
+  }, domain_any);
+}
+
+static xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain) {
+  return std::visit(xd::util::overloaded {
+    [](const auto &domain) {
+      return domain.get_domid();
+    },
+  }, domain);
 }

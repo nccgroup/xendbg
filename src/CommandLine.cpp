@@ -23,7 +23,7 @@ CommandLine::CommandLine()
   _app.callback([this, server_mode] {
     if (server_mode->count()) {
       xd::Server server(_base_port);
-      server.run();
+      server.run_multi();
     } else {
       // TODO: repl mode
     }

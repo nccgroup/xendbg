@@ -1,7 +1,7 @@
 #include <csignal>
 #include <iostream>
 
-#include "DebugSessionPV.hpp"
+#include "DebugSession.hpp"
 #include "ServerModeController.hpp"
 
 using xd::ServerModeController;
@@ -89,7 +89,7 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   std::visit(util::overloaded {
       [&](xen::DomainPV domain) {
         auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<DebugSessionPV>(*_loop, domain)); // TODO
+            std::make_unique<DebugSessionPV>(*_loop, std::move(domain))); // TODO
 
         std::cout << "[+] Domain " << kv->first << ": port " << _next_port << std::endl;
         kv->second->run("127.0.0.1", _next_port++);

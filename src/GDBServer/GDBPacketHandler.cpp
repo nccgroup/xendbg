@@ -6,7 +6,7 @@ template <>
 void GDBPacketHandler::operator()(
     const pkt::InterruptRequest &) const
 {
-  _domain.pause();
+  _debugger.get_domain().pause();
   broadcast(pkt::StopReasonSignalResponse(SIGSTOP, 1));
 };
 
@@ -49,7 +49,7 @@ void GDBPacketHandler::operator()(
     const pkt::QueryHostInfoRequest &) const
 {
     send(pkt::QueryHostInfoResponse(
-          _domain.get_word_size(), _domain.get_name()));
+          _debugger.get_domain().get_word_size(), _debugger.get_domain().get_name()));
 };
 
 template <>
@@ -57,7 +57,7 @@ void GDBPacketHandler::operator()(
     const pkt::QueryRegisterInfoRequest &req) const
 {
   const auto id = req.get_register_id();
-  const auto word_size = _domain.get_word_size();
+  const auto word_size = _debugger.get_domain().get_word_size();
 
   if (word_size == sizeof(uint64_t)) {
     reg::x86_64::RegistersX86_64::find_metadata_by_id(id,
@@ -94,7 +94,7 @@ void GDBPacketHandler::operator()(
 {
   const auto address = req.get_address();
 
-  auto pte = _domain.get_page_table_entry(address);
+  auto pte = _debugger.get_domain().get_page_table_entry(address);
   auto length = XC_PAGE_SIZE;
 
   if (pte.is_present() ) {
@@ -112,7 +112,7 @@ void GDBPacketHandler::operator()(
     auto address2 = address;
     do {
       address2 += XC_PAGE_SIZE;
-      pte = _domain.get_page_table_entry(address2);
+      pte = _debugger.get_domain().get_page_table_entry(address2);
     } while (!pte.is_present());
 
     length = address2 - address;
@@ -154,7 +154,7 @@ template <>
 void GDBPacketHandler::operator()(
     const pkt::KillRequest&) const
 {
-  _domain.destroy();
+  _debugger.get_domain().destroy();
   broadcast(pkt::TerminatedResponse(SIGKILL));
 }
 
@@ -172,7 +172,7 @@ void GDBPacketHandler::operator()(
 {
   const auto id = req.get_register_id();
   const auto thread_id = req.get_thread_id();
-  const auto regs = _domain.get_cpu_context(thread_id-1);
+  const auto regs = _debugger.get_domain().get_cpu_context(thread_id-1);
 
   std::visit(util::overloaded {
       [&](const auto &regs) {
@@ -192,7 +192,7 @@ void GDBPacketHandler::operator()(
   const auto id = req.get_register_id();
   const auto value = req.get_value();
 
-  auto regs = _domain.get_cpu_context();
+  auto regs = _debugger.get_domain().get_cpu_context();
   std::visit(util::overloaded {
       [&](auto &regs) {
         regs.find_by_id(id, [&value](const auto&, auto &reg) {
@@ -202,7 +202,7 @@ void GDBPacketHandler::operator()(
         });
       }
   }, regs);
-  _domain.set_cpu_context(regs);
+  _debugger.get_domain().set_cpu_context(regs);
   send(pkt::OKResponse());
 }
 
@@ -214,14 +214,14 @@ void GDBPacketHandler::operator()(
       [&](const auto &regs) {
         send(pkt::GeneralRegistersBatchReadResponse(regs));
       }
-  }, _domain.get_cpu_context());
+  }, _debugger.get_domain().get_cpu_context());
 }
 
 template <>
 void GDBPacketHandler::operator()(
     const pkt::GeneralRegistersBatchWriteRequest &req) const
 {
-  auto regs_any = _domain.get_cpu_context();
+  auto regs_any = _debugger.get_domain().get_cpu_context();
   auto values = req.get_values();
 
   std::visit(util::overloaded {
@@ -246,7 +246,7 @@ void GDBPacketHandler::operator()(
       }
   }, regs_any);
 
-  _domain.set_cpu_context(regs_any);
+  _debugger.get_domain().set_cpu_context(regs_any);
 
   send(pkt::OKResponse());
 }
@@ -282,7 +282,7 @@ void GDBPacketHandler::operator()(
   _debugger.continue_();
 
   _debugger.notify_breakpoint_hit([&](auto /*address*/) {
-    _domain.pause();
+    _debugger.get_domain().pause();
     send(pkt::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
   });
 

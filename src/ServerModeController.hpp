@@ -13,7 +13,7 @@
 #include <Debugger/DebuggerPV.hpp>
 #include <Xen/DomainAny.hpp>
 
-#include "DebugSessionPV.hpp"
+#include "DebugSession.hpp"
 
 namespace xd {
 
@@ -36,7 +36,7 @@ namespace xd {
     std::shared_ptr<uvw::PollHandle> _poll;
 
     uint16_t _next_port;
-    std::unordered_map<xen::DomID, std::unique_ptr<DebugSessionPV>> _instances;
+    std::unordered_map<xen::DomID, std::unique_ptr<DebugSessionBase>> _instances;
 
   private:
     void run();

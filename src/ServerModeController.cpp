@@ -1,15 +1,15 @@
 #include <csignal>
 #include <iostream>
 
-#include "ServerInstancePV.hpp"
-#include "Server.hpp"
+#include "GDBServer/GDBServerInstancePV.hpp"
+#include "ServerModeController.hpp"
 
-using xd::Server;
+using xd::ServerModeController;
 using xd::ServerInstancePV;
-using xd::xen::get_domain_any;
+using xd::xen::get_domid_any;
 using xd::xen::get_domains;
 
-Server::Server(uint16_t base_port)
+ServerModeController::ServerModeController(uint16_t base_port)
   : _loop(uvw::Loop::getDefault()),
     _poll(_loop->resource<uvw::PollHandle>(_xenstore.get_fileno())),
     _signal(_loop->resource<uvw::SignalHandle>()),
@@ -17,12 +17,12 @@ Server::Server(uint16_t base_port)
 {
 }
 
-void Server::run_single(xen::DomainAny domain) {
+void ServerModeController::run_single(xen::DomainAny domain) {
   add_instance(std::move(domain));
   run();
 }
 
-void Server::run_multi() {
+void ServerModeController::run_multi() {
   auto &watch_introduce = _xenstore.add_watch();
   watch_introduce.add_path("@introduceDomain");
 
@@ -39,7 +39,7 @@ void Server::run_multi() {
   run();
 }
 
-void Server::run() {
+void ServerModeController::run() {
   _signal->on([&](const auto &event, auto &handle) {
     _loop->stop();
   }, SIGINT);
@@ -47,7 +47,7 @@ void Server::run() {
   _loop->run();
 }
 
-void Server::add_new_instances() {
+void ServerModeController::add_new_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   for (const auto &domain_any : domains) {
@@ -57,7 +57,7 @@ void Server::add_new_instances() {
   }
 }
 
-void Server::prune_instances() {
+void ServerModeController::prune_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   auto it = _instances.begin();
@@ -75,7 +75,7 @@ void Server::prune_instances() {
   }
 }
 
-void Server::add_instance(xen::DomainAny domain_any) {
+void ServerModeController::add_instance(xen::DomainAny domain_any) {
   const auto domid = get_domid_any(domain_any);
 
   if (_instances.count(domid))

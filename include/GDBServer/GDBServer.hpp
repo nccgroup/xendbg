@@ -1,36 +1,31 @@
+
 //
-// Created by Spencer Michaels on 9/20/18.
+// Created by Spencer Michaels on 9/19/18.
 //
 
-#ifndef XENDBG_GDBSERVER_HPP
-#define XENDBG_GDBSERVER_HPP
+#ifndef XENDBG_SERVERINSTANCE_HPP
+#define XENDBG_SERVERINSTANCE_HPP
 
-#include <cstdint>
-#include <functional>
-#include <queue>
+#include <memory>
 #include <string>
-#include <unordered_map>
 
 #include <uvw.hpp>
 
-#include "GDBConnection.hpp"
-#include "GDBResponsePacket.hpp"
-#include "GDBRequestPacket.hpp"
+#include <Xen/Common.hpp>
 
 namespace xd::gdbsrv {
 
+  class GDBConnection;
+
   class GDBServer : std::enable_shared_from_this<GDBServer> {
   public:
-    using OnAcceptFn = std::function<void(GDBServer&, GDBConnection&)>;
+    using OnAcceptFn = std::function<void(GDBServer&, GDBConnection)>;
+    using OnErrorFn = std::function<void(const uvw::ErrorEvent&)>;
 
-  public:
     explicit GDBServer(uvw::Loop &loop);
+    virtual ~GDBServer() = default;
 
-    void run(const std::string& address, uint16_t port, size_t max_connections,
-        OnAcceptFn on_accept, uv::OnErrorFn on_error);
-
-    void broadcast(const pkt::GDBResponsePacket &packet,
-        uv::OnErrorFn on_error);
+    void listen(const std::string& address, uint16_t port, OnAcceptFn on_accept, OnErrorFn on_error);
 
   private:
     std::shared_ptr<uvw::TcpHandle> _tcp;
@@ -38,4 +33,4 @@ namespace xd::gdbsrv {
 
 }
 
-#endif //XENDBG_GDBSERVER_HPP
+#endif //XENDBG_SERVERINSTANCE_HPP

@@ -19,8 +19,7 @@ add_executable(xendbg
         include/GDBServer/GDBPacketQueue.hpp
   include/GDBServer/GDBRequestPacket.hpp
   include/GDBServer/GDBResponsePacket.hpp
-  include/GDBServer/GDBServer.hpp
-  include/Registers/Register.hpp
+        include/Registers/Register.hpp
   include/Registers/RegisterContext.hpp
   include/Registers/RegistersX86.hpp
   include/Registers/RegistersX86Any.hpp
@@ -49,9 +48,8 @@ add_executable(xendbg
   src/Debugger/DebugSession.cpp
   src/GDBServer/GDBConnection.cpp
         src/GDBServer/GDBPacketQueue.cpp
-  src/GDBServer/GDBServer.cpp
-        src/Server/Server.cpp
-        src/Server/Server.hpp
+        src/ServerModeController.cpp
+        src/ServerModeController.hpp
   src/Xen/Domain.cpp
   src/Xen/DomainAny.cpp
   src/Xen/PageTableEntry.cpp
@@ -64,12 +62,12 @@ add_executable(xendbg
   src/Debugger/DebugSession.cpp
   src/Debugger/DebugSessionPV.cpp
         include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
-        src/Server/GDBPacketHandler.hpp
-        src/Server/GDBPacketHandler.cpp
-        src/Server/ServerInstance.hpp
-        src/Server/ServerInstancePV.hpp
-        src/Server/ServerInstancePV.cpp
-        )
+        src/GDBServer/GDBPacketHandler.hpp
+        src/GDBServer/GDBPacketHandler.cpp
+        include/GDBServer/GDBServer.hpp
+        src/GDBServer/GDBServerInstancePV.hpp
+        src/GDBServer/GDBServerInstancePV.cpp
+        src/GDBServer/GDBServer.cpp)
 
 target_link_libraries(xendbg
   capstone

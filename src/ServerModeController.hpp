@@ -13,13 +13,13 @@
 #include <Debugger/DebugSessionPV.hpp>
 #include <Xen/DomainAny.hpp>
 
-#include "ServerInstance.hpp"
+#include "GDBServer/GDBServer.hpp"
 
 namespace xd {
 
-  class Server {
+  class ServerModeController {
   public:
-    explicit Server(uint16_t base_port);
+    explicit ServerModeController(uint16_t base_port);
 
     void run_single(xen::DomainAny domain);
     void run_multi();
@@ -31,11 +31,12 @@ namespace xd {
     xen::XenStore _xenstore;
 
     std::shared_ptr<uvw::Loop> _loop;
+    std::shared_ptr<uvw::TcpHandle> _tcp;
     std::shared_ptr<uvw::SignalHandle> _signal;
     std::shared_ptr<uvw::PollHandle> _poll;
 
     uint16_t _next_port;
-    std::unordered_map<xen::DomID, std::unique_ptr<ServerInstance>> _instances;
+    std::unordered_map<xen::DomID, std::unique_ptr<GDBServerInstance>> _instances;
 
   private:
     void run();

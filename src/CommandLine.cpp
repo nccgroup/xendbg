@@ -4,7 +4,7 @@
 
 #include <Debugger/DebugSessionPV.hpp>
 #include <GDBServer/GDBServer.hpp>
-#include "Server/Server.hpp"
+#include "ServerModeController.hpp"
 
 #include "CommandLine.hpp"
 
@@ -22,7 +22,7 @@ CommandLine::CommandLine()
 
   _app.callback([this, server_mode] {
     if (server_mode->count()) {
-      xd::Server server(_base_port);
+      xd::ServerModeController server(_base_port);
       server.run_multi();
     } else {
       // TODO: repl mode

@@ -5,6 +5,7 @@
 #ifndef XENDBG_DEBUGSESSION_HPP
 #define XENDBG_DEBUGSESSION_HPP
 
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
@@ -34,7 +35,7 @@ class NoSuchBreakpointException : public std::exception {
         : std::runtime_error(name) {};
   };
 
-  class DebugSession : public std::enable_shared_from_this {
+  class DebugSession : public std::enable_shared_from_this<DebugSession> {
   private:
     struct Symbol {
       xen::Address address;

@@ -6,9 +6,9 @@
 #define XENDBG_GDBCONNECTION_HPP
 
 #include <functional>
+#include <memory>
 
-#include <uv.h>
-#include <UV/UVTCP.hpp>
+#include <uvw.hpp>
 
 #include "GDBPacketQueue.hpp"
 #include "GDBRequestPacket.hpp"
@@ -18,31 +18,24 @@ namespace xd::gdbsrv {
 
   struct GDBPacket; // TODO
 
-  class GDBConnection {
+  class GDBConnection : std::enable_shared_from_this<GDBConnection> {
   public:
     using OnReceiveFn = std::function<void(GDBConnection&, const pkt::GDBRequestPacket&)>;
     using OnCloseFn = std::function<void()>;
+    using OnErrorFn = std::function<void(const uvw::ErrorEvent&)>;
 
-    GDBConnection(uv::UVTCP tcp);
+    explicit GDBConnection(std::shared_ptr<uvw::TcpHandle> tcp);
     ~GDBConnection() = default;
 
-    GDBConnection(GDBConnection&& other);
-    GDBConnection& operator=(GDBConnection&& other);
-
-    GDBConnection(const GDBConnection& other) = delete;
-    GDBConnection& operator=(const GDBConnection& other) = delete;
-
-    bool is_running() const { return _tcp.is_reading(); };
-
     void disable_ack_mode() { _ack_mode = false; };
-    void start(OnReceiveFn on_receive, OnCloseFn on_close,
-        uv::OnErrorFn on_error);
+
+    void read(OnReceiveFn on_receive, OnCloseFn on_close, OnErrorFn on_error);
     void stop();
 
-    void send(const pkt::GDBResponsePacket &packet, uv::OnErrorFn on_error);
+    void send(const pkt::GDBResponsePacket &packet);
 
   private:
-    uv::UVTCP _tcp;
+    std::shared_ptr<uvw::TcpHandle> _tcp;
     GDBPacketQueue _input_queue;
     bool _ack_mode, _is_initializing;
 

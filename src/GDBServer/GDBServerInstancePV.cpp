@@ -1,4 +1,4 @@
-#include "ServerInstancePV.hpp"
+#include "GDBServerInstancePV.hpp"
 #include "GDBPacketHandler.hpp"
 
 using xd::ServerInstancePV;

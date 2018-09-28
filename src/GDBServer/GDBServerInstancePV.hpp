@@ -13,11 +13,11 @@
 #include <Xen/DomainPV.hpp>
 
 #include "GDBPacketHandler.hpp"
-#include "ServerInstance.hpp"
+#include "GDBServer/GDBServer.hpp"
 
 namespace xd {
 
-  class ServerInstancePV : public ServerInstance {
+  class ServerInstancePV : public GDBServerInstance {
   public:
     ServerInstancePV(uv::UVLoop &loop, xen::DomainPV domain);
 

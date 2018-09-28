@@ -4,16 +4,12 @@
 
 #include <GDBServer/GDBConnection.hpp>
 #include <Util/string.hpp>
-#include <UV/UVCast.hpp>
 
-using uvcast::uv_upcast;
 using xd::gdbsrv::GDBConnection;
 using xd::gdbsrv::GDBPacket;
 using xd::gdbsrv::pkt::GDBRequestPacket;
 using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
-using xd::uv::OnErrorFn;
-using xd::uv::UVTCP;
 
 class UnknownPacketTypeException : public std::runtime_error {
 public:
@@ -21,39 +17,34 @@ public:
       : std::runtime_error(data) {};
 };
 
-GDBConnection::GDBConnection(UVTCP tcp)
-  : _tcp(std::move(tcp)), _ack_mode(true), _is_initializing(false)
+GDBConnection::GDBConnection(std::shared_ptr<uvw::TcpHandle> tcp)
+  : _tcp(tcp), _ack_mode(true), _is_initializing(false)
 {
-  _tcp.data = this;
+  _tcp->data(shared_from_this());
 }
 
-GDBConnection::GDBConnection(GDBConnection&& other)
-  : _tcp(std::move(other._tcp)),
-    _input_queue(std::move(other._input_queue)),
-    _ack_mode(other._ack_mode), _is_initializing(other._is_initializing)
-{
-  _tcp.data = this;
-}
-
-GDBConnection& GDBConnection::operator=(GDBConnection&& other) {
-  _tcp = std::move(other._tcp);
-  _tcp.data = this;
-  _input_queue = std::move(other._input_queue);
-  _ack_mode = other._ack_mode;
-  _is_initializing = other._is_initializing;
-  return *this;
-}
-
-void GDBConnection::start(OnReceiveFn on_receive, OnCloseFn on_close,
+void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
     OnErrorFn on_error)
 {
   _is_initializing = true;
 
-  _tcp.read_start([on_receive, on_error](auto &tcp, auto data) {
-    auto self = (GDBConnection*)tcp.data;
+  _tcp->on<uvw::ErrorEvent>([on_error](const auto &event, auto &tcp) {
+    on_error(event);
+    tcp.close();
+  });
+
+  /*
+  _tcp->on<uvw::ConnectEvent>([](const auto &error) {
+  });
+  */
+
+  _tcp->on<uvw::DataEvent>([on_receive](const auto &event, auto &tcp) {
+    auto self = tcp->template data<GDBConnection>();
+
+    std::vector<char> data(event.data.get(), event.length);
 
     if (self->_is_initializing && data.size() == 1 && data.front() == '+') {
-      tcp.write("+", on_error);
+      tcp.write("+");
     } else {
       self->_input_queue.append(std::move(data));
       while (!self->_input_queue.empty()) {
@@ -62,7 +53,7 @@ void GDBConnection::start(OnReceiveFn on_receive, OnCloseFn on_close,
         bool valid = validate_packet_checksum(raw_packet);
 
         if (self->_ack_mode)
-          tcp.write(valid ? "+" : "-", on_error);
+          tcp.write(valid ? "+" : "-", 1);
 
         if (valid) {
           try { // TODO exception handling
@@ -70,22 +61,24 @@ void GDBConnection::start(OnReceiveFn on_receive, OnCloseFn on_close,
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
-            self->send(pkt::NotSupportedResponse(), on_error);
+            self->send(pkt::NotSupportedResponse());
           }
         }
       }
     }
-  }, on_close, on_error);
+  });
 }
 
 void GDBConnection::stop() {
-  _tcp.read_stop();
+  _tcp->stop();
 }
 
-void GDBConnection::send(const pkt::GDBResponsePacket &packet, OnErrorFn on_error)
+void GDBConnection::send(const pkt::GDBResponsePacket &packet)
 {
   std::cout << "SEND: " << packet.to_string() << std::endl;
-  _tcp.write(format_packet(packet), on_error);
+
+  const auto s = format_packet(packet);
+  _tcp->write(s.c_str(), s.size());
 }
 
 bool GDBConnection::validate_packet_checksum(const GDBPacket &packet) {
@@ -175,7 +168,7 @@ GDBRequestPacket GDBConnection::parse_packet(const GDBPacket &packet) {
       return pkt::RestartRequest(contents);
     case 'D':
       return pkt::DetachRequest(contents);
+    default:
+      throw UnknownPacketTypeException(contents);
   }
-
-  throw UnknownPacketTypeException(contents);
 }

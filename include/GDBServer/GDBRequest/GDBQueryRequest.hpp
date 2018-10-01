@@ -21,18 +21,15 @@ namespace xd::gdb::req {
 
   DECLARE_SIMPLE_REQUEST(QueryProcessInfoRequest, "qProcessInfo");
 
+  DECLARE_SIMPLE_REQUEST(QueryCurrentThreadIDRequest, "qC");
+
+  DECLARE_SIMPLE_REQUEST(QueryThreadInfoStartRequest, "qfThreadInfo");
+
+  DECLARE_SIMPLE_REQUEST(QueryThreadInfoContinuingRequest, "qsThreadInfo");
+
   class QuerySupportedRequest : public GDBRequestBase {
   public:
-    explicit QuerySupportedRequest(const std::string &data)
-      : GDBRequestBase(data, "qSupported")
-    {
-      expect_char(':');
-      while (has_more()) {
-        const auto feature = read_until_char_or_end(';');
-        _features.push_back(feature);
-      }
-      expect_end();
-    };
+    explicit QuerySupportedRequest(const std::string &data);
 
     const std::vector<std::string> get_features() { return _features; };
 
@@ -40,41 +37,9 @@ namespace xd::gdb::req {
     std::vector<std::string> _features;
   };
 
-  class QueryCurrentThreadIDRequest : public GDBRequestBase {
-  public:
-    explicit QueryCurrentThreadIDRequest(const std::string &data)
-      : GDBRequestBase(data, "qC")
-    {
-      expect_end();
-    };
-  };
-
-  class QueryThreadInfoStartRequest : public GDBRequestBase {
-  public:
-    explicit QueryThreadInfoStartRequest(const std::string &data)
-      : GDBRequestBase(data, "qfThreadInfo")
-    {
-      expect_end();
-    };
-  };
-
-  class QueryThreadInfoContinuingRequest : public GDBRequestBase {
-  public:
-    explicit QueryThreadInfoContinuingRequest(const std::string &data)
-      : GDBRequestBase(data, "qsThreadInfo")
-    {
-      expect_end();
-    };
-  };
-
   class QueryRegisterInfoRequest : public GDBRequestBase {
   public:
-    explicit QueryRegisterInfoRequest(const std::string &data)
-      : GDBRequestBase(data, "qRegisterInfo")
-    {
-      _register_id = read_hex_number<uint16_t>();
-      expect_end();
-    };
+    explicit QueryRegisterInfoRequest(const std::string &data);
 
     uint16_t get_register_id() const { return _register_id; };
 
@@ -84,13 +49,7 @@ namespace xd::gdb::req {
 
   class QueryMemoryRegionInfoRequest : public GDBRequestBase {
   public:
-    QueryMemoryRegionInfoRequest(const std::string &data)
-      : GDBRequestBase(data, "qMemoryRegionInfo")
-    {
-      expect_char(':');
-      _address = read_hex_number<uint64_t>();
-      expect_end();
-    };
+    explicit QueryMemoryRegionInfoRequest(const std::string &data);
 
     uint64_t get_address() const { return _address; };
 

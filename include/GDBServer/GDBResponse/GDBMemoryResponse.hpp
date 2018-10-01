@@ -14,20 +14,10 @@ namespace xd::gdb::rsp {
 
   class MemoryReadResponse : public GDBResponse {
   public:
-    explicit MemoryReadResponse(const unsigned char * const data, size_t length)
+    explicit MemoryReadResponse(unsigned char * data, size_t length)
       : _data(data, data + length) {};
 
-    std::string to_string() const override {
-      std::stringstream ss;
-
-      ss << std::hex << std::setfill('0');
-      std::for_each(_data.begin(), _data.end(),
-        [&ss](const unsigned char &ch) {
-          ss << std::setw(2) << (unsigned)ch;
-        });
-
-      return ss.str();
-    };
+    std::string to_string() const override;
 
   private:
     std::vector<unsigned char> _data;

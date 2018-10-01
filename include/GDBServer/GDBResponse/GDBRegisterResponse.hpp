@@ -18,11 +18,7 @@ namespace xd::gdb::rsp {
     explicit RegisterReadResponse(uint64_t value, int width = sizeof(uint64_t))
       : _value(value), _width(width) {};
 
-    std::string to_string() const override {
-      std::stringstream ss;
-      write_bytes(ss, _value);
-      return ss.str();
-    };
+    std::string to_string() const override;
 
   private:
     uint64_t _value;
@@ -34,25 +30,7 @@ namespace xd::gdb::rsp {
     explicit GeneralRegistersBatchReadResponse(xd::reg::RegistersX86Any registers)
       : _registers(std::move(registers)) {}
 
-    std::string to_string() const override {
-      std::stringstream ss;
-
-      ss << std::hex << std::setfill('0');
-      std::visit(util::overloaded {
-        [&ss](const xd::reg::x86_64::RegistersX86_64& regs) {
-          regs.for_each([&ss](const auto&, const auto &reg) {
-            write_register(ss, reg);
-          });
-        },
-        [&ss](const xd::reg::x86_32::RegistersX86_32& regs) {
-          regs.for_each([&ss](const auto&, const auto &reg) {
-            write_register(ss, reg);
-          });
-        },
-      }, _registers);
-
-      return ss.str();
-    }
+    std::string to_string() const override;
 
     template <typename Reg_t>
     static void write_register(std::stringstream &ss, const Reg_t&reg) {

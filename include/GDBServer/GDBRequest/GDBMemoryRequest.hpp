@@ -5,22 +5,17 @@
 #ifndef XENDBG_GDBMEMORYREQUEST_HPP
 #define XENDBG_GDBMEMORYREQUEST_HPP
 
+#include <vector>
+
 #include "GDBRequestBase.hpp"
 
 namespace xd::gdb::req {
 
   class MemoryReadRequest : public GDBRequestBase {
   public:
-    explicit MemoryReadRequest(const std::string &data)
-        : GDBRequestBase(data, 'm') {
-      _address = read_hex_number<uint64_t>();
-      expect_char(',');
-      _length = read_hex_number<uint64_t>();
-      expect_end();
-    };
+    explicit MemoryReadRequest(const std::string &data);
 
     uint64_t get_address() const { return _address; };
-
     uint64_t get_length() const { return _length; };
 
   private:
@@ -30,19 +25,7 @@ namespace xd::gdb::req {
 
   class MemoryWriteRequest : public GDBRequestBase {
   public:
-    explicit MemoryWriteRequest(const std::string &data)
-        : GDBRequestBase(data, 'M') {
-      _address = read_hex_number<uint64_t>();
-      expect_char(',');
-      _length = read_hex_number<uint64_t>();
-      expect_char(':');
-
-      _data.reserve(_length);
-      for (size_t i = 0; i < _length; ++i)
-        _data.push_back(read_byte());
-
-      expect_end();
-    };
+    explicit MemoryWriteRequest(const std::string &data);
 
     uint64_t get_address() const { return _address; };
 

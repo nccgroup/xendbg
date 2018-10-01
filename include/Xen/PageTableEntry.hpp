@@ -5,6 +5,8 @@
 #ifndef XENDBG_PAGETABLEENTRY_HPP
 #define XENDBG_PAGETABLEENTRY_HPP
 
+#include <optional>
+
 #include "Common.hpp"
 
 namespace xd::xen {
@@ -25,6 +27,8 @@ namespace xd::xen {
 	public:
     PageTableEntry(uint64_t pte)
       : _pte(pte) {};
+
+    operator bool() const { return is_present(); };
 
     Address get_mfn() const;
 

@@ -5,6 +5,7 @@
 #ifndef XENDBG_GDBPACKETQUEUE_HPP
 #define XENDBG_GDBPACKETQUEUE_HPP
 
+#include <exception>
 #include <optional>
 #include <queue>
 #include <string>
@@ -16,6 +17,8 @@ namespace xd::gdbsrv {
     std::string contents;
     uint8_t checksum;
   };
+
+  class NoPacketException : std::exception {};
 
   class GDBPacketQueue {
   public:

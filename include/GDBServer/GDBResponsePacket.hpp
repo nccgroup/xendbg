@@ -72,15 +72,21 @@ namespace xd::gdbsrv::pkt {
   public:
     ErrorResponse(uint8_t error_code)
       : _error_code(error_code) {};
+    ErrorResponse(uint8_t error_code, std::string message)
+      : _error_code(error_code), _message(message) {};
 
     std::string to_string() const override {
       std::stringstream ss;
-      ss << "E" << std::hex << std::setfill('0') << std::setw(2) << (unsigned)_error_code;
+      ss << "E";
+      ss << std::hex << std::setfill('0') << std::setw(2) << (unsigned)_error_code;
+      if (!_message.empty())
+        ss << ";" << _message;
       return ss.str();
     };
 
   private:
     uint8_t _error_code;
+    std::string _message;
   };
 
   class QuerySupportedResponse : public GDBResponsePacket {

@@ -13,6 +13,30 @@
 
 namespace xd::gdbsrv {
 
+  class PacketSizeException : public std::exception {
+  public:
+    PacketSizeException(size_t actual_size, size_t expected_size)
+      : _actual_size(actual_size),_expected_size(expected_size) {}
+
+    size_t get_expected_size() { return _expected_size; };
+    size_t get_actual_size() { return _actual_size; };
+
+  private:
+    size_t _actual_size;
+    size_t _expected_size;
+  };
+
+  class WordSizeException : public std::exception {
+  public:
+    WordSizeException(size_t word_size)
+      : _word_size(word_size) {}
+
+    size_t get_word_size() { return _word_size; };
+
+  private:
+    size_t _word_size;
+  };
+
   class GDBServer;
   class GDBConnection;
 
@@ -23,6 +47,10 @@ namespace xd::gdbsrv {
     GDBPacketHandler(xen::Domain &domain, dbg::Debugger &debugger, GDBServer &server, GDBConnection &connection)
       : _domain(domain), _debugger(debugger), _server(server), _connection(connection)
     {
+    }
+
+    void send_error(uint8_t code, std::string message = "") const {
+      _connection.send_error(code, message);
     }
 
     void send(const pkt::GDBResponsePacket &packet) const {

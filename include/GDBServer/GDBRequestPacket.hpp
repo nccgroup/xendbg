@@ -275,6 +275,7 @@ namespace xd::gdbsrv::pkt {
     std::vector<std::string> _features;
   };
 
+  DECLARE_SIMPLE_REQUEST(QueryEnableErrorStrings, "QEnableErrorStrings");
   DECLARE_SIMPLE_REQUEST(QueryThreadSuffixSupportedRequest, "QThreadSuffixSupported");
   DECLARE_SIMPLE_REQUEST(QueryListThreadsInStopReplySupportedRequest, "QListThreadsInStopReply");
 
@@ -549,6 +550,7 @@ namespace xd::gdbsrv::pkt {
     StartNoAckModeRequest,
     InterruptRequest,
     QuerySupportedRequest,
+    QueryEnableErrorStrings,
     QueryThreadSuffixSupportedRequest,
     QueryListThreadsInStopReplySupportedRequest,
     QueryCurrentThreadIDRequest,

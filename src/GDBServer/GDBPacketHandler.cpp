@@ -8,7 +8,7 @@ void GDBPacketHandler::operator()(
 {
   _domain.pause();
   broadcast(pkt::StopReasonSignalResponse(SIGSTOP, 1));
-};
+}
 
 template <>
 void GDBPacketHandler::operator()(
@@ -16,7 +16,7 @@ void GDBPacketHandler::operator()(
 {
   _connection.disable_ack_mode();
   send(pkt::OKResponse());
-};
+}
 
 template <>
 void GDBPacketHandler::operator()(
@@ -28,21 +28,28 @@ void GDBPacketHandler::operator()(
     "QThreadSuffixSupported+",
     "QListThreadsInStopReplySupported+",
   }));
-};
+}
+
+template <>
+void GDBPacketHandler::operator()(
+    const pkt::QueryEnableErrorStrings &) const
+{
+  send(pkt::OKResponse());
+}
 
 template <>
 void GDBPacketHandler::operator()(
     const pkt::QueryThreadSuffixSupportedRequest &) const
 {
   send(pkt::OKResponse());
-};
+}
 
 template <>
 void GDBPacketHandler::operator()(
     const pkt::QueryListThreadsInStopReplySupportedRequest &) const
 {
   send(pkt::OKResponse());
-};
+}
 
 template <>
 void GDBPacketHandler::operator()(
@@ -50,7 +57,7 @@ void GDBPacketHandler::operator()(
 {
     send(pkt::QueryHostInfoResponse(
           _domain.get_word_size(), _domain.get_name()));
-};
+}
 
 template <>
 void GDBPacketHandler::operator()(
@@ -65,7 +72,7 @@ void GDBPacketHandler::operator()(
         send(pkt::QueryRegisterInfoResponse(
             md.name, 8*md.width, md.offset, md.gcc_id));
       }, [&]() {
-        send(pkt::ErrorResponse(0x45));
+        send_error(0x45);
       });
   } else if (word_size == sizeof(uint32_t)) {
     reg::x86_32::RegistersX86_32::find_metadata_by_id(id,
@@ -73,10 +80,10 @@ void GDBPacketHandler::operator()(
         send(pkt::QueryRegisterInfoResponse(
             md.name, 8*md.width, md.offset, md.gcc_id));
       }, [&]() {
-        send(pkt::ErrorResponse(0x45));
+        send_error(0x45);
       });
   } else {
-    throw std::runtime_error("Unsupported word size!");
+    throw WordSizeException(word_size);
   }
 }
 
@@ -95,13 +102,11 @@ void GDBPacketHandler::operator()(
   const auto address = req.get_address();
 
   auto pte = _domain.get_page_table_entry(address);
-  auto length = XC_PAGE_SIZE;
-
-  if (pte.is_present() ) {
+  if (pte && pte->is_present()) {
 
     send(pkt::QueryMemoryRegionInfoResponse(
-          address & XC_PAGE_MASK, length,
-          true, pte.is_rw(), !pte.is_nx()));
+          address & XC_PAGE_MASK, XC_PAGE_SIZE,
+          true, pte->is_rw(), !pte->is_nx()));
 
   } else {
 
@@ -109,15 +114,16 @@ void GDBPacketHandler::operator()(
      * provide a region that represents the space before the next
      * one that IS present.
      */
-    auto address2 = address;
-    do {
-      address2 += XC_PAGE_SIZE;
-      pte = _domain.get_page_table_entry(address2);
-    } while (!pte.is_present());
 
-    length = address2 - address;
+    const auto MAX_ADDRESS = _domain.get_max_gpfn() << XC_PAGE_SHIFT;
+    auto address_end = address;
+    do {
+      address_end += XC_PAGE_SIZE;
+      pte = _domain.get_page_table_entry(address_end);
+    } while (address_end < MAX_ADDRESS && !pte && !pte->is_present());
+
     send(pkt::QueryMemoryRegionInfoResponse(
-          address & XC_PAGE_MASK, length,
+          address & XC_PAGE_MASK, address_end - address,
           false, false, false));
   }
 }
@@ -179,7 +185,7 @@ void GDBPacketHandler::operator()(
         regs.find_by_id(id, [&](const auto&, const auto &reg) {
           send(pkt::RegisterReadResponse(reg));
         }, [&]() {
-          send(pkt::ErrorResponse(0x45)); // TODO
+          send_error(0x45, "No register with ID " + std::to_string(id));
         });
       }
   }, regs);
@@ -198,7 +204,7 @@ void GDBPacketHandler::operator()(
         regs.find_by_id(id, [&value](const auto&, auto &reg) {
           reg = value;
         }, [&]() {
-          send(pkt::ErrorResponse(0x45)); // TODO
+          send_error(0x45, "No register with ID " + std::to_string(id));
         });
       }
   }, regs);
@@ -226,23 +232,27 @@ void GDBPacketHandler::operator()(
 
   std::visit(util::overloaded {
       [&values](auto &orig_regs) {
-        const auto pair = values.back();
-        values.pop_back();
+        size_t size = 0;
+        while (!values.empty()) {
+          const auto pair = values.back();
+          values.pop_back();
 
-        // For some reason, if I do [id, value] = values.back(),
-        // 'value' isn't available for the lambda capture below
-        const auto id = pair.first;
-        const auto value = pair.second;
+          // For some reason, if I do [id, value] = values.back(),
+          // 'value' isn't available for the lambda capture below
+          const auto id = pair.first;
+          const auto value = pair.second;
 
-        orig_regs.find_by_id(id, [value](const auto&, auto &reg) {
-          std::visit(util::overloaded {
-              [&reg](const auto &value) {
-                reg = value;
-              }
-          }, value);
-        }, [&]() {
-          throw std::runtime_error("Oversized register write packet!");
-        });
+          orig_regs.find_by_id(id, [&](const auto &md, auto &reg) {
+            std::visit(util::overloaded {
+                [&](const auto &value) {
+                  reg = value;
+                  size = md.offset + md.width;
+                }
+            }, value);
+          }, [&]() {
+            throw PacketSizeException(size, orig_regs.size);
+          });
+        }
       }
   }, regs_any);
 

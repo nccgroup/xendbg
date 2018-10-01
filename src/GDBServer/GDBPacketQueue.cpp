@@ -51,7 +51,7 @@ void GDBPacketQueue::append(const std::vector<char> &data) {
 
 GDBPacket GDBPacketQueue::pop() {
   if (_packets.empty())
-    throw std::runtime_error("No packets!");
+    throw NoPacketException();
 
   return util::pop_ret(_packets);
 }

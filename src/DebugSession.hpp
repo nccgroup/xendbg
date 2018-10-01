@@ -45,7 +45,11 @@ namespace xd {
 
           _packet_handler.emplace(_domain, *_debugger, *_gdb_server, *_gdb_connection);
           connection->read([this, &server](auto &connection, const auto &packet) {
-            std::visit(*_packet_handler, packet);
+            try {
+              std::visit(*_packet_handler, packet);
+            } catch (const xen::XenException &e) {
+              connection.send_error(e.get_err(), e.what());
+            }
           }, [this]() {
             _debugger->detach();
             _packet_handler.reset();

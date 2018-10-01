@@ -43,15 +43,12 @@ Address DebuggerPV::single_step() {
     remove_breakpoint(*orig_addr);
 
   // For conditional branches, we need to insert EBFEs at both potential locations.
-  const auto [dest1_addr, dest2_addr] = get_address_of_next_instruction();
+  const auto [dest1_addr, dest2_addr_opt] = get_address_of_next_instruction();
+  bool dest2_had_il = dest2_addr_opt && (_infinite_loops.count(*dest2_addr_opt) != 0);
 
-  bool dest1_had_il = dest1_addr && (_infinite_loops.count(*dest1_addr) != 0);
-  bool dest2_had_il = dest2_addr && (_infinite_loops.count(*dest2_addr) != 0);
-
-  if (dest1_addr && !dest1_had_il)
-    insert_breakpoint(*dest1_addr);
-  if (dest2_addr && !dest2_had_il)
-    insert_breakpoint(*dest2_addr);
+  insert_breakpoint(dest1_addr);
+  if (dest2_addr_opt && !dest2_had_il)
+    insert_breakpoint(*dest2_addr_opt);
 
   _domain.unpause();
   std::optional<Address> address_opt;
@@ -60,10 +57,9 @@ Address DebuggerPV::single_step() {
 
   // Remove each of our two infinite loops unless there is a
   // *manually-inserted* breakpoint at the corresponding address.
-  if (dest1_addr && !dest1_had_il)
-    remove_breakpoint(*dest1_addr);
-  if (dest2_addr && !dest2_had_il)
-    remove_breakpoint(*dest2_addr);
+  remove_breakpoint(dest1_addr);
+  if (dest2_addr_opt && !dest2_had_il)
+    remove_breakpoint(*dest2_addr_opt);
 
   // If there was a BP at the instruction we started at, put it back
   if (orig_addr)

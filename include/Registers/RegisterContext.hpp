@@ -102,11 +102,11 @@ namespace xd::reg {
     };
   }
 
-  template <size_t base, typename... Registers_t>
+  template <size_t _id, size_t _base, typename... Registers_t>
   class _RegisterContext;
 
-  template <size_t _base>
-  class _RegisterContext<_base> {
+  template <size_t _id, size_t _base>
+  class _RegisterContext<_id, _base> {
   public:
     static constexpr auto base = _base;
 
@@ -138,13 +138,13 @@ namespace xd::reg {
       return false;
     }
 
-    template <typename FoundFn, typename NotFoundFn>
-    void find_by_id(size_t, FoundFn, NotFoundFn nff) const {
+    template <typename MatchFn, typename FoundFn, typename NotFoundFn>
+    void find(MatchFn m, FoundFn ff, NotFoundFn nff) {
       nff();
     }
 
-    template <typename FoundFn, typename NotFoundFn>
-    void find_by_id(size_t, FoundFn, NotFoundFn nff) {
+    template <typename MatchFn, typename FoundFn, typename NotFoundFn>
+    void find(MatchFn m, FoundFn ff, NotFoundFn nff) const {
       nff();
     }
 
@@ -152,19 +152,12 @@ namespace xd::reg {
     static void find_metadata_by_id(size_t, FoundFn, NotFoundFn nff) {
       nff();
     }
-
-    static std::string get_name_by_id(size_t) {
-      throw std::runtime_error("No such ID!");
-    }
-    static std::string _get_id_by_name(const std::string &, size_t) {
-      throw std::runtime_error("No such name!");
-    }
   };
 
-  template <size_t _base, typename Register_t, typename... Registers_t>
-  class _RegisterContext<_base, Register_t, Registers_t...>
+  template <size_t _id, size_t _base, typename Register_t, typename... Registers_t>
+  class _RegisterContext<_id, _base, Register_t, Registers_t...>
     : public _RegisterContext<
-        _base+sizeof(typename Register_t::Value),
+        _id+1, _base+sizeof(typename Register_t::Value),
         Registers_t...>
   {
   protected:
@@ -177,9 +170,9 @@ namespace xd::reg {
     template <typename Context_t, typename Reg_t, bool matches>
     friend struct __get_impl;
 
-    using This = _RegisterContext<_base, Register_t, Registers_t...>;
+    using This = _RegisterContext<_id, _base, Register_t, Registers_t...>;
     using Next = _RegisterContext<
-          _base+sizeof(typename Register_t::Value),
+          _id+1, _base+sizeof(typename Register_t::Value),
           Registers_t...>;
 
     const Register_t &_get() const {
@@ -205,6 +198,7 @@ namespace xd::reg {
       _register.clear();
     }
 
+    static constexpr auto id = _id;
     static constexpr auto base = _base;
     static constexpr size_t size = sizeof(typename Register_t::Value) + Next::size;
 
@@ -216,6 +210,7 @@ namespace xd::reg {
     struct RegisterMetadataReference {
       using Register = Reg_t;
 
+      const size_t &id;
       const size_t &width;
       const size_t &offset;
       const decltype(Register_t::name) &name;
@@ -225,6 +220,7 @@ namespace xd::reg {
 
     template <typename Reg_t>
     static constexpr RegisterMetadataReference<Reg_t> metadata_of = {
+      id,
       sizeof(typename Reg_t::Value),
       offset_of<Reg_t>,
       Reg_t::name,
@@ -260,35 +256,40 @@ namespace xd::reg {
       Next::template for_each_metadata(f);
     };
 
-    static bool is_valid_id(size_t id) {
-      return (id == 0)
+    static bool is_valid_id(size_t target_id) {
+      return (id == target_id)
         ? true
-        : Next::is_valid_id(id-1);
+        : Next::is_valid_id(target_id-1);
     }
 
-    static std::string get_name_by_id(size_t id) {
-      return (id == 0)
-        ? std::string(Register_t::name)
-        : Next::get_name_by_id(id-1);
+    template <typename MatchFn, typename FoundFn, typename NotFoundFn>
+    void find(MatchFn m, FoundFn ff, NotFoundFn nff) const {
+      if (m(metadata_of<Register_t>))
+        ff(metadata_of<Register_t>, _register);
+      else
+        Next::find(m, ff, nff);
     }
-    static size_t get_id_by_name(const std::string &name) {
-      return _get_id_by_name(name, 0);
+
+    template <typename MatchFn, typename FoundFn, typename NotFoundFn>
+    void find(MatchFn m, FoundFn ff, NotFoundFn nff) {
+      if (m(metadata_of<Register_t>))
+        ff(metadata_of<Register_t>, _register);
+      else
+        Next::find(m, ff, nff);
     }
 
     template <typename FoundFn, typename NotFoundFn>
     void find_by_id(size_t id, FoundFn ff, NotFoundFn nff) const {
-      if (id == 0)
-        ff(metadata_of<Register_t>, _register);
-      else
-        Next::find_by_id(id-1, ff, nff);
+      find([&](const auto &md) {
+        return md.id == id;
+      }, ff, nff);
     }
 
     template <typename FoundFn, typename NotFoundFn>
     void find_by_id(size_t id, FoundFn ff, NotFoundFn nff) {
-      if (id == 0)
-        ff(metadata_of<Register_t>, _register);
-      else
-        Next::find_by_id(id-1, ff, nff);
+      find([&](const auto &md) {
+        return md.id == id;
+      }, ff, nff);
     }
 
     template <typename FoundFn, typename NotFoundFn>
@@ -307,16 +308,10 @@ namespace xd::reg {
 
   private:
     Register_t _register;
-
-    static size_t _get_id_by_name(const std::string &name, size_t id) {
-      return (Register_t::name == name)
-        ? id
-        : Next::_get_id_by_name(name, id+1);
-    }
   };
 
   template <typename... Registers_t>
-  using RegisterContext = _RegisterContext<0, Registers_t...>;
+  using RegisterContext = _RegisterContext<0, 0, Registers_t...>;
 
 }
 

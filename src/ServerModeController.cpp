@@ -84,7 +84,7 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   const auto domid = get_domid_any(domain_any);
 
   if (_instances.count(domid))
-    throw std::runtime_error("Domain already added!");
+    throw DomainAlreadyAddedException(domid);
 
   std::visit(util::overloaded {
       [&](xen::DomainPV domain) {

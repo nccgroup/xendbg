@@ -80,7 +80,7 @@ MemInfo Domain::map_meminfo() const {
   return meminfo;
 }
 
-xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
+std::optional<xd::xen::PageTableEntry> Domain::get_page_table_entry(Address address) const {
   // FYI: "cr3" is the register that holds the base address of the page table
   const auto cr3 = std::visit(util::overloaded {
     [](const auto &regs) {
@@ -91,19 +91,19 @@ xd::xen::PageTableEntry Domain::get_page_table_entry(Address address) const {
       PageTableEntry::Level::L4);
 
   if (!(l4.is_present()))
-    throw std::runtime_error("L4: No such page!");
+    return std::nullopt;
 
   const auto l3 = PageTableEntry::read_level(*this, address, l4.get_mfn(),
       PageTableEntry::Level::L3);
 
   if (!(l3.is_present()))
-    throw std::runtime_error("L3: No such page!");
+    return std::nullopt;
 
   const auto l2 = PageTableEntry::read_level(*this, address, l3.get_mfn(),
       PageTableEntry::Level::L2);
 
   if (!(l2.is_present()))
-    throw std::runtime_error("L2: No such page!");
+    return std::nullopt;
 
   return PageTableEntry::read_level(*this, address, l2.get_mfn(),
       PageTableEntry::Level::L1);
@@ -161,6 +161,15 @@ xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
     uint32_t mfn = ((uint32_t*)meminfo->p2m_table)[pfn];
     return (mfn == ~0U) ? INVALID_MFN : mfn;
   }
+}
+
+xen_pfn_t Domain::get_max_gpfn() const {
+  xen_pfn_t max_gpfn;
+  int err;
+  if ((err = xc_domain_maximum_gpfn(_xenctrl.get(), _domid, &max_gpfn)))
+    throw XenException(
+        "Failed to destroy domain " + std::to_string(_domid), -err);
+  return max_gpfn;
 }
 
 // TODO: This doesn't seem to have any effect.

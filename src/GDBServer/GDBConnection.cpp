@@ -12,16 +12,10 @@ using xd::gdbsrv::pkt::GDBResponsePacket;
 using xd::util::string::is_prefix;
 
 static char ACK_OK[] = "+";
-static char ACK_ERROR[] = "+";
-
-class UnknownPacketTypeException : public std::runtime_error {
-public:
-  explicit UnknownPacketTypeException(const std::string &data)
-      : std::runtime_error(data) {};
-};
+static char ACK_ERROR[] = "-";
 
 GDBConnection::GDBConnection(std::shared_ptr<uvw::TcpHandle> tcp)
-  : _tcp(tcp), _ack_mode(true), _is_initializing(false)
+  : _tcp(tcp), _ack_mode(true), _is_initializing(false), _error_strings(false)
 {
 }
 
@@ -91,6 +85,13 @@ void GDBConnection::send(const pkt::GDBResponsePacket &packet)
   _tcp->write((char*)s.c_str(), s.size());
 }
 
+void GDBConnection::send_error(uint8_t code, std::string message) {
+  if (_error_strings)
+    send(pkt::ErrorResponse(code, message));
+  else
+    send(pkt::ErrorResponse(code, message));
+}
+
 bool GDBConnection::validate_packet_checksum(const GDBPacket &packet) {
   const auto& contents = packet.contents;
   const auto checksum_calculated = std::accumulate(
@@ -143,6 +144,8 @@ GDBRequestPacket GDBConnection::parse_packet(const GDBPacket &packet) {
         return pkt::QueryThreadSuffixSupportedRequest(contents);
       else if (contents == "QListThreadsInStopReply")
         return pkt::QueryListThreadsInStopReplySupportedRequest(contents);
+      else if (contents == "QEnableErrorStrings")
+        return pkt::QueryEnableErrorStrings(contents);
       break;
     case '?':
       return pkt::StopReasonRequest(contents);

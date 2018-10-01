@@ -40,7 +40,7 @@ namespace xd::xen {
     int get_word_size() const;
 
     MemInfo map_meminfo() const;
-    PageTableEntry get_page_table_entry(Address address) const;
+    std::optional<PageTableEntry> get_page_table_entry(Address address) const;
 
     virtual xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const = 0;
     virtual void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const = 0;
@@ -51,6 +51,7 @@ namespace xd::xen {
     void destroy() const;
 
     xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
+    xen_pfn_t get_max_gpfn() const;
 
     /*
     template<typename InitFn_t, typename CleanupFn_t>

@@ -30,19 +30,24 @@ enum PAGE_FLAGS {
   _PAGE_GUEST_KERNEL  = 1U << 12
 };
 
+static inline size_t get_pagetable_shift(PageTableEntry::Level level) {
+  const auto level_index = 
+    static_cast<typename std::underlying_type<PageTableEntry::Level>::type>(level);
+  return PAGETABLE_SHIFTS[level_index];
+}
+
 PageTableEntry PageTableEntry::read_level(const Domain &domain,
     Address virtual_address, Address mfn, Level level)
 {
-  const auto table = domain.map_memory_by_mfn<RawPTE>(mfn, 0, XC_PAGE_SIZE, PROT_READ);
+  const auto table = domain.map_memory_by_mfn<RawPTE>(
+      mfn, 0, XC_PAGE_SIZE, PROT_READ);
   const auto offset = get_pte_offset(virtual_address, level);
   const auto pte = (table.get())[offset];
   return PageTableEntry(pte);
 }
 
 unsigned PageTableEntry::get_pte_offset(Address address, Level level) {
-  const auto level_index = 
-    static_cast<typename std::underlying_type<Level>::type>(level);
-  return (((address) >> PAGETABLE_SHIFTS[level_index]) & (PAGETABLE_ENTRIES - 1));
+  return (((address) >> get_pagetable_shift(level)) & (PAGETABLE_ENTRIES - 1));
 }
 
 uint64_t PageTableEntry::get_flags() const {

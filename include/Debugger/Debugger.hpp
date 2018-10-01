@@ -18,7 +18,13 @@
 
 namespace xd::dbg {
 
-class NoSuchBreakpointException : public std::exception {
+  class CapstoneException : public std::runtime_error {
+  public:
+    CapstoneException(const std::string &msg)
+      : std::runtime_error(msg) {};
+  };
+
+  class NoSuchBreakpointException : public std::exception {
   public:
     explicit NoSuchBreakpointException(const xen::Address address)
         : _address(address) {};
@@ -68,7 +74,7 @@ class NoSuchBreakpointException : public std::exception {
     virtual void write_memory_retaining_breakpoints(xen::Address address, size_t length, void *data) = 0;
 
   protected:
-    std::pair<std::optional<xen::Address>,
+    std::pair<xen::Address,
               std::optional<xen::Address>> get_address_of_next_instruction();
 
   private:

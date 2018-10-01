@@ -6,6 +6,7 @@
 #define XENDBG_SERVER_HPP
 
 #include <cstdint>
+#include <stdexcept>
 #include <unordered_map>
 
 #include <uvw.hpp>
@@ -16,6 +17,17 @@
 #include "DebugSession.hpp"
 
 namespace xd {
+
+  class DomainAlreadyAddedException : public std::exception {
+  public:
+    DomainAlreadyAddedException(xen::DomID domid)
+      : _domid(domid) {};
+
+    xen::DomID get_domid() { return _domid; };
+
+  private:
+    xen::DomID _domid;
+  };
 
   class ServerModeController {
   public:

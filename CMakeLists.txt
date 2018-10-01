@@ -66,7 +66,8 @@ add_executable(xendbg
         src/GDBServer/GDBPacketHandler.cpp
         include/GDBServer/GDBServer.hpp
         src/GDBServer/GDBServer.cpp
-        src/DebugSession.hpp)
+        src/DebugSession.hpp
+        )
 
 target_link_libraries(xendbg
   capstone

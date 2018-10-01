@@ -12,10 +12,10 @@
 #include <vector>
 
 #include <capstone/capstone.h>
+#include <uvw.h>
 
 #include <Xen/Domain.hpp>
 #include <Util/overloaded.hpp>
-#include <UV/UVLoop.hpp>
 
 #include "Debugger.hpp"
 
@@ -26,7 +26,7 @@ namespace xd::dbg {
     using BreakpointMap = std::unordered_map<xen::Address, uint8_t>;
 
   public:
-    DebuggerHVM(uv::UVLoop &loop, xen::Domain domain);
+    DebuggerHVM(uvw::Loop &loop, xen::Domain domain);
     ~DebuggerHVM() override;
 
     void continue_() override;

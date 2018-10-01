@@ -7,6 +7,9 @@
 #include <sys/mman.h>
 
 #include <capstone/capstone.h>
+#include <spdlog/spdlog.h>
+
+#include <Globals.hpp>
 
 #include <Debugger/DebuggerPV.hpp>
 #include <Util/overloaded.hpp>
@@ -80,10 +83,13 @@ std::vector<Address> DebuggerPV::get_breakpoints() {
 
 void DebuggerPV::insert_breakpoint(Address address) {
   if (_infinite_loops.count(address)) {
-    std::cout << "[!]: Tried to insert infinite loop where one already exists." << std::endl;
-    return; // TODO?
+    spdlog::get(LOGNAME_ERROR)->info(
+        "[!]: Tried to insert infinite loop where one already exists (address {0:x}). "
+        "This is generally harmless, but might indicate a failure in estimating the "
+        "next instruction address.",
+        address);
+    return;
   }
-  //std::cout << "Inserting infinite loop at " << std::hex << address << std::endl;
 
   const auto mem_handle = _domain.map_memory<char>(address, 2, PROT_READ | PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
@@ -95,11 +101,14 @@ void DebuggerPV::insert_breakpoint(Address address) {
 }
 
 void DebuggerPV::remove_breakpoint(Address address) {
-  if (!_infinite_loops.count(address)) {
-    std::cout << "[!]: Tried to remove infinite loop where one does not exist." << std::endl;
-    return; // TODO?
+  if (_infinite_loops.count(address)) {
+    spdlog::get(LOGNAME_ERROR)->info(
+        "[!]: Tried to remove infinite loop where one already exists (address {0:x}). "
+        "This is generally harmless, but might indicate a failure in estimating the "
+        "next instruction address.",
+        address);
+    return;
   }
-  //std::cout << "Removing infinite loop at " << std::hex << address << std::endl;
 
   const auto mem_handle = _domain.map_memory<char>(address, 2, PROT_WRITE);
   const auto mem = (uint16_t*)mem_handle.get();
@@ -154,7 +163,7 @@ void DebuggerPV::write_memory_retaining_breakpoints(Address address, size_t leng
   const auto mem_orig = (char*)mem_handle.get() + (length - length_orig);
   memcpy((void*)mem_orig, data, length_orig);
 
-  std::cout << std::hex << "wrote " << length_orig << " bytes to " << address << std::endl;
+  spdlog::get(LOGNAME_ERROR)->info("Wrote {0:d} bytes to {1:x}.", length_orig, address);
 
   for (const auto &il_address : il_addresses)
     insert_breakpoint(il_address);

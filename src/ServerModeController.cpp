@@ -1,6 +1,10 @@
 #include <csignal>
 #include <iostream>
 
+#include <spdlog/spdlog.h>
+
+#include <Globals.hpp>
+
 #include "DebugSession.hpp"
 #include "ServerModeController.hpp"
 
@@ -90,7 +94,8 @@ void ServerModeController::prune_instances() {
         return get_domid_any(domain) == it->first;
       }))
     {
-      std::cout << "[-] Domain " << it->first << std::endl;
+      spdlog::get(LOGNAME_CONSOLE)->info(
+          "DOWN: Domain {0:d}", it->first);
       it = _instances.erase(it);
     } else {
       ++it;
@@ -109,7 +114,8 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
         auto [kv, _] = _instances.emplace(domid,
             std::make_unique<DebugSessionPV>(*_loop, std::move(domain))); // TODO
 
-        std::cout << "[+] Domain " << kv->first << ": port " << _next_port << std::endl;
+        spdlog::get(LOGNAME_CONSOLE)->info(
+            "UP: Domain {0:d} @ port {1:d}", kv->first, _next_port);
         kv->second->run("127.0.0.1", _next_port++);
       },
       [&](xen::DomainHVM domain) {

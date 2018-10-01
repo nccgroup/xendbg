@@ -59,8 +59,6 @@ void DomainPV::set_cpu_context_raw(vcpu_guest_context_any_t context, VCPU_ID vcp
   int err = xc_vcpu_setcontext(_xenctrl.get(), _domid, vcpu_id, &context);
 
   if (err < 0) {
-    std::cout << std::strerror(EINVAL) << std::endl;
-    std::cout << std::strerror(-err) << std::endl;
     throw XenException("Failed to set PV CPU context for VCPU " +
                        std::to_string(vcpu_id) + " of domain " +
                        std::to_string(_domid), -err);

@@ -2,6 +2,9 @@
 #include <numeric>
 #include <stdexcept>
 
+#include <spdlog/spdlog.h>
+
+#include <Globals.hpp>
 #include <GDBServer/GDBConnection.hpp>
 #include <Util/string.hpp>
 
@@ -58,11 +61,18 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
           tcp.write(valid ? ACK_OK : ACK_ERROR, 1);
 
         if (valid) {
-          try { // TODO exception handling
-            std::cout << "RECV: " << raw_packet.contents << std::endl;
+          try {
+            spdlog::get(LOGNAME_CONSOLE)->info("RECV: {0}", raw_packet.contents);
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
+            spdlog::get(LOGNAME_ERROR)->warn(
+              "Got packet of unknown type: \"{0}\"", e.what());
+            self->send(rsp::NotSupportedResponse());
+          } catch (const req::RequestPacketParseException &e) {
+            spdlog::get(LOGNAME_ERROR)->error(
+                "Failed to parse packet ({0}): \"{1}\"",
+                e.what(), raw_packet.contents);
             self->send(rsp::NotSupportedResponse());
           }
         }
@@ -79,7 +89,7 @@ void GDBConnection::stop() {
 
 void GDBConnection::send(const rsp::GDBResponse &packet)
 {
-  std::cout << "SEND: " << packet.to_string() << std::endl;
+  spdlog::get(LOGNAME_CONSOLE)->info("SEND: {0}", packet.to_string());
 
   const auto s = format_packet(packet);
   _tcp->write((char*)s.c_str(), s.size());

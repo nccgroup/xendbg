@@ -7,8 +7,8 @@
 
 using xd::gdb::GDBConnection;
 using xd::gdb::GDBPacket;
-using xd::gdb::req::GDBRequestPacket;
-using xd::gdb::req::GDBResponsePacket;
+using xd::gdb::req::GDBRequest;
+using xd::gdb::rsp::GDBResponse;
 using xd::util::string::is_prefix;
 
 static char ACK_OK[] = "+";
@@ -63,7 +63,7 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
-            self->send(req::NotSupportedResponse());
+            self->send(rsp::NotSupportedResponse());
           }
         }
       }
@@ -77,7 +77,7 @@ void GDBConnection::stop() {
   _tcp->stop();
 }
 
-void GDBConnection::send(const req::GDBResponsePacket &packet)
+void GDBConnection::send(const rsp::GDBResponse &packet)
 {
   std::cout << "SEND: " << packet.to_string() << std::endl;
 
@@ -87,9 +87,9 @@ void GDBConnection::send(const req::GDBResponsePacket &packet)
 
 void GDBConnection::send_error(uint8_t code, std::string message) {
   if (_error_strings)
-    send(req::ErrorResponse(code, message));
+    send(rsp::ErrorResponse(code, message));
   else
-    send(req::ErrorResponse(code, message));
+    send(rsp::ErrorResponse(code, message));
 }
 
 bool GDBConnection::validate_packet_checksum(const GDBPacket &packet) {
@@ -100,7 +100,7 @@ bool GDBConnection::validate_packet_checksum(const GDBPacket &packet) {
   return checksum_calculated == packet.checksum;
 }
 
-std::string GDBConnection::format_packet(const GDBResponsePacket &packet) {
+std::string GDBConnection::format_packet(const GDBResponse &packet) {
   const auto& contents = packet.to_string();
   const uint8_t checksum = std::accumulate(
       contents.begin(), contents.end(), (uint8_t)0);
@@ -113,7 +113,7 @@ std::string GDBConnection::format_packet(const GDBResponsePacket &packet) {
   return ss.str();
 }
 
-GDBRequestPacket GDBConnection::parse_packet(const GDBPacket &packet) {
+GDBRequest GDBConnection::parse_packet(const GDBPacket &packet) {
   const auto &contents = packet.contents;
 
   switch (contents[0]) {

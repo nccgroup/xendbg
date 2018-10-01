@@ -21,7 +21,6 @@ namespace xd::xen {
       XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore);
 
   xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain);
-
 }
 
 #endif //XENDBG_DOMAINANY_HPP

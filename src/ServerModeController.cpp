@@ -17,6 +17,24 @@ ServerModeController::ServerModeController(uint16_t base_port)
 {
 }
 
+void ServerModeController::run_single(const std::string &name) {
+  const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+
+  auto found = std::find_if(domains.begin(), domains.end(), [&](const auto &domain) {
+    return std::visit(util::overloaded {
+      [&](const auto &domain) {
+        return domain.get_name() == name;
+      }
+    }, domain);
+  });
+
+  if (found == domains.end())
+    throw std::runtime_error("No such domain!");
+
+  add_instance(std::move(*found));
+  run();
+}
+
 void ServerModeController::run_single(xen::DomID domid) {
   auto domain = xen::init_domain(domid, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
   add_instance(std::move(domain));
@@ -30,7 +48,7 @@ void ServerModeController::run_multi() {
   auto &watch_release = _xenstore.add_watch();
   watch_release.add_path("@releaseDomain");
 
-  _poll->on<uvw::PollEvent>([&](const auto &event, auto &handle) {
+  _poll->on<uvw::PollEvent>([&](const auto&, auto&) {
     if (watch_introduce.check())
       add_new_instances();
     else if (watch_release.check())

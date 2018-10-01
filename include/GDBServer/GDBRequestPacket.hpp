@@ -65,13 +65,10 @@
 
 namespace xd::gdbsrv::pkt {
 
-  /*
   class RequestPacketParseException : public std::runtime_error {
   public:
-    RequestPacketParseException(const std::string &msg);
-  };
-  */
-  class RequestPacketParseException : public std::exception {
+    RequestPacketParseException(const std::string &msg)
+      : std::runtime_error(msg) {};
   };
 
   class GDBRequestPacketBase {
@@ -99,7 +96,8 @@ namespace xd::gdbsrv::pkt {
     void assert_char_not(char ch) {
       expect_more();
       if (peek() == ch)
-        throw RequestPacketParseException();
+        throw RequestPacketParseException(
+            std::string("assert_char_not(") + ch + ") failed");
     };
 
     bool check_char(char ch) {
@@ -120,7 +118,8 @@ namespace xd::gdbsrv::pkt {
 
     void expect_char(char ch) {
       if (get_char() != ch)
-        throw RequestPacketParseException();
+        throw RequestPacketParseException(
+            std::string("expect_char(") + ch + ") failed");
     };
 
     void skip_space() {
@@ -136,12 +135,13 @@ namespace xd::gdbsrv::pkt {
 
     void expect_more(size_t n = 1) {
       if (!has_more(n))
-        throw RequestPacketParseException();
+        throw RequestPacketParseException(
+            std::string("expect_more(") + std::to_string(n) + ") failed");
     }
 
     void expect_end() {
       if (has_more())
-        throw RequestPacketParseException();
+        throw RequestPacketParseException("expect_end() failed");
     }
 
     char peek() {
@@ -163,7 +163,9 @@ namespace xd::gdbsrv::pkt {
         if (cl >= 'a' && cl <= 'f')
           return 0xa + (cl - 'a');
 
-        throw RequestPacketParseException();
+        throw RequestPacketParseException(
+            std::string("read_byte failed on invalid hex char '")
+              + std::to_string((unsigned)cl) + "'");
       };
 
       uint8_t c1 = from_hex(get_char());
@@ -195,7 +197,7 @@ namespace xd::gdbsrv::pkt {
       }
 
       if (remaining)
-        throw RequestPacketParseException();
+        throw RequestPacketParseException("Incomplete hex number");
 
       return value;
     };
@@ -234,7 +236,7 @@ namespace xd::gdbsrv::pkt {
       size_t end;
       Word_t num = std::stoull(s, &end, 16);
       if (end != SIZE)
-        throw RequestPacketParseException();
+        throw RequestPacketParseException("Incomplete hex number");
 
       _it += SIZE;
       return num;
@@ -456,7 +458,7 @@ namespace xd::gdbsrv::pkt {
           ++index;
         });
       } else {
-        throw RequestPacketParseException();
+        throw RequestPacketParseException("Invalid register packet size");
       }
       expect_end();
     };

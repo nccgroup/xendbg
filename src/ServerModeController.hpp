@@ -33,6 +33,7 @@ namespace xd {
   public:
     explicit ServerModeController(uint16_t base_port);
 
+    void run_single(const std::string &name);
     void run_single(xen::DomID domid);
     void run_multi();
 

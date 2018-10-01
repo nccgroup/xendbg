@@ -5,7 +5,7 @@
 #include <GDBServer/GDBConnection.hpp>
 #include <GDBServer/GDBServer.hpp>
 
-using xd::gdbsrv::GDBServer;
+using xd::gdb::GDBServer;
 
 GDBServer::GDBServer(uvw::Loop &loop)
   : _server(loop.resource<uvw::TcpHandle>())

@@ -5,10 +5,10 @@
 #include <GDBServer/GDBConnection.hpp>
 #include <Util/string.hpp>
 
-using xd::gdbsrv::GDBConnection;
-using xd::gdbsrv::GDBPacket;
-using xd::gdbsrv::pkt::GDBRequestPacket;
-using xd::gdbsrv::pkt::GDBResponsePacket;
+using xd::gdb::GDBConnection;
+using xd::gdb::GDBPacket;
+using xd::gdb::req::GDBRequestPacket;
+using xd::gdb::req::GDBResponsePacket;
 using xd::util::string::is_prefix;
 
 static char ACK_OK[] = "+";
@@ -63,7 +63,7 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
-            self->send(pkt::NotSupportedResponse());
+            self->send(req::NotSupportedResponse());
           }
         }
       }
@@ -77,7 +77,7 @@ void GDBConnection::stop() {
   _tcp->stop();
 }
 
-void GDBConnection::send(const pkt::GDBResponsePacket &packet)
+void GDBConnection::send(const req::GDBResponsePacket &packet)
 {
   std::cout << "SEND: " << packet.to_string() << std::endl;
 
@@ -87,9 +87,9 @@ void GDBConnection::send(const pkt::GDBResponsePacket &packet)
 
 void GDBConnection::send_error(uint8_t code, std::string message) {
   if (_error_strings)
-    send(pkt::ErrorResponse(code, message));
+    send(req::ErrorResponse(code, message));
   else
-    send(pkt::ErrorResponse(code, message));
+    send(req::ErrorResponse(code, message));
 }
 
 bool GDBConnection::validate_packet_checksum(const GDBPacket &packet) {
@@ -118,69 +118,69 @@ GDBRequestPacket GDBConnection::parse_packet(const GDBPacket &packet) {
 
   switch (contents[0]) {
     case '\x03':
-      return pkt::InterruptRequest(contents);
+      return req::InterruptRequest(contents);
     case 'q':
       if (contents == "qfThreadInfo")
-        return pkt::QueryThreadInfoStartRequest(contents);
+        return req::QueryThreadInfoStartRequest(contents);
       else if (contents == "qsThreadInfo")
-        return pkt::QueryThreadInfoContinuingRequest(contents);
+        return req::QueryThreadInfoContinuingRequest(contents);
       else if (contents == "qC")
-        return pkt::QueryCurrentThreadIDRequest(contents);
+        return req::QueryCurrentThreadIDRequest(contents);
       else if (is_prefix(std::string("qSupported"), contents))
-        return pkt::QuerySupportedRequest(contents);
+        return req::QuerySupportedRequest(contents);
       else if ("qHostInfo" == contents)
-        return pkt::QueryHostInfoRequest(contents);
+        return req::QueryHostInfoRequest(contents);
       else if ("qProcessInfo" == contents)
-        return pkt::QueryProcessInfoRequest(contents);
+        return req::QueryProcessInfoRequest(contents);
       else if (is_prefix(std::string("qRegisterInfo"), contents))
-        return pkt::QueryRegisterInfoRequest(contents);
+        return req::QueryRegisterInfoRequest(contents);
       else if (is_prefix(std::string("qMemoryRegionInfo"), contents))
-        return pkt::QueryMemoryRegionInfoRequest(contents);
+        return req::QueryMemoryRegionInfoRequest(contents);
       break;
     case 'Q':
       if (contents == "QStartNoAckMode")
-        return pkt::StartNoAckModeRequest(contents);
+        return req::StartNoAckModeRequest(contents);
       else if (contents == "QThreadSuffixSupported")
-        return pkt::QueryThreadSuffixSupportedRequest(contents);
+        return req::QueryThreadSuffixSupportedRequest(contents);
       else if (contents == "QListThreadsInStopReply")
-        return pkt::QueryListThreadsInStopReplySupportedRequest(contents);
+        return req::QueryListThreadsInStopReplySupportedRequest(contents);
       else if (contents == "QEnableErrorStrings")
-        return pkt::QueryEnableErrorStrings(contents);
+        return req::QueryEnableErrorStrings(contents);
       break;
     case '?':
-      return pkt::StopReasonRequest(contents);
+      return req::StopReasonRequest(contents);
     case 'k':
-      return pkt::KillRequest(contents);
+      return req::KillRequest(contents);
     case 'H':
-      return pkt::SetThreadRequest(contents);
+      return req::SetThreadRequest(contents);
     case 'p':
-      return pkt::RegisterReadRequest(contents);
+      return req::RegisterReadRequest(contents);
     case 'P':
-      return pkt::RegisterWriteRequest(contents);
+      return req::RegisterWriteRequest(contents);
     case 'G':
-      return pkt::GeneralRegistersBatchWriteRequest(contents);
+      return req::GeneralRegistersBatchWriteRequest(contents);
     case 'g':
-      return pkt::GeneralRegistersBatchReadRequest(contents);
+      return req::GeneralRegistersBatchReadRequest(contents);
     case 'M':
-      return pkt::MemoryWriteRequest(contents);
+      return req::MemoryWriteRequest(contents);
     case 'm':
-      return pkt::MemoryReadRequest(contents);
+      return req::MemoryReadRequest(contents);
     case 'c':
-      return pkt::ContinueRequest(contents);
+      return req::ContinueRequest(contents);
     case 'C':
-      return pkt::ContinueSignalRequest(contents);
+      return req::ContinueSignalRequest(contents);
     case 's':
-      return pkt::StepRequest(contents);
+      return req::StepRequest(contents);
     case 'S':
-      return pkt::StepSignalRequest(contents);
+      return req::StepSignalRequest(contents);
     case 'Z':
-      return pkt::BreakpointInsertRequest(contents);
+      return req::BreakpointInsertRequest(contents);
     case 'z':
-      return pkt::BreakpointRemoveRequest(contents);
+      return req::BreakpointRemoveRequest(contents);
     case 'R':
-      return pkt::RestartRequest(contents);
+      return req::RestartRequest(contents);
     case 'D':
-      return pkt::DetachRequest(contents);
+      return req::DetachRequest(contents);
     default:
       throw UnknownPacketTypeException(contents);
   }

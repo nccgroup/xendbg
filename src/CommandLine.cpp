@@ -2,7 +2,7 @@
 #include "ServerModeController.hpp"
 
 using xd::CommandLine;
-using xd::gdbsrv::GDBServer;
+using xd::gdb::GDBServer;
 using xd::xen::DomID;
 using xd::xen::XenException;
 

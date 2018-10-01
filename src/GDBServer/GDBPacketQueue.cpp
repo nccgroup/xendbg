@@ -9,8 +9,8 @@
 
 #define CHECKSUM_LENGTH 2
 
-using xd::gdbsrv::GDBPacket;
-using xd::gdbsrv::GDBPacketQueue;
+using xd::gdb::GDBPacket;
+using xd::gdb::GDBPacketQueue;
 
 void GDBPacketQueue::append(const std::vector<char> &data) {
   _buffer.insert(_buffer.end(), data.begin(), data.end());

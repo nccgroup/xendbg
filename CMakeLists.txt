@@ -17,8 +17,8 @@ add_executable(xendbg
         include/Debugger/DebuggerPV.hpp
   include/GDBServer/GDBConnection.hpp
         include/GDBServer/GDBPacketQueue.hpp
-  include/GDBServer/GDBRequestPacket.hpp
-  include/GDBServer/GDBResponsePacket.hpp
+        include/GDBServer/GDBRequest/GDBRequest.hpp
+        include/GDBServer/GDBResponse/GDBResponse.hpp
         include/Registers/Register.hpp
   include/Registers/RegisterContext.hpp
   include/Registers/RegistersX86.hpp
@@ -67,7 +67,7 @@ add_executable(xendbg
         include/GDBServer/GDBServer.hpp
         src/GDBServer/GDBServer.cpp
         src/DebugSession.hpp
-        )
+        include/GDBServer/GDBRequest/GDBRequestBase.hpp include/GDBServer/GDBRequest/GDBQueryRequest.hpp include/GDBServer/GDBRequest/GDBRegisterRequest.hpp include/GDBServer/GDBRequest/GDBMemoryRequest.hpp include/GDBServer/GDBRequest/GDBBreakpointRequest.hpp include/GDBServer/GDBRequest/GDBStepContinueRequest.hpp include/GDBServer/GDBResponse/GDBQueryResponse.hpp include/GDBServer/GDBResponse/GDBResponseBase.hpp include/GDBServer/GDBResponse/GDBRegisterResponse.hpp include/GDBServer/GDBResponse/GDBMemoryResponse.hpp)
 
 target_link_libraries(xendbg
   capstone

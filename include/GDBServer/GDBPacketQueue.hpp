@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace xd::gdbsrv {
+namespace xd::gdb {
 
   struct GDBPacket {
     std::string contents;

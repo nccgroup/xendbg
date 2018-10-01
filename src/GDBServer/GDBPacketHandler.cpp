@@ -1,28 +1,28 @@
 #include <GDBServer/GDBPacketHandler.hpp>
 
-using xd::gdbsrv::GDBPacketHandler;
+using xd::gdb::GDBPacketHandler;
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::InterruptRequest &) const
+    const req::InterruptRequest &) const
 {
   _domain.pause();
-  broadcast(pkt::StopReasonSignalResponse(SIGSTOP, 1));
+  broadcast(rsp::StopReasonSignalResponse(SIGSTOP, 1));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::StartNoAckModeRequest &) const
+    const req::StartNoAckModeRequest &) const
 {
   _connection.disable_ack_mode();
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QuerySupportedRequest &) const
+    const req::QuerySupportedRequest &) const
 {
-  send(pkt::QuerySupportedResponse({
+  send(rsp::QuerySupportedResponse({
     "PacketSize=20000",
     "QStartNoAckMode+",
     "QThreadSuffixSupported+",
@@ -32,36 +32,36 @@ void GDBPacketHandler::operator()(
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryEnableErrorStrings &) const
+    const req::QueryEnableErrorStrings &) const
 {
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryThreadSuffixSupportedRequest &) const
+    const req::QueryThreadSuffixSupportedRequest &) const
 {
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryListThreadsInStopReplySupportedRequest &) const
+    const req::QueryListThreadsInStopReplySupportedRequest &) const
 {
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryHostInfoRequest &) const
+    const req::QueryHostInfoRequest &) const
 {
-    send(pkt::QueryHostInfoResponse(
+    send(rsp::QueryHostInfoResponse(
           _domain.get_word_size(), _domain.get_name()));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryRegisterInfoRequest &req) const
+    const req::QueryRegisterInfoRequest &req) const
 {
   const auto id = req.get_register_id();
   const auto word_size = _domain.get_word_size();
@@ -69,7 +69,7 @@ void GDBPacketHandler::operator()(
   if (word_size == sizeof(uint64_t)) {
     reg::x86_64::RegistersX86_64::find_metadata_by_id(id,
       [&](const auto &md) {
-        send(pkt::QueryRegisterInfoResponse(
+        send(rsp::QueryRegisterInfoResponse(
             md.name, 8*md.width, md.offset, md.gcc_id));
       }, [&]() {
         send_error(0x45);
@@ -77,7 +77,7 @@ void GDBPacketHandler::operator()(
   } else if (word_size == sizeof(uint32_t)) {
     reg::x86_32::RegistersX86_32::find_metadata_by_id(id,
       [&](const auto &md) {
-        send(pkt::QueryRegisterInfoResponse(
+        send(rsp::QueryRegisterInfoResponse(
             md.name, 8*md.width, md.offset, md.gcc_id));
       }, [&]() {
         send_error(0x45);
@@ -89,22 +89,22 @@ void GDBPacketHandler::operator()(
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryProcessInfoRequest &) const
+    const req::QueryProcessInfoRequest &) const
 {
-  send(pkt::QueryProcessInfoResponse(1));
+  send(rsp::QueryProcessInfoResponse(1));
 }
 
 // TODO: impl is PV-specific for now
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryMemoryRegionInfoRequest &req) const
+    const req::QueryMemoryRegionInfoRequest &req) const
 {
   const auto address = req.get_address();
 
   auto pte = _domain.get_page_table_entry(address);
   if (pte && pte->is_present()) {
 
-    send(pkt::QueryMemoryRegionInfoResponse(
+    send(rsp::QueryMemoryRegionInfoResponse(
           address & XC_PAGE_MASK, XC_PAGE_SIZE,
           true, pte->is_rw(), !pte->is_nx()));
 
@@ -122,7 +122,7 @@ void GDBPacketHandler::operator()(
       pte = _domain.get_page_table_entry(address_end);
     } while (address_end < MAX_ADDRESS && !pte && !pte->is_present());
 
-    send(pkt::QueryMemoryRegionInfoResponse(
+    send(rsp::QueryMemoryRegionInfoResponse(
           address & XC_PAGE_MASK, address_end - address,
           false, false, false));
   }
@@ -130,51 +130,51 @@ void GDBPacketHandler::operator()(
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryCurrentThreadIDRequest &) const
+    const req::QueryCurrentThreadIDRequest &) const
 {
-  send(pkt::QueryCurrentThreadIDResponse(1));
+  send(rsp::QueryCurrentThreadIDResponse(1));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryThreadInfoStartRequest &) const
+    const req::QueryThreadInfoStartRequest &) const
 {
-  send(pkt::QueryThreadInfoResponse({1}));
+  send(rsp::QueryThreadInfoResponse({1}));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::QueryThreadInfoContinuingRequest &) const
+    const req::QueryThreadInfoContinuingRequest &) const
 {
-  send(pkt::QueryThreadInfoEndResponse());
+  send(rsp::QueryThreadInfoEndResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::StopReasonRequest &) const
+    const req::StopReasonRequest &) const
 {
-  send(pkt::StopReasonSignalResponse(SIGTRAP, 1));
+  send(rsp::StopReasonSignalResponse(SIGTRAP, 1));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::KillRequest&) const
+    const req::KillRequest&) const
 {
   _domain.destroy();
-  broadcast(pkt::TerminatedResponse(SIGKILL));
+  broadcast(rsp::TerminatedResponse(SIGKILL));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::SetThreadRequest&) const
+    const req::SetThreadRequest&) const
 {
   // TODO
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::RegisterReadRequest &req) const
+    const req::RegisterReadRequest &req) const
 {
   const auto id = req.get_register_id();
   const auto thread_id = req.get_thread_id();
@@ -183,7 +183,7 @@ void GDBPacketHandler::operator()(
   std::visit(util::overloaded {
       [&](const auto &regs) {
         regs.find_by_id(id, [&](const auto&, const auto &reg) {
-          send(pkt::RegisterReadResponse(reg));
+          send(rsp::RegisterReadResponse(reg));
         }, [&]() {
           send_error(0x45, "No register with ID " + std::to_string(id));
         });
@@ -193,7 +193,7 @@ void GDBPacketHandler::operator()(
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::RegisterWriteRequest &req) const
+    const req::RegisterWriteRequest &req) const
 {
   const auto id = req.get_register_id();
   const auto value = req.get_value();
@@ -209,23 +209,23 @@ void GDBPacketHandler::operator()(
       }
   }, regs);
   _domain.set_cpu_context(regs);
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::GeneralRegistersBatchReadRequest &) const
+    const req::GeneralRegistersBatchReadRequest &) const
 {
   std::visit(util::overloaded {
       [&](const auto &regs) {
-        send(pkt::GeneralRegistersBatchReadResponse(regs));
+        send(rsp::GeneralRegistersBatchReadResponse(regs));
       }
   }, _domain.get_cpu_context());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::GeneralRegistersBatchWriteRequest &req) const
+    const req::GeneralRegistersBatchWriteRequest &req) const
 {
   auto regs_any = _domain.get_cpu_context();
   auto values = req.get_values();
@@ -258,23 +258,23 @@ void GDBPacketHandler::operator()(
 
   _domain.set_cpu_context(regs_any);
 
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::MemoryReadRequest &req) const
+    const req::MemoryReadRequest &req) const
 {
   const auto address = req.get_address();
   const auto length = req.get_length();
 
   const auto data = _debugger.read_memory_masking_breakpoints(address, length);
-  send(pkt::MemoryReadResponse(data.get(), length));
+  send(rsp::MemoryReadResponse(data.get(), length));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::MemoryWriteRequest &req) const
+    const req::MemoryWriteRequest &req) const
 {
   const auto address = req.get_address();
   const auto length = req.get_length();
@@ -282,61 +282,61 @@ void GDBPacketHandler::operator()(
 
   _debugger.write_memory_retaining_breakpoints(
       address, length, (void*)&data[0]);
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::ContinueRequest &) const
+    const req::ContinueRequest &) const
 {
   _debugger.continue_();
 
   _debugger.notify_breakpoint_hit([&](auto /*address*/) {
     _domain.pause();
-    send(pkt::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
+    send(rsp::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
   });
 
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::StepRequest &) const
+    const req::StepRequest &) const
 {
   _debugger.single_step();
-  broadcast(pkt::StopReasonSignalResponse(SIGTRAP, 1));
+  broadcast(rsp::StopReasonSignalResponse(SIGTRAP, 1));
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::BreakpointInsertRequest &req) const
+    const req::BreakpointInsertRequest &req) const
 {
   const auto address = req.get_address();
   _debugger.insert_breakpoint(address);
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::BreakpointRemoveRequest &req) const
+    const req::BreakpointRemoveRequest &req) const
 {
   const auto address = req.get_address();
   _debugger.remove_breakpoint(address);
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::RestartRequest &) const
+    const req::RestartRequest &) const
 {
-  send(pkt::NotSupportedResponse());
+  send(rsp::NotSupportedResponse());
 }
 
 template <>
 void GDBPacketHandler::operator()(
-    const pkt::DetachRequest &) const
+    const req::DetachRequest &) const
 {
   _debugger.detach();
   _connection.stop();
-  send(pkt::OKResponse());
+  send(rsp::OKResponse());
 }

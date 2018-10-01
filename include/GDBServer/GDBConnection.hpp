@@ -11,10 +11,10 @@
 #include <uvw.hpp>
 
 #include "GDBPacketQueue.hpp"
-#include "GDBRequestPacket.hpp"
-#include "GDBResponsePacket.hpp"
+#include "GDBServer/GDBRequest/GDBRequest.hpp"
+#include "GDBServer/GDBResponse/GDBResponse.hpp"
 
-namespace xd::gdbsrv {
+namespace xd::gdb {
 
   class UnknownPacketTypeException : public std::runtime_error {
   public:
@@ -26,7 +26,7 @@ namespace xd::gdbsrv {
 
   class GDBConnection : public std::enable_shared_from_this<GDBConnection> {
   public:
-    using OnReceiveFn = std::function<void(GDBConnection&, const pkt::GDBRequestPacket&)>;
+    using OnReceiveFn = std::function<void(GDBConnection&, const req::GDBRequest&)>;
     using OnCloseFn = std::function<void()>;
     using OnErrorFn = std::function<void(const uvw::ErrorEvent&)>;
 
@@ -39,7 +39,7 @@ namespace xd::gdbsrv {
     void read(OnReceiveFn on_receive, OnCloseFn on_close, OnErrorFn on_error);
     void stop();
 
-    void send(const pkt::GDBResponsePacket &packet);
+    void send(const rsp::GDBResponse &packet);
     void send_error(uint8_t code, std::string message);
 
   private:
@@ -48,8 +48,8 @@ namespace xd::gdbsrv {
     bool _ack_mode, _is_initializing, _error_strings;
 
     static bool validate_packet_checksum(const GDBPacket &packet);
-    static std::string format_packet(const pkt::GDBResponsePacket &packet);
-    static pkt::GDBRequestPacket parse_packet(const GDBPacket &packet);
+    static std::string format_packet(const rsp::GDBResponse &packet);
+    static req::GDBRequest parse_packet(const GDBPacket &packet);
   };
 
 }

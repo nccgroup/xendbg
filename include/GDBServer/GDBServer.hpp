@@ -13,7 +13,7 @@
 
 #include <Xen/Common.hpp>
 
-namespace xd::gdbsrv {
+namespace xd::gdb {
 
   class GDBConnection;
 

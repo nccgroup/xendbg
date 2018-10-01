@@ -29,7 +29,7 @@ namespace xd {
     DebugSession(uvw::Loop &loop, Domain_t domain)
         : _domain(std::move(domain)),
           _debugger(std::make_shared<Debugger_t>(loop, _domain)),
-          _gdb_server(std::make_shared<gdbsrv::GDBServer>(loop))
+          _gdb_server(std::make_shared<gdb::GDBServer>(loop))
     {
     };
 
@@ -59,12 +59,12 @@ namespace xd {
   private:
     Domain_t _domain;
     std::shared_ptr<Debugger_t> _debugger;
-    std::shared_ptr<xd::gdbsrv::GDBServer> _gdb_server;
-    std::shared_ptr<xd::gdbsrv::GDBConnection> _gdb_connection;
+    std::shared_ptr<xd::gdb::GDBServer> _gdb_server;
+    std::shared_ptr<xd::gdb::GDBConnection> _gdb_connection;
     std::optional<PacketHandler_t> _packet_handler;
   };
 
-  using DebugSessionPV = DebugSession<dbg::DebuggerPV, gdbsrv::GDBPacketHandler, xen::DomainPV>;
+  using DebugSessionPV = DebugSession<dbg::DebuggerPV, gdb::GDBPacketHandler, xen::DomainPV>;
 
 }
 

@@ -4,14 +4,13 @@
 #include <Debugger/Debugger.hpp>
 #include <GDBServer/GDBConnection.hpp>
 #include <GDBServer/GDBServer.hpp>
-#include <GDBServer/GDBRequestPacket.hpp>
-#include <GDBServer/GDBRequestPacket.hpp>
-#include <GDBServer/GDBResponsePacket.hpp>
+#include <GDBServer/GDBRequest/GDBRequest.hpp>
+#include <GDBServer/GDBResponse/GDBResponse.hpp>
 #include <Registers/RegistersX86_32.hpp>
 #include <Registers/RegistersX86_64.hpp>
 #include <Xen/Domain.hpp>
 
-namespace xd::gdbsrv {
+namespace xd::gdb {
 
   class PacketSizeException : public std::exception {
   public:
@@ -28,7 +27,7 @@ namespace xd::gdbsrv {
 
   class WordSizeException : public std::exception {
   public:
-    WordSizeException(size_t word_size)
+    explicit WordSizeException(size_t word_size)
       : _word_size(word_size) {}
 
     size_t get_word_size() { return _word_size; };
@@ -50,14 +49,14 @@ namespace xd::gdbsrv {
     }
 
     void send_error(uint8_t code, std::string message = "") const {
-      _connection.send_error(code, message);
+      _connection.send_error(code, std::move(message));
     }
 
-    void send(const pkt::GDBResponsePacket &packet) const {
+    void send(const rsp::GDBResponse &packet) const {
       _connection.send(packet);
     }
 
-    void broadcast(const pkt::GDBResponsePacket &packet) const {
+    void broadcast(const rsp::GDBResponse &packet) const {
       _connection.send(packet);
     }
 
@@ -72,7 +71,7 @@ namespace xd::gdbsrv {
     // Specialize for specific supported packets
     template <typename Packet_t>
     void operator()(const Packet_t &) const {
-      send(pkt::NotSupportedResponse());
+      send(rsp::NotSupportedResponse());
     };
 
   };

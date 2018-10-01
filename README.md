@@ -30,5 +30,8 @@
 ## Final feature set
 - [x] PV support
 - [ ] HVM support
+  - [ ] Registers
+  - [ ] Breakpoints
+  - [ ] Extra: memory watchpoints?
 - [ ] Sub-registers? (rax -> eax -> ax...)
 - [ ] REPL (redo with CLI11)

@@ -16,6 +16,7 @@
 
 #define X86_INFINITE_LOOP 0xFEEB
 
+using xd::dbg::Debugger;
 using xd::dbg::DebuggerPV;
 using xd::dbg::NoSuchSymbolException;
 using xd::reg::x86_32::RegistersX86_32;
@@ -71,14 +72,9 @@ Address DebuggerPV::single_step() {
   return *address_opt;
 }
 
-std::vector<Address> DebuggerPV::get_breakpoints() {
-  std::vector<Address> addresses;
-  std::transform(_infinite_loops.begin(), _infinite_loops.end(),
-      std::back_inserter(addresses),
-      [](const auto &il) {
-        return il.first;
-      });
-  return addresses;
+void DebuggerPV::cleanup() {
+  for (const auto &il : _infinite_loops)
+    remove_breakpoint(il.first);
 }
 
 void DebuggerPV::insert_breakpoint(Address address) {
@@ -119,7 +115,7 @@ void DebuggerPV::remove_breakpoint(Address address) {
   _infinite_loops.erase(_infinite_loops.find(address));
 }
 
-xd::dbg::Debugger::MaskedMemory
+Debugger::MaskedMemory
 DebuggerPV::read_memory_masking_breakpoints(Address address, size_t length) {
   const auto mem_handle = _domain.map_memory<char>(
       address, length, PROT_READ);

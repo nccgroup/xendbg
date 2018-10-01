@@ -9,13 +9,10 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
-#include <vector>
 
-#include <capstone/capstone.h>
 #include <uvw.hpp>
 
 #include <Xen/DomainPV.hpp>
-#include <Util/overloaded.hpp>
 
 #include "Debugger.hpp"
 
@@ -32,7 +29,7 @@ namespace xd::dbg {
     xen::Address single_step() override;
     std::optional<xen::Address> check_breakpoint_hit() override;
 
-    std::vector<xen::Address> get_breakpoints() override;
+    void cleanup() override;
     void insert_breakpoint(xen::Address address) override;
     void remove_breakpoint(xen::Address address) override;
 

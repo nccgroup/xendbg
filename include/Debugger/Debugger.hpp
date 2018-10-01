@@ -47,11 +47,9 @@ namespace xd::dbg {
       xen::Address address;
     };
 
-  protected:
-    using MaskedMemory = std::unique_ptr<unsigned char>;
-
   public:
     using OnBreakpointHitFn = std::function<void(xen::Address)>;
+    using MaskedMemory = std::unique_ptr<unsigned char>;
 
     Debugger(uvw::Loop &loop, xen::Domain &domain);
     virtual ~Debugger();
@@ -66,7 +64,7 @@ namespace xd::dbg {
     virtual std::optional<xen::Address> check_breakpoint_hit() = 0;
     void notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit); // TODO
 
-    virtual std::vector<xen::Address> get_breakpoints() = 0;
+    virtual void cleanup() = 0;
     virtual void insert_breakpoint(xen::Address address) = 0;
     virtual void remove_breakpoint(xen::Address address) = 0;
 

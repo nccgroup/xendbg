@@ -9,13 +9,10 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
-#include <vector>
 
-#include <capstone/capstone.h>
-#include <uvw.h>
+#include <uvw.hpp>
 
-#include <Xen/Domain.hpp>
-#include <Util/overloaded.hpp>
+#include <Xen/DomainHVM.hpp>
 
 #include "Debugger.hpp"
 
@@ -26,14 +23,13 @@ namespace xd::dbg {
     using BreakpointMap = std::unordered_map<xen::Address, uint8_t>;
 
   public:
-    DebuggerHVM(uvw::Loop &loop, xen::Domain domain);
-    ~DebuggerHVM() override;
+    DebuggerHVM(uvw::Loop &loop, xen::DomainHVM &domain);
 
     void continue_() override;
     xen::Address single_step() override;
     std::optional<xen::Address> check_breakpoint_hit() override;
 
-    std::vector<xen::Address> get_breakpoints() override;
+    void cleanup() override;
     void insert_breakpoint(xen::Address address) override;
     void remove_breakpoint(xen::Address address) override;
 
@@ -41,6 +37,7 @@ namespace xd::dbg {
     void write_memory_retaining_breakpoints(xen::Address address, size_t length, void *data) override;
 
   private:
+    xen::DomainHVM &_domain;
     BreakpointMap _breakpoints;
   };
 

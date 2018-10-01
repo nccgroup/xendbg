@@ -13,8 +13,8 @@ include_directories(
 
 add_executable(xendbg
         include/Debugger/Debugger.hpp
-        include/Debugger/Debugger.hpp
         include/Debugger/DebuggerPV.hpp
+        include/Debugger/DebuggerHVM.hpp
   include/GDBServer/GDBConnection.hpp
         include/GDBServer/GDBPacketQueue.hpp
         include/GDBServer/GDBRequest/GDBRequest.hpp
@@ -61,6 +61,7 @@ add_executable(xendbg
   src/main.cpp
         src/Debugger/Debugger.cpp
         src/Debugger/DebuggerPV.cpp
+        src/Debugger/DebuggerHVM.cpp
         include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
         include/GDBServer/GDBPacketHandler.hpp
         src/GDBServer/GDBPacketHandler.cpp

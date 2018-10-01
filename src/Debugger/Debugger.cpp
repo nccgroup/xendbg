@@ -33,8 +33,7 @@ void Debugger::attach() {
 }
 
 void Debugger::detach() {
-  for (const auto address : get_breakpoints())
-    remove_breakpoint(address);
+  cleanup();
   _domain.unpause();
 }
 

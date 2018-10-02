@@ -18,7 +18,7 @@ static char ACK_OK[] = "+";
 static char ACK_ERROR[] = "-";
 
 GDBConnection::GDBConnection(std::shared_ptr<uvw::TcpHandle> tcp)
-  : _tcp(tcp), _ack_mode(true), _is_initializing(false), _error_strings(false)
+  : _tcp(std::move(tcp)), _ack_mode(true), _is_initializing(false), _error_strings(false)
 {
 }
 
@@ -55,14 +55,14 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
       while (!self->_input_queue.empty()) {
         const auto raw_packet = self->_input_queue.pop();
 
-        bool valid = validate_packet_checksum(raw_packet);
+        bool valid = raw_packet.is_checksum_valid();
 
         if (self->_ack_mode)
           tcp.write(valid ? ACK_OK : ACK_ERROR, 1);
 
         if (valid) {
           try {
-            spdlog::get(LOGNAME_CONSOLE)->debug("RECV: {0}", raw_packet.contents);
+            spdlog::get(LOGNAME_CONSOLE)->debug("RECV: {0}", raw_packet.get_contents());
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
@@ -91,109 +91,63 @@ void GDBConnection::send(const rsp::GDBResponse &packet)
 {
   spdlog::get(LOGNAME_CONSOLE)->debug("SEND: {0}", packet.to_string());
 
-  const auto s = format_packet(packet);
-  _tcp->write((char*)s.c_str(), s.size());
+  const auto raw_packet = GDBPacket(packet.to_string());
+  const auto &contents = raw_packet.get_contents();
+  _tcp->write((char*)contents.c_str(), contents.size());
 }
 
 void GDBConnection::send_error(uint8_t code, std::string message) {
   if (_error_strings)
-    send(rsp::ErrorResponse(code, message));
+    send(rsp::ErrorResponse(code, std::move(message)));
   else
-    send(rsp::ErrorResponse(code, message));
+    send(rsp::ErrorResponse(code));
 }
 
-bool GDBConnection::validate_packet_checksum(const GDBPacket &packet) {
-  const auto& contents = packet.contents;
-  const auto checksum_calculated = std::accumulate(
-      contents.begin(), contents.end(), (uint8_t)0);
-
-  return checksum_calculated == packet.checksum;
-}
-
-std::string GDBConnection::format_packet(const GDBResponse &packet) {
-  const auto& contents = packet.to_string();
-  const uint8_t checksum = std::accumulate(
-      contents.begin(), contents.end(), (uint8_t)0);
-
-  std::stringstream ss;
-  ss << "$" << contents << "#";
-  ss << std::hex << std::setfill('0') << std::setw(2);
-  ss << (unsigned)checksum;
-
-  return ss.str();
+template <typename T>
+static auto make_parser() {
+  return [](const auto &s) { return T(s); };
 }
 
 GDBRequest GDBConnection::parse_packet(const GDBPacket &packet) {
-  const auto &contents = packet.contents;
+  using namespace xd::gdb::req;
+  using ParseRequestFn = std::function<GDBRequest(const std::string&)>;
 
-  switch (contents[0]) {
-    case '\x03':
-      return req::InterruptRequest(contents);
-    case 'q':
-      if (contents == "qfThreadInfo")
-        return req::QueryThreadInfoStartRequest(contents);
-      else if (contents == "qsThreadInfo")
-        return req::QueryThreadInfoContinuingRequest(contents);
-      else if (contents == "qC")
-        return req::QueryCurrentThreadIDRequest(contents);
-      else if (is_prefix(std::string("qSupported"), contents))
-        return req::QuerySupportedRequest(contents);
-      else if ("qHostInfo" == contents)
-        return req::QueryHostInfoRequest(contents);
-      else if ("qProcessInfo" == contents)
-        return req::QueryProcessInfoRequest(contents);
-      else if (is_prefix(std::string("qRegisterInfo"), contents))
-        return req::QueryRegisterInfoRequest(contents);
-      else if (is_prefix(std::string("qMemoryRegionInfo"), contents))
-        return req::QueryMemoryRegionInfoRequest(contents);
-      break;
-    case 'Q':
-      if (contents == "QStartNoAckMode")
-        return req::StartNoAckModeRequest(contents);
-      else if (contents == "QThreadSuffixSupported")
-        return req::QueryThreadSuffixSupportedRequest(contents);
-      else if (contents == "QListThreadsInStopReply")
-        return req::QueryListThreadsInStopReplySupportedRequest(contents);
-      else if (contents == "QEnableErrorStrings")
-        return req::QueryEnableErrorStrings(contents);
-      break;
-    case '?':
-      return req::StopReasonRequest(contents);
-    case 'k':
-      return req::KillRequest(contents);
-    case 'H':
-      return req::SetThreadRequest(contents);
-    case 'p':
-      return req::RegisterReadRequest(contents);
-    case 'P':
-      return req::RegisterWriteRequest(contents);
-    case 'G':
-      return req::GeneralRegistersBatchWriteRequest(contents);
-    case 'g':
-      return req::GeneralRegistersBatchReadRequest(contents);
-    case 'M':
-      return req::MemoryWriteRequest(contents);
-    case 'm':
-      return req::MemoryReadRequest(contents);
-    case 'c':
-      return req::ContinueRequest(contents);
-    case 'C':
-      return req::ContinueSignalRequest(contents);
-    case 's':
-      return req::StepRequest(contents);
-    case 'S':
-      return req::StepSignalRequest(contents);
-    case 'Z':
-      return req::BreakpointInsertRequest(contents);
-    case 'z':
-      return req::BreakpointRemoveRequest(contents);
-    case 'R':
-      return req::RestartRequest(contents);
-    case 'D':
-      return req::DetachRequest(contents);
-    default:
-      throw UnknownPacketTypeException(contents);
-  }
+  static const std::vector<std::pair<std::string, ParseRequestFn>> request_parsers = {
+      { "qfThreadInfo",             make_parser<QueryThreadInfoStartRequest>() },
+      { "qsThreadInfo",             make_parser<QueryThreadInfoContinuingRequest>() },
+      { "qC",                       make_parser<QueryCurrentThreadIDRequest>() },
+      { "qSupported",               make_parser<QuerySupportedRequest>() },
+      { "qHostInfo",                make_parser<QueryHostInfoRequest>() },
+      { "qProcessInfo",             make_parser<QueryProcessInfoRequest>() },
+      { "qRegisterInfo",            make_parser<QueryRegisterInfoRequest>() },
+      { "qMemoryRegionInfo",        make_parser<QueryMemoryRegionInfoRequest>() },
+      { "QStartNoAckMode",          make_parser<StartNoAckModeRequest>() },
+      { "QThreadSuffixSupported",   make_parser<QueryThreadSuffixSupportedRequest>() },
+      { "QListThreadsInStopReply",  make_parser<QueryListThreadsInStopReplySupportedRequest>() },
+      { "QEnableErrorStrings",      make_parser<QueryEnableErrorStrings>() },
+      { "\x03",                     make_parser<InterruptRequest>() },
+      { "?",                        make_parser<StopReasonRequest>() },
+      { "k",                        make_parser<KillRequest>() },
+      { "H",                        make_parser<SetThreadRequest>() },
+      { "p",                        make_parser<RegisterReadRequest>() },
+      { "P",                        make_parser<RegisterWriteRequest>() },
+      { "g",                        make_parser<GeneralRegistersBatchReadRequest>() },
+      { "G",                        make_parser<GeneralRegistersBatchWriteRequest>() },
+      { "m",                        make_parser<MemoryReadRequest>() },
+      { "M",                        make_parser<MemoryWriteRequest>() },
+      { "c",                        make_parser<ContinueRequest>() },
+      { "C",                        make_parser<ContinueSignalRequest>() },
+      { "s",                        make_parser<StepRequest>() },
+      { "S",                        make_parser<StepSignalRequest>() },
+      { "z",                        make_parser<BreakpointRemoveRequest>() },
+      { "Z",                        make_parser<BreakpointInsertRequest>() },
+      { "R",                        make_parser<RestartRequest>() },
+      { "D",                        make_parser<DetachRequest>() },
+  };
 
-  throw UnknownPacketTypeException(contents);
+  for (const auto &pair : request_parsers)
+    if (packet.starts_with(pair.first))
+      return pair.second(packet.get_contents());
+
+  throw UnknownPacketTypeException(packet.get_contents());
 }

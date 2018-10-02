@@ -63,12 +63,12 @@ add_executable(xendbg
         src/Debugger/DebuggerPV.cpp
         src/Debugger/DebuggerHVM.cpp
         include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
-        include/GDBServer/GDBPacketHandler.hpp
-        src/GDBServer/GDBPacketHandler.cpp
+        include/GDBServer/GDBRequestHandler.hpp
+        src/GDBServer/GDBRequestHandler.cpp
         include/GDBServer/GDBServer.hpp
         src/GDBServer/GDBServer.cpp
         src/DebugSession.hpp
-        include/GDBServer/GDBRequest/GDBRequestBase.hpp include/GDBServer/GDBRequest/GDBQueryRequest.hpp include/GDBServer/GDBRequest/GDBRegisterRequest.hpp include/GDBServer/GDBRequest/GDBMemoryRequest.hpp include/GDBServer/GDBRequest/GDBBreakpointRequest.hpp include/GDBServer/GDBRequest/GDBStepContinueRequest.hpp include/GDBServer/GDBResponse/GDBQueryResponse.hpp include/GDBServer/GDBResponse/GDBResponseBase.hpp include/GDBServer/GDBResponse/GDBRegisterResponse.hpp include/GDBServer/GDBResponse/GDBMemoryResponse.hpp src/GDBServer/GDBRequest/GDBMemoryRequest.cpp src/GDBServer/GDBRequest/GDBQueryRequest.cpp src/GDBServer/GDBRequest/GDBRegisterRequest.cpp src/GDBServer/GDBResponse/GDBMemoryResponse.cpp src/GDBServer/GDBResponse/GDBQueryResponse.cpp src/GDBServer/GDBResponse/GDBRegisterResponse.cpp)
+        include/GDBServer/GDBRequest/GDBRequestBase.hpp include/GDBServer/GDBRequest/GDBQueryRequest.hpp include/GDBServer/GDBRequest/GDBRegisterRequest.hpp include/GDBServer/GDBRequest/GDBMemoryRequest.hpp include/GDBServer/GDBRequest/GDBBreakpointRequest.hpp include/GDBServer/GDBRequest/GDBStepContinueRequest.hpp include/GDBServer/GDBResponse/GDBQueryResponse.hpp include/GDBServer/GDBResponse/GDBResponseBase.hpp include/GDBServer/GDBResponse/GDBRegisterResponse.hpp include/GDBServer/GDBResponse/GDBMemoryResponse.hpp src/GDBServer/GDBRequest/GDBMemoryRequest.cpp src/GDBServer/GDBRequest/GDBQueryRequest.cpp src/GDBServer/GDBRequest/GDBRegisterRequest.cpp src/GDBServer/GDBResponse/GDBMemoryResponse.cpp src/GDBServer/GDBResponse/GDBQueryResponse.cpp src/GDBServer/GDBResponse/GDBRegisterResponse.cpp include/GDBServer/GDBPacket.hpp src/GDBServer/GDBPacket.cpp)
 
 target_link_libraries(xendbg
   capstone

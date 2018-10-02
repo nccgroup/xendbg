@@ -9,14 +9,10 @@
 #include <optional>
 #include <queue>
 #include <string>
-#include <vector>
+
+#include "GDBPacket.hpp"
 
 namespace xd::gdb {
-
-  struct GDBPacket {
-    std::string contents;
-    uint8_t checksum;
-  };
 
   class NoPacketException : std::exception {};
 

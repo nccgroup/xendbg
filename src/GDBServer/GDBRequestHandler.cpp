@@ -1,9 +1,9 @@
-#include <GDBServer/GDBPacketHandler.hpp>
+#include <GDBServer/GDBRequestHandler.hpp>
 
-using xd::gdb::GDBPacketHandler;
+using xd::gdb::GDBRequestHandler;
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::InterruptRequest &) const
 {
   _domain.pause();
@@ -11,7 +11,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::StartNoAckModeRequest &) const
 {
   _connection.disable_ack_mode();
@@ -19,7 +19,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QuerySupportedRequest &) const
 {
   send(rsp::QuerySupportedResponse({
@@ -31,28 +31,28 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryEnableErrorStrings &) const
 {
   send(rsp::OKResponse());
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryThreadSuffixSupportedRequest &) const
 {
   send(rsp::OKResponse());
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryListThreadsInStopReplySupportedRequest &) const
 {
   send(rsp::OKResponse());
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryHostInfoRequest &) const
 {
     send(rsp::QueryHostInfoResponse(
@@ -60,7 +60,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryRegisterInfoRequest &req) const
 {
   const auto id = req.get_register_id();
@@ -88,7 +88,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryProcessInfoRequest &) const
 {
   send(rsp::QueryProcessInfoResponse(1));
@@ -96,7 +96,7 @@ void GDBPacketHandler::operator()(
 
 // TODO: impl is PV-specific for now
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryMemoryRegionInfoRequest &req) const
 {
   const auto address = req.get_address();
@@ -129,35 +129,35 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryCurrentThreadIDRequest &) const
 {
   send(rsp::QueryCurrentThreadIDResponse(1));
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryThreadInfoStartRequest &) const
 {
   send(rsp::QueryThreadInfoResponse({1}));
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::QueryThreadInfoContinuingRequest &) const
 {
   send(rsp::QueryThreadInfoEndResponse());
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::StopReasonRequest &) const
 {
   send(rsp::StopReasonSignalResponse(SIGTRAP, 1));
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::KillRequest&) const
 {
   _domain.destroy();
@@ -165,7 +165,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::SetThreadRequest&) const
 {
   // TODO
@@ -173,7 +173,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::RegisterReadRequest &req) const
 {
   const auto id = req.get_register_id();
@@ -192,7 +192,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::RegisterWriteRequest &req) const
 {
   const auto id = req.get_register_id();
@@ -213,7 +213,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::GeneralRegistersBatchReadRequest &) const
 {
   std::visit(util::overloaded {
@@ -224,7 +224,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::GeneralRegistersBatchWriteRequest &req) const
 {
   auto regs_any = _domain.get_cpu_context();
@@ -262,7 +262,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::MemoryReadRequest &req) const
 {
   const auto address = req.get_address();
@@ -273,7 +273,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::MemoryWriteRequest &req) const
 {
   const auto address = req.get_address();
@@ -286,7 +286,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::ContinueRequest &) const
 {
   _debugger.continue_();
@@ -300,7 +300,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::StepRequest &) const
 {
   _debugger.single_step();
@@ -308,7 +308,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::BreakpointInsertRequest &req) const
 {
   const auto address = req.get_address();
@@ -317,7 +317,7 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::BreakpointRemoveRequest &req) const
 {
   const auto address = req.get_address();
@@ -326,14 +326,14 @@ void GDBPacketHandler::operator()(
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::RestartRequest &) const
 {
   send(rsp::NotSupportedResponse());
 }
 
 template <>
-void GDBPacketHandler::operator()(
+void GDBRequestHandler::operator()(
     const req::DetachRequest &) const
 {
   _debugger.detach();

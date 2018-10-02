@@ -1,5 +1,5 @@
-#ifndef XENDBG_GDBPACKETHANDLER_HPP
-#define XENDBG_GDBPACKETHANDLER_HPP
+#ifndef XENDBG_GDBREQUESTHANDLER_HPP
+#define XENDBG_GDBREQUESTHANDLER_HPP
 
 #include <Debugger/Debugger.hpp>
 #include <GDBServer/GDBConnection.hpp>
@@ -39,11 +39,11 @@ namespace xd::gdb {
   class GDBServer;
   class GDBConnection;
 
-  class GDBPacketHandler {
+  class GDBRequestHandler {
   public:
     using OnErrorFn = std::function<void(int)>;
 
-    GDBPacketHandler(xen::Domain &domain, dbg::Debugger &debugger, GDBServer &server, GDBConnection &connection)
+    GDBRequestHandler(xen::Domain &domain, dbg::Debugger &debugger, GDBServer &server, GDBConnection &connection)
       : _domain(domain), _debugger(debugger), _server(server), _connection(connection)
     {
     }
@@ -78,4 +78,4 @@ namespace xd::gdb {
 
 }
 
-#endif //XENDBG_GDBPACKETHANDLER_HPP
+#endif //XENDBG_GDBREQUESTHANDLER_HPP

@@ -12,7 +12,7 @@
 #include <Debugger/DebuggerPV.hpp>
 #include <GDBServer/GDBServer.hpp>
 
-#include "GDBServer/GDBPacketHandler.hpp"
+#include "GDBServer/GDBRequestHandler.hpp"
 #include "GDBServer/GDBServer.hpp"
 
 namespace xd {
@@ -64,7 +64,7 @@ namespace xd {
     std::optional<PacketHandler_t> _packet_handler;
   };
 
-  using DebugSessionPV = DebugSession<dbg::DebuggerPV, gdb::GDBPacketHandler, xen::DomainPV>;
+  using DebugSessionPV = DebugSession<dbg::DebuggerPV, gdb::GDBRequestHandler, xen::DomainPV>;
 
 }
 

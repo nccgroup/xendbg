@@ -48,8 +48,7 @@ add_executable(xendbg
   include/Xen/XenStore.hpp
   src/CommandLine.cpp
   src/CommandLine.hpp
-        src/Debugger/Debugger.cpp
-  src/GDBServer/GDBConnection.cpp
+        src/GDBServer/GDBConnection.cpp
         src/GDBServer/GDBPacketQueue.cpp
         src/ServerModeController.cpp
         src/ServerModeController.hpp
@@ -64,7 +63,6 @@ add_executable(xendbg
   src/Xen/XenForeignMemory.cpp
   src/Xen/XenStore.cpp
   src/main.cpp
-        src/Debugger/Debugger.cpp
         src/Debugger/DebuggerPV.cpp
         src/Debugger/DebuggerHVM.cpp
         include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp

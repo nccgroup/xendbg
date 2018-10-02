@@ -17,9 +17,9 @@
 using xd::dbg::DebuggerPV;
 using xd::xen::DomainPV;
 
-DebuggerPV::DebuggerPV(uvw::Loop &loop, DomainPV &domain)
-  : DebuggerWithBreakpoints<uint16_t, X86_INFINITE_LOOP>(domain),
-    _domain(domain), _timer(loop.resource<uvw::TimerHandle>())
+DebuggerPV::DebuggerPV(uvw::Loop &loop, DomainPV domain)
+  : DebuggerImpl<DomainPV, uint16_t, X86_INFINITE_LOOP>(std::move(domain)),
+    _timer(loop.resource<uvw::TimerHandle>())
 {
 }
 

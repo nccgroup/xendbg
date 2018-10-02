@@ -19,11 +19,13 @@
 #include <Xen/Common.hpp>
 #include <Xen/Domain.hpp>
 
+#define X86_MAX_INSTRUCTION_SIZE 0x10
+
 namespace xd::dbg {
 
   class CapstoneException : public std::runtime_error {
   public:
-    CapstoneException(const std::string &msg)
+    explicit CapstoneException(const std::string &msg)
       : std::runtime_error(msg) {};
   };
 
@@ -49,14 +51,13 @@ namespace xd::dbg {
   class Debugger {
   public:
     using OnBreakpointHitFn = std::function<void(xen::Address)>;
+    virtual ~Debugger() = default;
 
-    Debugger(xen::Domain &domain);
-    virtual ~Debugger();
+    virtual const xen::Domain &get_domain() = 0;
+    virtual size_t get_vcpu_id() = 0;
 
-    size_t get_vcpu_id() { return _vcpu_id; }
-
-    void attach();
-    void detach();
+    virtual void attach() = 0;
+    virtual void detach() = 0;
 
     virtual void continue_() = 0;
     virtual xen::Address single_step() = 0;
@@ -72,31 +73,45 @@ namespace xd::dbg {
         xen::Address address, size_t length) = 0;
     virtual void write_memory_retaining_breakpoints(
         xen::Address address, size_t length, void *data) = 0;
-
-  protected:
-    xen::Domain &_domain;
-
-    std::pair<xen::Address, std::optional<xen::Address>> 
-      get_address_of_next_instruction();
-
-  private:
-    csh _capstone;
-    xen::VCPU_ID _vcpu_id;
   };
 
-  template <typename Breakpoint_t, Breakpoint_t BREAKPOINT_VALUE>
-  class DebuggerWithBreakpoints : public Debugger,
-    public std::enable_shared_from_this<DebuggerWithBreakpoints<
-                                  Breakpoint_t, BREAKPOINT_VALUE>>
+  template <typename Domain_t, typename Breakpoint_t, Breakpoint_t BREAKPOINT_VALUE>
+  class DebuggerImpl : public Debugger,
+    public std::enable_shared_from_this<DebuggerImpl<
+                                  Domain_t, Breakpoint_t, BREAKPOINT_VALUE>>
   {
   private:
     static const Breakpoint_t _BREAKPOINT_VALUE = BREAKPOINT_VALUE;
     using BreakpointMap = std::unordered_map<xen::Address, Breakpoint_t>;
 
   public:
-    DebuggerWithBreakpoints(xen::Domain &domain)
-      : Debugger(domain) {};
-    ~DebuggerWithBreakpoints() = default;
+    explicit DebuggerImpl(Domain_t &domain)
+        : _domain(domain), _vcpu_id(0)
+    {
+      const auto mode =
+          (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
+
+      if (cs_open(CS_ARCH_X86, mode, &_capstone) != CS_ERR_OK)
+        throw CapstoneException("Failed to open Capstone handle!");
+
+      cs_option(_capstone, CS_OPT_DETAIL, CS_OPT_ON);
+    }
+
+    ~DebuggerImpl() override {
+      cs_close(&_capstone);
+    }
+
+    const xen::Domain &get_domain() override { return _domain; };
+    size_t get_vcpu_id() override { return _vcpu_id; }
+
+    void attach() override {
+      _domain.pause();
+    };
+
+    void detach() override {
+      cleanup();
+      _domain.unpause();
+    }
 
     void cleanup() override {
       for (const auto &bp : _breakpoints)
@@ -258,7 +273,108 @@ namespace xd::dbg {
     }
 
   protected:
+    std::pair<xen::Address, std::optional<xen::Address>>
+      get_address_of_next_instruction()
+    {
+      const auto read_word = [this](xen::Address addr) {
+        const auto mem_handle = _domain.map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
+        if (_domain.get_word_size() == sizeof(uint64_t)) {
+          return *mem_handle;
+        } else {
+          return (uint64_t)(*((uint32_t*)mem_handle.get()));
+        }
+      };
+
+      // TODO: need functionality to get register by name
+      const auto read_reg_cs  = [this](const auto &regs_any, auto cs_reg)
+      {
+        const auto name = cs_reg_name(_capstone, cs_reg);
+        return std::visit(util::overloaded {
+            [&](const auto &regs) {
+              const auto id = 0;// decltype(regs)::get_id_by_name(name);
+
+              uint64_t value;
+              regs.find_by_id(id, [&](const auto&, const auto &reg) {
+                value = reg;
+              }, [&] {
+                throw std::runtime_error(std::string("No such register: ") + name);
+              });
+
+              return value;
+            }
+        }, regs_any);
+
+      };
+
+      const auto context = _domain.get_cpu_context();
+      const auto address = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(context);
+      const auto read_size = (2*X86_MAX_INSTRUCTION_SIZE);
+      const auto mem_handle = _domain.map_memory<uint8_t>(address, read_size, PROT_READ);
+
+      cs_insn *instrs;
+      size_t instrs_size;
+
+      instrs_size = cs_disasm(_capstone, mem_handle.get(), read_size-1, address, 0, &instrs);
+
+      if (instrs_size < 2)
+        throw CapstoneException("Failed to read instructions!");
+
+      auto cur_instr = instrs[0];
+      const auto next_instr_address = instrs[1].address;
+
+      // JMP and CALL
+      if (cs_insn_group(_capstone, &cur_instr, X86_GRP_JUMP) ||
+          cs_insn_group(_capstone, &cur_instr, X86_GRP_CALL))
+      {
+        const auto x86 = cur_instr.detail->x86;
+        assert(x86.op_count != 0);
+        const auto op = x86.operands[0];
+
+        if (op.type == X86_OP_IMM) {
+          const auto dest = op.imm;
+          return std::make_pair(next_instr_address, dest);
+        } else if (op.type == X86_OP_MEM) {
+          const auto base = op.mem.base ? read_reg_cs(context, op.mem.base) : 0;
+          const auto index = op.mem.index ? read_reg_cs(context, op.mem.index) : 0;
+          const auto addr = base + (op.mem.scale * index) + op.mem.disp;
+
+          uint64_t dest;
+          if (_domain.get_word_size() == sizeof(uint64_t))
+            dest = *_domain.map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
+          else
+            dest = *_domain.map_memory<uint32_t>(addr, sizeof(uint32_t), PROT_READ);
+
+          return std::make_pair(dest, std::nullopt);
+        } else if (op.type == X86_OP_REG) {
+          const auto reg_value = read_reg_cs(context, op.reg);
+          return std::make_pair(reg_value, std::nullopt);
+        } else {
+          throw std::runtime_error("Invalid JMP/CALL operand type!");
+        }
+      }
+
+        // RET
+      else if (cs_insn_group(_capstone, &cur_instr, X86_GRP_RET) ||
+               cs_insn_group(_capstone, &cur_instr, X86_GRP_IRET))
+      {
+        const auto stack_ptr = reg::read_register<reg::x86_32::esp, reg::x86_64::rsp>(_domain.get_cpu_context());
+        const auto ret_dest = read_word(stack_ptr);
+        return std::make_pair(ret_dest, std::nullopt);
+      }
+
+        // Any other instructions
+      else {
+        return std::make_pair(next_instr_address, std::nullopt);
+      }
+    }
+
+  protected:
+    Domain_t _domain;
     BreakpointMap _breakpoints;
+
+  private:
+    csh _capstone;
+    xen::VCPU_ID _vcpu_id;
   };
 
 }

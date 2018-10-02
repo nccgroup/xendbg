@@ -23,8 +23,8 @@ namespace xd::dbg {
 
   class DebuggerHVM : public DebuggerImpl<xen::DomainHVM, uint8_t, X86_INT3> {
   public:
-    DebuggerHVM(xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn,
-        uvw::Loop &loop, xen::DomainHVM domain);
+    DebuggerHVM(uvw::Loop &loop, xen::DomainHVM domain,
+        xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn);
 
     void on_breakpoint_hit(Debugger::OnBreakpointHitFn on_breakpoint_hit) override;
 

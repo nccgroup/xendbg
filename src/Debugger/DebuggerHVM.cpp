@@ -17,8 +17,8 @@
 using xd::dbg::DebuggerHVM;
 using xd::xen::DomainHVM;
 
-DebuggerHVM::DebuggerHVM(xen::XenDeviceModel &xendevicemodel,
-    xen::XenEventChannel &xenevtchn, uvw::Loop &loop, DomainHVM domain)
+DebuggerHVM::DebuggerHVM(uvw::Loop &loop, DomainHVM domain,
+    xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn)
   : DebuggerImpl<DomainHVM, uint8_t, X86_INT3>(std::move(domain)),
     _monitor(xendevicemodel, xenevtchn, loop, _domain)
 {

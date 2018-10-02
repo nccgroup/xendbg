@@ -117,12 +117,14 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   std::visit(util::overloaded {
       [&](xen::DomainPV domain) {
         auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<DebugSessionPV>(*_loop, std::move(domain))); // TODO
+            std::make_unique<DebugSessionPV>(
+              *_loop, std::move(domain))); // TODO
         kv->second->run("127.0.0.1", _next_port++);
       },
       [&](xen::DomainHVM domain) {
         auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<DebugSessionHVM>(*_loop, std::move(domain))); // TODO
+            std::make_unique<DebugSessionHVM>(
+              *_loop, std::move(domain), _xendevicemodel, _xenevtchn)); // TODO
         kv->second->run("127.0.0.1", _next_port++);
       }
   }, domain_any);

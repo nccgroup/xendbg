@@ -24,13 +24,14 @@ namespace xd {
     virtual void run(const std::string& address_str, uint16_t port) = 0;
   };
 
-  template <typename Debugger_t, typename PacketHandler_t, typename Domain_t>
+  template <typename Debugger_t>
   class DebugSession : public DebugSessionBase {
   public:
-    DebugSession(uvw::Loop &loop, Domain_t domain)
-        : _domain(std::move(domain)),
-          _debugger(std::make_shared<Debugger_t>(loop, _domain)),
-          _gdb_server(std::make_shared<gdb::GDBServer>(loop))
+    template <typename Domain_t, typename... DebuggerArgs_t>
+    DebugSession(uvw::Loop &loop, Domain_t domain, DebuggerArgs_t&&... debugger_args)
+      : _debugger(std::make_shared<Debugger_t>(
+            loop, std::move(domain), std::forward<DebuggerArgs_t>(debugger_args)...)),
+        _gdb_server(std::make_shared<gdb::GDBServer>(loop))
     {
     };
 
@@ -44,31 +45,28 @@ namespace xd {
           _gdb_connection = connection;
           _debugger->attach();
 
-          _packet_handler.emplace(_domain, *_debugger, *_gdb_server, *_gdb_connection);
+          _request_handler.emplace(*_debugger, *_gdb_server, *_gdb_connection);
           connection->read([this, &server](auto &connection, const auto &packet) {
             try {
-              std::visit(*_packet_handler, packet);
+              std::visit(*_request_handler, packet);
             } catch (const xen::XenException &e) {
               connection.send_error(e.get_err(), e.what());
             }
           }, [this]() {
             _debugger->detach();
-            _packet_handler.reset();
+            _request_handler.reset();
           }, on_error);
         }, on_error);
     }
   private:
-    Domain_t _domain;
     std::shared_ptr<Debugger_t> _debugger;
-    std::shared_ptr<xd::gdb::GDBServer> _gdb_server;
-    std::shared_ptr<xd::gdb::GDBConnection> _gdb_connection;
-    std::optional<PacketHandler_t> _packet_handler;
+    std::shared_ptr<gdb::GDBServer> _gdb_server;
+    std::shared_ptr<gdb::GDBConnection> _gdb_connection;
+    std::optional<gdb::GDBRequestHandler> _request_handler;
   };
 
-  using DebugSessionHVM = DebugSession<dbg::DebuggerHVM,
-        gdb::GDBRequestHandler, xen::DomainHVM>;
-  using DebugSessionPV = DebugSession<dbg::DebuggerPV,
-        gdb::GDBRequestHandler, xen::DomainPV>;
+  using DebugSessionHVM = DebugSession<dbg::DebuggerHVM>;
+  using DebugSessionPV = DebugSession<dbg::DebuggerPV>;
 
 }
 

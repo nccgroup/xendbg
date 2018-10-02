@@ -40,6 +40,7 @@ namespace xd {
   private:
     xen::XenEventChannel _xenevtchn;
     xen::XenCtrl _xenctrl;
+    xen::XenDeviceModel _xendevicemodel;
     xen::XenForeignMemory _xenforeignmemory;
     xen::XenStore _xenstore;
 

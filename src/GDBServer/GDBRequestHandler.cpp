@@ -6,7 +6,7 @@ template <>
 void GDBRequestHandler::operator()(
     const req::InterruptRequest &) const
 {
-  _domain.pause();
+  _debugger.get_domain().pause();
   broadcast(rsp::StopReasonSignalResponse(SIGSTOP, 1));
 }
 
@@ -56,7 +56,7 @@ void GDBRequestHandler::operator()(
     const req::QueryHostInfoRequest &) const
 {
     send(rsp::QueryHostInfoResponse(
-          _domain.get_word_size(), _domain.get_name()));
+          _debugger.get_domain().get_word_size(), _debugger.get_domain().get_name()));
 }
 
 template <>
@@ -64,7 +64,7 @@ void GDBRequestHandler::operator()(
     const req::QueryRegisterInfoRequest &req) const
 {
   const auto id = req.get_register_id();
-  const auto word_size = _domain.get_word_size();
+  const auto word_size = _debugger.get_domain().get_word_size();
 
   if (word_size == sizeof(uint64_t)) {
     reg::x86_64::RegistersX86_64::find_metadata_by_id(id,
@@ -101,7 +101,7 @@ void GDBRequestHandler::operator()(
 {
   const auto address = req.get_address();
 
-  auto pte = _domain.get_page_table_entry(address);
+  auto pte = _debugger.get_domain().get_page_table_entry(address);
   if (pte && pte->is_present()) {
 
     send(rsp::QueryMemoryRegionInfoResponse(
@@ -115,11 +115,11 @@ void GDBRequestHandler::operator()(
      * one that IS present.
      */
 
-    const auto MAX_ADDRESS = _domain.get_max_gpfn() << XC_PAGE_SHIFT;
+    const auto MAX_ADDRESS = _debugger.get_domain().get_max_gpfn() << XC_PAGE_SHIFT;
     auto address_end = address;
     do {
       address_end += XC_PAGE_SIZE;
-      pte = _domain.get_page_table_entry(address_end);
+      pte = _debugger.get_domain().get_page_table_entry(address_end);
     } while (address_end < MAX_ADDRESS && !pte && !pte->is_present());
 
     send(rsp::QueryMemoryRegionInfoResponse(
@@ -160,7 +160,7 @@ template <>
 void GDBRequestHandler::operator()(
     const req::KillRequest&) const
 {
-  _domain.destroy();
+  _debugger.get_domain().destroy();
   broadcast(rsp::TerminatedResponse(SIGKILL));
 }
 
@@ -178,7 +178,7 @@ void GDBRequestHandler::operator()(
 {
   const auto id = req.get_register_id();
   const auto thread_id = req.get_thread_id();
-  const auto regs = _domain.get_cpu_context(thread_id-1);
+  const auto regs = _debugger.get_domain().get_cpu_context(thread_id-1);
 
   std::visit(util::overloaded {
       [&](const auto &regs) {
@@ -198,7 +198,7 @@ void GDBRequestHandler::operator()(
   const auto id = req.get_register_id();
   const auto value = req.get_value();
 
-  auto regs = _domain.get_cpu_context();
+  auto regs = _debugger.get_domain().get_cpu_context();
   std::visit(util::overloaded {
       [&](auto &regs) {
         regs.find_by_id(id, [&value](const auto&, auto &reg) {
@@ -208,7 +208,7 @@ void GDBRequestHandler::operator()(
         });
       }
   }, regs);
-  _domain.set_cpu_context(regs);
+  _debugger.get_domain().set_cpu_context(regs);
   send(rsp::OKResponse());
 }
 
@@ -220,14 +220,14 @@ void GDBRequestHandler::operator()(
       [&](const auto &regs) {
         send(rsp::GeneralRegistersBatchReadResponse(regs));
       }
-  }, _domain.get_cpu_context());
+  }, _debugger.get_domain().get_cpu_context());
 }
 
 template <>
 void GDBRequestHandler::operator()(
     const req::GeneralRegistersBatchWriteRequest &req) const
 {
-  auto regs_any = _domain.get_cpu_context();
+  auto regs_any = _debugger.get_domain().get_cpu_context();
   auto values = req.get_values();
 
   std::visit(util::overloaded {
@@ -256,7 +256,7 @@ void GDBRequestHandler::operator()(
       }
   }, regs_any);
 
-  _domain.set_cpu_context(regs_any);
+  _debugger.get_domain().set_cpu_context(regs_any);
 
   send(rsp::OKResponse());
 }
@@ -290,7 +290,7 @@ void GDBRequestHandler::operator()(
     const req::ContinueRequest &) const
 {
   _debugger.on_breakpoint_hit([&](auto /*address*/) {
-    _domain.pause();
+    _debugger.get_domain().pause();
     send(rsp::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
   });
 

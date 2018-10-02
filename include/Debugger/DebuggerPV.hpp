@@ -22,7 +22,7 @@ namespace xd::dbg {
 
   class DebuggerPV : public DebuggerImpl<xen::DomainPV, uint16_t, X86_INFINITE_LOOP> {
   public:
-    DebuggerPV(uvw::Loop &loop, xen::DomainPV &domain);
+    DebuggerPV(uvw::Loop &loop, xen::DomainPV domain);
     ~DebuggerPV() = default;
 
     void on_breakpoint_hit(Debugger::OnBreakpointHitFn on_breakpoint_hit) override;

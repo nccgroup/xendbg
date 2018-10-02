@@ -85,11 +85,11 @@ namespace xd::dbg {
     using BreakpointMap = std::unordered_map<xen::Address, Breakpoint_t>;
 
   public:
-    explicit DebuggerImpl(Domain_t &domain)
-        : _domain(domain), _vcpu_id(0)
+    explicit DebuggerImpl(Domain_t domain)
+        : _domain(std::move(domain)), _vcpu_id(0)
     {
       const auto mode =
-          (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
+          (_domain.template get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
 
       if (cs_open(CS_ARCH_X86, mode, &_capstone) != CS_ERR_OK)
         throw CapstoneException("Failed to open Capstone handle!");
@@ -105,12 +105,12 @@ namespace xd::dbg {
     size_t get_vcpu_id() override { return _vcpu_id; }
 
     void attach() override {
-      _domain.pause();
+      _domain.template pause();
     };
 
     void detach() override {
       cleanup();
-      _domain.unpause();
+      _domain.template unpause();
     }
 
     void cleanup() override {
@@ -124,11 +124,11 @@ namespace xd::dbg {
       if (check_breakpoint_hit())
         single_step();
 
-      _domain.unpause();
+      _domain.template unpause();
     }
 
     xen::Address single_step() override {
-      _domain.pause();
+      _domain.template pause();
 
       // If there's already a breakpoint here, remove it temporarily so we can continue
       std::optional<xen::Address> orig_addr;
@@ -144,10 +144,10 @@ namespace xd::dbg {
       if (dest2_addr_opt && !dest2_had_il)
         insert_breakpoint(*dest2_addr_opt);
 
-      _domain.unpause();
+      _domain.template unpause();
       std::optional<xen::Address> address_opt;
       while (!(address_opt = check_breakpoint_hit()));
-      _domain.pause();
+      _domain.template pause();
 
       // Remove each of our two infinite loops unless there is a
       // *manually-inserted* breakpoint at the corresponding address.
@@ -175,7 +175,7 @@ namespace xd::dbg {
         return;
       }
 
-      const auto mem_handle = _domain.map_memory<Breakpoint_t>(
+      const auto mem_handle = _domain.template map_memory<Breakpoint_t>(
           address, sizeof(Breakpoint_t), PROT_READ | PROT_WRITE);
       const auto mem = mem_handle.get();
 
@@ -187,8 +187,8 @@ namespace xd::dbg {
 
     std::optional<xen::Address> check_breakpoint_hit() override {
       const auto address = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(
-          _domain.get_cpu_context());
-      const auto mem_handle = _domain.map_memory<Breakpoint_t>(
+          _domain.template get_cpu_context());
+      const auto mem_handle = _domain.template map_memory<Breakpoint_t>(
           address, sizeof(Breakpoint_t), PROT_READ);
       const auto mem = mem_handle.get();
 
@@ -209,7 +209,7 @@ namespace xd::dbg {
         return;
       }
 
-      const auto mem_handle = _domain.map_memory<Breakpoint_t>(
+      const auto mem_handle = _domain.template map_memory<Breakpoint_t>(
           address, sizeof(Breakpoint_t), PROT_WRITE);
       const auto mem = (Breakpoint_t*)mem_handle.get();
 
@@ -222,7 +222,7 @@ namespace xd::dbg {
     MaskedMemory read_memory_masking_breakpoints(
         xen::Address address, size_t length) override
     {
-        const auto mem_handle = _domain.map_memory<char>(
+        const auto mem_handle = _domain.template map_memory<char>(
             address, length, PROT_READ);
 
         const auto mem_masked = (unsigned char*)malloc(length);
@@ -262,7 +262,7 @@ namespace xd::dbg {
         }
       }
 
-      const auto mem_handle = _domain.map_memory<char>(address, length, PROT_WRITE);
+      const auto mem_handle = _domain.template map_memory<char>(address, length, PROT_WRITE);
       const auto mem_orig = (char*)mem_handle.get() + (length - length_orig);
       memcpy((void*)mem_orig, data, length_orig);
 
@@ -277,8 +277,8 @@ namespace xd::dbg {
       get_address_of_next_instruction()
     {
       const auto read_word = [this](xen::Address addr) {
-        const auto mem_handle = _domain.map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
-        if (_domain.get_word_size() == sizeof(uint64_t)) {
+        const auto mem_handle = _domain.template map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
+        if (_domain.template get_word_size() == sizeof(uint64_t)) {
           return *mem_handle;
         } else {
           return (uint64_t)(*((uint32_t*)mem_handle.get()));
@@ -306,10 +306,10 @@ namespace xd::dbg {
 
       };
 
-      const auto context = _domain.get_cpu_context();
+      const auto context = _domain.template get_cpu_context();
       const auto address = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(context);
       const auto read_size = (2*X86_MAX_INSTRUCTION_SIZE);
-      const auto mem_handle = _domain.map_memory<uint8_t>(address, read_size, PROT_READ);
+      const auto mem_handle = _domain.template map_memory<uint8_t>(address, read_size, PROT_READ);
 
       cs_insn *instrs;
       size_t instrs_size;
@@ -339,10 +339,10 @@ namespace xd::dbg {
           const auto addr = base + (op.mem.scale * index) + op.mem.disp;
 
           uint64_t dest;
-          if (_domain.get_word_size() == sizeof(uint64_t))
-            dest = *_domain.map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
+          if (_domain.template get_word_size() == sizeof(uint64_t))
+            dest = *_domain.template map_memory<uint64_t>(addr, sizeof(uint64_t), PROT_READ);
           else
-            dest = *_domain.map_memory<uint32_t>(addr, sizeof(uint32_t), PROT_READ);
+            dest = *_domain.template map_memory<uint32_t>(addr, sizeof(uint32_t), PROT_READ);
 
           return std::make_pair(dest, std::nullopt);
         } else if (op.type == X86_OP_REG) {
@@ -357,7 +357,7 @@ namespace xd::dbg {
       else if (cs_insn_group(_capstone, &cur_instr, X86_GRP_RET) ||
                cs_insn_group(_capstone, &cur_instr, X86_GRP_IRET))
       {
-        const auto stack_ptr = reg::read_register<reg::x86_32::esp, reg::x86_64::rsp>(_domain.get_cpu_context());
+        const auto stack_ptr = reg::read_register<reg::x86_32::esp, reg::x86_64::rsp>(_domain.template get_cpu_context());
         const auto ret_dest = read_word(stack_ptr);
         return std::make_pair(ret_dest, std::nullopt);
       }

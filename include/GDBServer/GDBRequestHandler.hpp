@@ -43,8 +43,8 @@ namespace xd::gdb {
   public:
     using OnErrorFn = std::function<void(int)>;
 
-    GDBRequestHandler(xen::Domain &domain, dbg::Debugger &debugger, GDBServer &server, GDBConnection &connection)
-      : _domain(domain), _debugger(debugger), _server(server), _connection(connection)
+    GDBRequestHandler(dbg::Debugger &debugger, GDBServer &server, GDBConnection &connection)
+      : _debugger(debugger), _server(server), _connection(connection)
     {
     }
 
@@ -61,7 +61,6 @@ namespace xd::gdb {
     }
 
   private:
-    xd::xen::Domain &_domain;
     xd::dbg::Debugger &_debugger;
     GDBServer &_server;
     GDBConnection &_connection;

@@ -62,7 +62,7 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
 
         if (valid) {
           try {
-            spdlog::get(LOGNAME_CONSOLE)->info("RECV: {0}", raw_packet.contents);
+            spdlog::get(LOGNAME_CONSOLE)->debug("RECV: {0}", raw_packet.contents);
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
@@ -89,7 +89,7 @@ void GDBConnection::stop() {
 
 void GDBConnection::send(const rsp::GDBResponse &packet)
 {
-  spdlog::get(LOGNAME_CONSOLE)->info("SEND: {0}", packet.to_string());
+  spdlog::get(LOGNAME_CONSOLE)->debug("SEND: {0}", packet.to_string());
 
   const auto s = format_packet(packet);
   _tcp->write((char*)s.c_str(), s.size());

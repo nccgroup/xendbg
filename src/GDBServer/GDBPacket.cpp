@@ -20,7 +20,7 @@ GDBPacket::GDBPacket(std::string contents, uint8_t checksum)
 {
 }
 
-std::string GDBPacket::to_string() {
+std::string GDBPacket::to_string() const {
   std::stringstream ss;
   ss << "$" << _contents << "#";
   ss << std::hex << std::setfill('0') << std::setw(2);
@@ -36,6 +36,7 @@ uint8_t GDBPacket::calculate_checksum() const {
   return std::accumulate(_contents.begin(), _contents.end(), (uint8_t)0);
 }
 
-bool starts_with(const std::string &s) {
-  // TODO
+bool GDBPacket::starts_with(const std::string &s) const {
+  return s.size() <= _contents.size() &&
+    std::equal(s.begin(), s.end(), _contents.begin(), _contents.begin() + s.size());
 }

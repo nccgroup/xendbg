@@ -49,6 +49,7 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
     std::vector<char> data(event.data.get(), event.data.get() + event.length);
 
     if (self->_is_initializing && data.size() == 1 && data.front() == '+') {
+      spdlog::get(LOGNAME_CONSOLE)->debug("Got initial ACK.");
       tcp.write(ACK_OK, 1);
     } else {
       self->_input_queue.append(std::move(data));
@@ -57,12 +58,14 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
 
         bool valid = raw_packet.is_checksum_valid();
 
-        if (self->_ack_mode)
+        if (self->_ack_mode) {
           tcp.write(valid ? ACK_OK : ACK_ERROR, 1);
+          spdlog::get(LOGNAME_CONSOLE)->debug("ACK: {0}", valid ? "OK": "error");
+        }
 
         if (valid) {
           try {
-            spdlog::get(LOGNAME_CONSOLE)->debug("RECV: {0}", raw_packet.get_contents());
+            spdlog::get(LOGNAME_CONSOLE)->debug("RECV: {0}", raw_packet.to_string());
             const auto packet = parse_packet(raw_packet);
             on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
@@ -72,9 +75,12 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
           } catch (const req::RequestPacketParseException &e) {
             spdlog::get(LOGNAME_ERROR)->error(
                 "Failed to parse packet ({0}): \"{1}\"",
-                e.what(), raw_packet.contents);
+                e.what(), raw_packet.get_contents());
             self->send(rsp::NotSupportedResponse());
           }
+        } else {
+          spdlog::get(LOGNAME_ERROR)->warn(
+              "Invalid checksum for packet: \"{0}\"", raw_packet.get_contents());
         }
       }
     }
@@ -89,10 +95,11 @@ void GDBConnection::stop() {
 
 void GDBConnection::send(const rsp::GDBResponse &packet)
 {
-  spdlog::get(LOGNAME_CONSOLE)->debug("SEND: {0}", packet.to_string());
-
   const auto raw_packet = GDBPacket(packet.to_string());
-  const auto &contents = raw_packet.get_contents();
+  const auto &contents = raw_packet.to_string();
+
+  spdlog::get(LOGNAME_CONSOLE)->debug("SEND: {0}", contents);
+
   _tcp->write((char*)contents.c_str(), contents.size());
 }
 

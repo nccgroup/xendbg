@@ -78,9 +78,11 @@ void DebuggerPV::cleanup() {
 }
 
 void DebuggerPV::insert_breakpoint(Address address) {
+  spdlog::get(LOGNAME_CONSOLE)->debug("Inserting breakpoint at {0:x}", address);
+
   if (_infinite_loops.count(address)) {
     spdlog::get(LOGNAME_ERROR)->info(
-        "[!]: Tried to insert infinite loop where one already exists (address {0:x}). "
+        "[!]: Tried to insert infinite loop where one already exists. "
         "This is generally harmless, but might indicate a failure in estimating the "
         "next instruction address.",
         address);
@@ -97,9 +99,11 @@ void DebuggerPV::insert_breakpoint(Address address) {
 }
 
 void DebuggerPV::remove_breakpoint(Address address) {
-  if (_infinite_loops.count(address)) {
+  spdlog::get(LOGNAME_CONSOLE)->debug("Removing breakpoint at {0:x}", address);
+
+  if (!_infinite_loops.count(address)) {
     spdlog::get(LOGNAME_ERROR)->info(
-        "[!]: Tried to remove infinite loop where one already exists (address {0:x}). "
+        "[!]: Tried to remove infinite loop where one does not exist. "
         "This is generally harmless, but might indicate a failure in estimating the "
         "next instruction address.",
         address);

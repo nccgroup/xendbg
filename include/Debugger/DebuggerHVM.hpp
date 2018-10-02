@@ -12,33 +12,25 @@
 
 #include <uvw.hpp>
 
+#include <Xen/HVMMonitor.hpp>
 #include <Xen/DomainHVM.hpp>
 
 #include "Debugger.hpp"
 
+#define X86_INT3 0xCC
+
 namespace xd::dbg {
 
-  class DebuggerHVM : public Debugger {
-  private:
-    using BreakpointMap = std::unordered_map<xen::Address, uint8_t>;
-
+  class DebuggerHVM : public DebuggerWithBreakpoints<uint8_t, X86_INT3> {
   public:
-    DebuggerHVM(uvw::Loop &loop, xen::DomainHVM &domain);
+    DebuggerHVM(xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn,
+        uvw::Loop &loop, xen::DomainHVM &domain);
 
-    void continue_() override;
-    xen::Address single_step() override;
-    std::optional<xen::Address> check_breakpoint_hit() override;
-
-    void cleanup() override;
-    void insert_breakpoint(xen::Address address) override;
-    void remove_breakpoint(xen::Address address) override;
-
-    MaskedMemory read_memory_masking_breakpoints(xen::Address address, size_t length) override;
-    void write_memory_retaining_breakpoints(xen::Address address, size_t length, void *data) override;
+    void on_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) override;
 
   private:
     xen::DomainHVM &_domain;
-    BreakpointMap _breakpoints;
+    xen::HVMMonitor _monitor;
   };
 
 }

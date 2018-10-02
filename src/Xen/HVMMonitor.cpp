@@ -1,46 +1,53 @@
 #include <sys/mman.h>
 
-#include <Xen/Domain.hpp>
 #include <Xen/HVMMonitor.hpp>
 
-using xd::uv::UVLoop;
-using xd::uv::UVPoll;
-using xd::xen::Domain;
-using xd::xen::monitor::HVMMonitor;
+/* From xen/include/asm-x86/processor.h */
+#define X86_TRAP_DEBUG  1
+#define X86_TRAP_INT3   3
 
-HVMMonitor::HVMMonitor(UVLoop &loop, XenHandlePtr xen, const Domain &domain)
-  : _xen(std::move(xen)), _domain(domain), _ring_page(nullptr, unmap_ring_page),
-    _poll(loop, _xen->get_event_channel().get_fd())
+using xd::xen::Domain;
+using xd::xen::HVMMonitor;
+
+HVMMonitor::HVMMonitor(xen::XenDeviceModel &xendevicemodel,
+    xen::XenEventChannel &xenevtchn, uvw::Loop &loop, DomainHVM &domain)
+  : _xendevicemodel(xendevicemodel), _xenevtchn(xenevtchn), _domain(domain),
+    _ring_page(nullptr, unmap_ring_page),
+    _poll(loop.resource<uvw::PollHandle>(xenevtchn.get_fd()))
 {
   auto [ring_page, evtchn_port] = _domain.enable_monitor();
 
   _ring_page.reset(ring_page);
-  _port = _xen->get_event_channel().bind_interdomain(_domain, evtchn_port);
+  _port = _xenevtchn.bind_interdomain(_domain, evtchn_port);
 
   SHARED_RING_INIT((vm_event_sring_t*)ring_page);
   BACK_RING_INIT(&_back_ring, (vm_event_sring_t*)ring_page, XC_PAGE_SIZE);
 
-  _domain.monitor_software_breakpoint(true);
+  /*
   _domain.monitor_debug_exceptions(true, true);
   _domain.monitor_cpuid(true);
   _domain.monitor_descriptor_access(true);
   _domain.monitor_privileged_call(true);
+  */
 }
 
 HVMMonitor::~HVMMonitor() {
-  _xen->get_event_channel().unbind(_port);
+  _xenevtchn.unbind(_port);
 }
 
-void HVMMonitor::start(OnEventFn on_event) {
+void HVMMonitor::start() {
   // TODO: this capture fails if moved
-  _poll.start([this, on_event](const auto &fd_event) {
-      if (!fd_event.readable)
-        read_events(on_event);
+  _poll->data(shared_from_this());
+  _poll->on<uvw::PollEvent>([](const auto &event, auto &handle) {
+      auto self = handle.template data<HVMMonitor>();
+      self->read_events();
   });
+
+  _poll->start(uvw::PollHandle::Event::READABLE);
 }
 
 void HVMMonitor::stop() {
-  _poll.stop();
+  _poll->stop();
 }
 
 vm_event_request_t HVMMonitor::get_request() {
@@ -74,7 +81,7 @@ void HVMMonitor::put_response(vm_event_response_t rsp) {
     RING_PUSH_RESPONSES(&_back_ring);
 }
 
-void HVMMonitor::read_events(OnEventFn on_event) {
+void HVMMonitor::read_events() {
   while (RING_HAS_UNCONSUMED_REQUESTS(&_back_ring)) {
     auto req = get_request();
 
@@ -92,6 +99,12 @@ void HVMMonitor::read_events(OnEventFn on_event) {
       case VM_EVENT_REASON_MEM_ACCESS:
         break;
       case VM_EVENT_REASON_SOFTWARE_BREAKPOINT:
+        _xendevicemodel.inject_event(
+            _domain, req.vcpu_id, X86_TRAP_INT3,
+            req.u.software_breakpoint.type, -1,
+            req.u.software_breakpoint.insn_length, 0);
+        if (_on_software_breakpoint)
+          _on_software_breakpoint(req);
         break;
       case VM_EVENT_REASON_PRIVILEGED_CALL:
         break;

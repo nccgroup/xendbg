@@ -10,6 +10,8 @@
 
 using xd::ServerModeController;
 using xd::DebugSession;
+using xd::DebugSessionHVM;
+using xd::DebugSessionPV;
 using xd::xen::get_domid_any;
 using xd::xen::get_domains;
 
@@ -109,17 +111,19 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   if (_instances.count(domid))
     throw DomainAlreadyAddedException(domid);
 
+  spdlog::get(LOGNAME_CONSOLE)->info(
+      "UP: Domain {0:d} @ port {1:d}", domid, _next_port);
+
   std::visit(util::overloaded {
       [&](xen::DomainPV domain) {
         auto [kv, _] = _instances.emplace(domid,
             std::make_unique<DebugSessionPV>(*_loop, std::move(domain))); // TODO
-
-        spdlog::get(LOGNAME_CONSOLE)->info(
-            "UP: Domain {0:d} @ port {1:d}", kv->first, _next_port);
         kv->second->run("127.0.0.1", _next_port++);
       },
       [&](xen::DomainHVM domain) {
-        throw std::runtime_error("HVM domain instances not yet supported!");
+        auto [kv, _] = _instances.emplace(domid,
+            std::make_unique<DebugSessionHVM>(*_loop, std::move(domain))); // TODO
+        kv->second->run("127.0.0.1", _next_port++);
       }
   }, domain_any);
 }

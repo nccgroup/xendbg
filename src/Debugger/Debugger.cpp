@@ -4,16 +4,21 @@
 
 #define X86_MAX_INSTRUCTION_SIZE 0x10
 
-#include <Debugger/Debugger.hpp>
-
 #include <sys/mman.h>
 
+#include <spdlog/spdlog.h>
+
+#include <Globals.hpp>
+#include <Debugger/Debugger.hpp>
+
 using xd::dbg::Debugger;
+using xd::dbg::DebuggerWithBreakpoints;
+using xd::dbg::MaskedMemory;
 using xd::xen::Address;
 using xd::xen::DomID;
 
-Debugger::Debugger(uvw::Loop &loop, xen::Domain &domain)
-  : _domain(domain), _timer(loop.resource<uvw::TimerHandle>()), _vcpu_id(0)
+Debugger::Debugger(xen::Domain &domain)
+  : _domain(domain), _vcpu_id(0)
 {
   const auto mode =
       (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
@@ -35,22 +40,6 @@ void Debugger::attach() {
 void Debugger::detach() {
   cleanup();
   _domain.unpause();
-}
-
-void Debugger::notify_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) {
-  _timer->data(shared_from_this()); // TODO
-  _timer->on<uvw::TimerEvent>([on_breakpoint_hit](const auto &event, auto &handle) {
-    auto self = handle.template data<Debugger>();
-    auto address = self->check_breakpoint_hit();
-    if (address) {
-      handle.stop();
-      on_breakpoint_hit(*address);
-    }
-    return address.has_value();
-  });
-
-  // TODO: is this 100 ms?
-  _timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
 }
 
 std::pair<Address, std::optional<Address>>

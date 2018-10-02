@@ -289,12 +289,12 @@ template <>
 void GDBRequestHandler::operator()(
     const req::ContinueRequest &) const
 {
-  _debugger.continue_();
-
-  _debugger.notify_breakpoint_hit([&](auto /*address*/) {
+  _debugger.on_breakpoint_hit([&](auto /*address*/) {
     _domain.pause();
     send(rsp::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
   });
+
+  _debugger.continue_();
 
   send(rsp::OKResponse());
 }

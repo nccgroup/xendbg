@@ -21,15 +21,20 @@
 namespace xd::dbg {
 
   class DebuggerPV : public DebuggerWithBreakpoints<uint16_t, X86_INFINITE_LOOP> {
+  private:
+    using InfiniteLoopMap = std::unordered_map<xen::Address, uint16_t>;
+
   public:
     DebuggerPV(uvw::Loop &loop, xen::DomainPV &domain);
-    ~DebuggerPV() = default;
 
+    void continue_() override;
+    xen::Address single_step() override;
     void on_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) override;
 
   private:
     xen::DomainPV &_domain;
-    std::shared_ptr<uvw::TimerHandle> _timer;
+
+    std::optional<xen::Address> check_breakpoint_hit();
   };
 
 }

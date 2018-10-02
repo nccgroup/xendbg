@@ -30,15 +30,18 @@ add_executable(xendbg
   include/Util/string.hpp
   include/Xen/BridgeHeaders/domctl.h
   include/Xen/BridgeHeaders/xenctrl.h
+  include/Xen/BridgeHeaders/xendevicemodel.h
   include/Xen/BridgeHeaders/xenforeignmemory.h
   include/Xen/BridgeHeaders/xenguest.h
   include/Xen/BridgeHeaders/xenstore.h
   include/Xen/Common.hpp
   include/Xen/Domain.hpp
   include/Xen/DomainAny.hpp
+  include/Xen/HVMMonitor.hpp
   include/Xen/PageTableEntry.hpp
   include/Xen/PrivCmd.hpp
   include/Xen/XenCtrl.hpp
+  include/Xen/XenDeviceModel.hpp
   include/Xen/XenEventChannel.hpp
   include/Xen/XenException.hpp
   include/Xen/XenForeignMemory.hpp
@@ -52,9 +55,11 @@ add_executable(xendbg
         src/ServerModeController.hpp
   src/Xen/Domain.cpp
   src/Xen/DomainAny.cpp
+  src/Xen/HVMMonitor.cpp
   src/Xen/PageTableEntry.cpp
   src/Xen/PrivCmd.cpp
   src/Xen/XenCtrl.cpp
+  src/Xen/XenDeviceModel.cpp
   src/Xen/XenEventChannel.cpp
   src/Xen/XenForeignMemory.cpp
   src/Xen/XenStore.cpp
@@ -76,6 +81,7 @@ target_link_libraries(xendbg
   readline
   uv
   xenctrl
+  xendevicemodel
   xenevtchn
   xenforeignmemory
   xenlight

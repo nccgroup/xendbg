@@ -26,10 +26,19 @@ namespace xd::dbg {
     DebuggerHVM(uvw::Loop &loop, xen::DomainHVM domain,
         xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn);
 
-    void on_breakpoint_hit(Debugger::OnBreakpointHitFn on_breakpoint_hit) override;
+    void attach() override;
+    void detach() override;
+
+    void continue_() override;
+    void single_step() override;
+
+    void on_stop(Debugger::OnStopFn on_stop) override;
+    int get_last_stop_signal() override { return SIGSTOP; }; // TODO
 
   private:
-    xen::HVMMonitor _monitor;
+    std::shared_ptr<xen::HVMMonitor> _monitor;
+
+    using Base = DebuggerImpl<xen::DomainHVM, uint8_t, X86_INT3>;
   };
 
 }

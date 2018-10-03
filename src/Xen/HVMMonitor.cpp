@@ -12,10 +12,18 @@ using xd::xen::HVMMonitor;
 HVMMonitor::HVMMonitor(xen::XenDeviceModel &xendevicemodel,
     xen::XenEventChannel &xenevtchn, uvw::Loop &loop, DomainHVM &domain)
   : _xendevicemodel(xendevicemodel), _xenevtchn(xenevtchn), _domain(domain),
-    _ring_page(nullptr, unmap_ring_page),
+    _port(0), _ring_page(nullptr, unmap_ring_page),
     _poll(loop.resource<uvw::PollHandle>(xenevtchn.get_fd()))
 {
-  auto [ring_page, evtchn_port] = _domain.enable_monitor();
+}
+
+HVMMonitor::~HVMMonitor() {
+  if (_port != 0)
+    _xenevtchn.unbind(_port);
+}
+
+void HVMMonitor::start() {
+  auto [ring_page, evtchn_port] = _domain.enable_monitor(); // TODO
 
   _ring_page.reset(ring_page);
   _port = _xenevtchn.bind_interdomain(_domain, evtchn_port);
@@ -23,19 +31,13 @@ HVMMonitor::HVMMonitor(xen::XenDeviceModel &xendevicemodel,
   SHARED_RING_INIT((vm_event_sring_t*)ring_page);
   BACK_RING_INIT(&_back_ring, (vm_event_sring_t*)ring_page, XC_PAGE_SIZE);
 
-  /*
+  _domain.monitor_singlestep(true);
+  _domain.monitor_software_breakpoint(true);
   _domain.monitor_debug_exceptions(true, true);
   _domain.monitor_cpuid(true);
   _domain.monitor_descriptor_access(true);
   _domain.monitor_privileged_call(true);
-  */
-}
 
-HVMMonitor::~HVMMonitor() {
-  _xenevtchn.unbind(_port);
-}
-
-void HVMMonitor::start() {
   // TODO: this capture fails if moved
   _poll->data(shared_from_this());
   _poll->on<uvw::PollEvent>([](const auto &event, auto &handle) {
@@ -47,6 +49,7 @@ void HVMMonitor::start() {
 }
 
 void HVMMonitor::stop() {
+  _domain.disable_monitor();
   _poll->stop();
 }
 
@@ -109,6 +112,8 @@ void HVMMonitor::read_events() {
       case VM_EVENT_REASON_PRIVILEGED_CALL:
         break;
       case VM_EVENT_REASON_SINGLESTEP:
+        if (_on_singlestep)
+          _on_singlestep(req);
         break;
       case VM_EVENT_REASON_DEBUG_EXCEPTION:
         break;

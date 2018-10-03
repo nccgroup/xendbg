@@ -37,13 +37,26 @@ void ServerModeController::run_single(const std::string &name) {
   if (found == domains.end())
     throw std::runtime_error("No such domain!");
 
-  add_instance(std::move(*found));
-  run();
+  run_single(get_domid_any(*found));
 }
 
 void ServerModeController::run_single(xen::DomID domid) {
-  auto domain = xen::init_domain(domid, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+  auto &watch_release = _xenstore.add_watch();
+  watch_release.add_path("@releaseDomain");
+
+  _poll->on<uvw::PollEvent>([&](const auto &event, auto &handle) {
+    if (watch_release.check())
+      if (prune_instances())
+        handle.loop().stop();
+  });
+
+  _poll->start(uvw::PollHandle::Event::READABLE);
+
+  auto domain = xen::init_domain(domid, _xenevtchn, _xenctrl,
+      _xenforeignmemory, _xenstore);
+
   add_instance(std::move(domain));
+
   run();
 }
 
@@ -74,21 +87,30 @@ void ServerModeController::run() {
   _signal->start(SIGINT);
 
   _loop->run();
+  _loop->walk([](auto &handle) {
+    handle.close();
+  });
 }
 
-void ServerModeController::add_new_instances() {
+size_t ServerModeController::add_new_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
+  size_t num_added = 0;
   for (const auto &domain_any : domains) {
     const auto domid = get_domid_any(domain_any);
-    if (!_instances.count(domid))
+    if (!_instances.count(domid)) {
       add_instance(domain_any);
+      ++num_added;
+    }
   }
+
+  return num_added;
 }
 
-void ServerModeController::prune_instances() {
+size_t ServerModeController::prune_instances() {
   const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
+  size_t num_removed = 0;
   auto it = _instances.begin();
   while (it != _instances.end()) {
     if (std::none_of(domains.begin(), domains.end(),
@@ -99,10 +121,13 @@ void ServerModeController::prune_instances() {
       spdlog::get(LOGNAME_CONSOLE)->info(
           "DOWN: Domain {0:d}", it->first);
       it = _instances.erase(it);
+      ++num_removed;
     } else {
       ++it;
     }
   }
+
+  return num_removed;
 }
 
 void ServerModeController::add_instance(xen::DomainAny domain_any) {

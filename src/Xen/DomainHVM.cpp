@@ -109,6 +109,10 @@ void DomainHVM::disable_monitor() const {
   xc_monitor_disable(_xenctrl.get(), _domid);
 }
 
+void DomainHVM::monitor_singlestep(bool enable) {
+  xc_monitor_singlestep(_xenctrl.get(), _domid, enable);
+}
+
 void DomainHVM::monitor_software_breakpoint(bool enable) {
   xc_monitor_software_breakpoint(_xenctrl.get(), _domid, enable);
 }

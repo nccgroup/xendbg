@@ -153,7 +153,7 @@ template <>
 void GDBRequestHandler::operator()(
     const req::StopReasonRequest &) const
 {
-  send(rsp::StopReasonSignalResponse(SIGTRAP, 1));
+  send(rsp::StopReasonSignalResponse(_debugger.get_last_stop_signal(), 1));
 }
 
 template <>
@@ -289,13 +289,7 @@ template <>
 void GDBRequestHandler::operator()(
     const req::ContinueRequest &) const
 {
-  _debugger.on_breakpoint_hit([&](auto /*address*/) {
-    _debugger.get_domain().pause();
-    send(rsp::StopReasonSignalResponse(SIGTRAP, 1)); // TODO
-  });
-
   _debugger.continue_();
-
   send(rsp::OKResponse());
 }
 
@@ -304,7 +298,6 @@ void GDBRequestHandler::operator()(
     const req::StepRequest &) const
 {
   _debugger.single_step();
-  broadcast(rsp::StopReasonSignalResponse(SIGTRAP, 1));
 }
 
 template <>

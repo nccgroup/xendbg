@@ -23,6 +23,7 @@ namespace xd::xen {
     XenEventChannel::RingPageAndPort enable_monitor() const;
     void disable_monitor() const;
 
+    void monitor_singlestep(bool enable);
     void monitor_software_breakpoint(bool enable);
     void monitor_debug_exceptions(bool enable, bool sync);
     void monitor_cpuid(bool enable);

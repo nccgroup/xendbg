@@ -37,7 +37,7 @@ std::string QueryCurrentThreadIDResponse::to_string() const {
 QueryThreadInfoResponse::QueryThreadInfoResponse(std::vector<size_t> thread_ids)
   : _thread_ids(std::move(thread_ids))
 {
-  if (thread_ids.empty())
+  if (_thread_ids.empty())
     throw std::runtime_error("Must provide at least one thread ID!");
 };
 
@@ -63,7 +63,7 @@ std::string QueryHostInfoResponse::to_string() const {
   //add_list_entry(ss, "triple", hexify(make_triple()));
   add_list_entry(ss, "endian", "little"); // TODO can this ever be big?
   add_list_entry(ss, "ptrsize", _word_size);
-  add_list_entry(ss, "hostname", hexify(_hostname));
+  //add_list_entry(ss, "hostname", hexify(_hostname));
   return ss.str();
 };
 

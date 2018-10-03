@@ -50,6 +50,7 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
 
     if (self->_is_initializing && data.size() == 1 && data.front() == '+') {
       spdlog::get(LOGNAME_CONSOLE)->debug("Got initial ACK.");
+      self->_is_initializing = false;
       tcp.write(ACK_OK, 1);
     } else {
       self->_input_queue.append(std::move(data));

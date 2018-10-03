@@ -42,9 +42,13 @@ namespace xd {
 
       _gdb_server->listen(address_str, port,
         [this, on_error](auto &server, auto connection) {
-          _gdb_connection = connection;
+          _debugger->on_stop([connection](auto signal) {
+            connection->send(gdb::rsp::StopReasonSignalResponse(signal, 1));
+          });
+
           _debugger->attach();
 
+          _gdb_connection = connection;
           _request_handler.emplace(*_debugger, *_gdb_server, *_gdb_connection);
           connection->read([this, &server](auto &connection, const auto &packet) {
             try {

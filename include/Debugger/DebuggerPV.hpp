@@ -25,10 +25,24 @@ namespace xd::dbg {
     DebuggerPV(uvw::Loop &loop, xen::DomainPV domain);
     ~DebuggerPV() = default;
 
-    void on_breakpoint_hit(Debugger::OnBreakpointHitFn on_breakpoint_hit) override;
+    void attach() override;
+    void detach() override;
+
+    void continue_() override;
+    void single_step() override;
+
+    void on_stop(Debugger::OnStopFn on_stop) override;
+    int get_last_stop_signal() override { return _last_stop_signal; };
 
   private:
     std::shared_ptr<uvw::TimerHandle> _timer;
+    OnStopFn _on_stop;
+    int _last_stop_signal;
+
+    std::optional<xen::Address> check_breakpoint_hit();
+    void on_stop_internal(int signal);
+
+    using Base = DebuggerImpl<xen::DomainPV, uint16_t, X86_INFINITE_LOOP>;
   };
 
 }

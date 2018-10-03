@@ -55,8 +55,8 @@ namespace xd {
   private:
     void run();
 
-    void add_new_instances();
-    void prune_instances();
+    size_t add_new_instances();
+    size_t prune_instances();
 
     void add_instance(xen::DomainAny domain_any);
   };

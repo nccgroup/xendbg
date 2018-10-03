@@ -34,7 +34,13 @@ namespace xd::xen {
 
     template <typename Memory_t, typename Domain_t>
     MappedMemory<Memory_t> map(const Domain_t &domain, Address address, size_t size, int prot) const {
-      xen_pfn_t base_mfn = domain.pfn_to_mfn_pv(address >> XC_PAGE_SHIFT);
+      // See xen/tools/libxc/xc_sr_save_x86_{pv,hvm}.c:{1013,126}
+      // On PV, PFNs need to be mapped to MFNs, whereas on HVM it's a one-to-one mapping
+      const auto base_pfn = address >> XC_PAGE_SHIFT;
+      const xen_pfn_t base_mfn = domain.get_info().hvm
+        ? base_pfn
+        : domain.pfn_to_mfn_pv(base_pfn);
+
       return map_by_mfn<Memory_t, Domain_t>(domain, base_mfn, address % XC_PAGE_SIZE, size, prot);
     }
 

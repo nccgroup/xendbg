@@ -50,7 +50,8 @@ namespace xd::dbg {
 
   class Debugger {
   public:
-    using OnBreakpointHitFn = std::function<void(xen::Address)>;
+    using OnStopFn = std::function<void(int)>;
+
     virtual ~Debugger() = default;
 
     virtual const xen::Domain &get_domain() = 0;
@@ -60,14 +61,15 @@ namespace xd::dbg {
     virtual void detach() = 0;
 
     virtual void continue_() = 0;
-    virtual xen::Address single_step() = 0;
+    virtual void single_step() = 0;
 
     virtual void cleanup() = 0;
 
     virtual void insert_breakpoint(xen::Address address) = 0;
     virtual void remove_breakpoint(xen::Address address) = 0;
-    virtual std::optional<xen::Address> check_breakpoint_hit() = 0;
-    virtual void on_breakpoint_hit(OnBreakpointHitFn on_breakpoint_hit) = 0;
+
+    virtual void on_stop(OnStopFn on_stop) = 0;
+    virtual int get_last_stop_signal() = 0;
 
     virtual MaskedMemory read_memory_masking_breakpoints(
         xen::Address address, size_t length) = 0;
@@ -118,51 +120,6 @@ namespace xd::dbg {
         remove_breakpoint(bp.first);
     }
 
-    void continue_() override {
-      // Single step first to move beyond the current breakpoint;
-      // it will be removed during the step and replaced automatically.
-      if (check_breakpoint_hit())
-        single_step();
-
-      _domain.template unpause();
-    }
-
-    xen::Address single_step() override {
-      _domain.template pause();
-
-      // If there's already a breakpoint here, remove it temporarily so we can continue
-      std::optional<xen::Address> orig_addr;
-      if ((orig_addr = check_breakpoint_hit()))
-        remove_breakpoint(*orig_addr);
-
-      // For conditional branches, we need to insert EBFEs at both potential locations.
-      const auto [dest1_addr, dest2_addr_opt] = get_address_of_next_instruction();
-      bool dest1_had_il = (_breakpoints.count(dest1_addr) != 0);
-      bool dest2_had_il = dest2_addr_opt && (_breakpoints.count(*dest2_addr_opt) != 0);
-
-      insert_breakpoint(dest1_addr);
-      if (dest2_addr_opt && !dest2_had_il)
-        insert_breakpoint(*dest2_addr_opt);
-
-      _domain.template unpause();
-      std::optional<xen::Address> address_opt;
-      while (!(address_opt = check_breakpoint_hit()));
-      _domain.template pause();
-
-      // Remove each of our two infinite loops unless there is a
-      // *manually-inserted* breakpoint at the corresponding address.
-      if (!dest1_had_il)
-        remove_breakpoint(dest1_addr);
-      if (dest2_addr_opt && !dest2_had_il)
-        remove_breakpoint(*dest2_addr_opt);
-
-      // If there was a BP at the instruction we started at, put it back
-      if (orig_addr)
-        insert_breakpoint(*orig_addr);
-
-      return *address_opt;
-    }
-
     void insert_breakpoint(xen::Address address) override {
       spdlog::get(LOGNAME_CONSOLE)->debug("Inserting breakpoint at {0:x}", address);
 
@@ -183,18 +140,6 @@ namespace xd::dbg {
 
       _breakpoints[address] = orig_bytes;
       *mem = _BREAKPOINT_VALUE;
-    }
-
-    std::optional<xen::Address> check_breakpoint_hit() override {
-      const auto address = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(
-          _domain.template get_cpu_context());
-      const auto mem_handle = _domain.template map_memory<Breakpoint_t>(
-          address, sizeof(Breakpoint_t), PROT_READ);
-      const auto mem = mem_handle.get();
-
-      if (*mem == _BREAKPOINT_VALUE && _breakpoints.count(address))
-        return address;
-      return std::nullopt;
     }
 
     void remove_breakpoint(xen::Address address) override {

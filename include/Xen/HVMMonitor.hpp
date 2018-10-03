@@ -20,7 +20,7 @@
 
 namespace xd::xen {
 
-  class HVMMonitor : std::enable_shared_from_this<HVMMonitor> {
+  class HVMMonitor : public std::enable_shared_from_this<HVMMonitor> {
   public:
     using OnEventFn = std::function<void(vm_event_request_t)>;
 
@@ -32,8 +32,10 @@ namespace xd::xen {
     void stop();
 
     void on_software_breakpoint(OnEventFn callback) {
-      _domain.monitor_software_breakpoint(true);
       _on_software_breakpoint = callback;
+    };
+    void on_singlestep(OnEventFn callback) {
+      _on_singlestep = callback;
     };
 
   private:
@@ -50,7 +52,7 @@ namespace xd::xen {
     std::shared_ptr<uvw::PollHandle> _poll;
 
     OnEventFn _on_software_breakpoint;
-    OnEventFn _on_mem_access;
+    OnEventFn _on_singlestep;
 
   private:
     vm_event_request_t get_request();

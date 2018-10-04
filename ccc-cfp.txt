@@ -1,0 +1,31 @@
+Title: ??? (Xen VMI)
+Subtitle: ???
+
+Event type: lecture
+Track: Resilience?
+Time: 1 hr
+Language: English
+Logo: N/A
+
+Event classifiers: Resilience?
+
+# Detailed description
+
+Summary:
+- Talk about virtual machine introspection in Xen: how it is implemented,
+  what its current limitations are, and how said limitations contribute
+  to security standing (e.g. by inhibiting debugging). Possibly have a
+  section on points of improvement, e.g. implementing monitoring in PV mode
+- Technical specifics to touch on: foreign memory mapping & grant tables,
+  HVM event monitoring, xenctrl (used in lots of ways inspecting & manipulating
+  VMs), possibly how dom0 issues commands to Xen (some kind of virtual device)
+- Currently I know a fair amount about VMI, but I'm not sure what topics would
+  be interesting to people / worth talking about. This is my biggest issue at
+  the moment...
+
+Long description:
+
+Submission notes:
+
+Links: TODO
+Uploaded file: TODO

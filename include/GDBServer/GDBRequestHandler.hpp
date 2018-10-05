@@ -3,7 +3,6 @@
 
 #include <Debugger/Debugger.hpp>
 #include <GDBServer/GDBConnection.hpp>
-#include <GDBServer/GDBServer.hpp>
 #include <GDBServer/GDBRequest/GDBRequest.hpp>
 #include <GDBServer/GDBResponse/GDBResponse.hpp>
 #include <Registers/RegistersX86_32.hpp>
@@ -43,8 +42,8 @@ namespace xd::gdb {
   public:
     using OnErrorFn = std::function<void(int)>;
 
-    GDBRequestHandler(dbg::Debugger &debugger, GDBServer &server, GDBConnection &connection)
-      : _debugger(debugger), _server(server), _connection(connection)
+    GDBRequestHandler(dbg::Debugger &debugger, GDBConnection &connection)
+      : _debugger(debugger), _connection(connection)
     {
     }
 
@@ -56,13 +55,8 @@ namespace xd::gdb {
       _connection.send(packet);
     }
 
-    void broadcast(const rsp::GDBResponse &packet) const {
-      _connection.send(packet);
-    }
-
   private:
     xd::dbg::Debugger &_debugger;
-    GDBServer &_server;
     GDBConnection &_connection;
 
   public:

@@ -9,6 +9,7 @@ using xd::reg::RegistersX86Any;
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::DomainHVM;
+using xd::xen::PagePermissions;
 using xd::xen::VCPU_ID;
 using xd::xen::XenEventChannel;
 
@@ -25,6 +26,12 @@ DomainHVM::DomainHVM(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
   : Domain(domid, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
 {
+}
+
+std::optional<PagePermissions> DomainHVM::get_page_permissions(Address address) const {
+  xenmem_access_t access;
+  xc_get_mem_access(_xenctrl.get(), _domid, address >> XC_PAGE_SHIFT, &access);
+  return PagePermissions(access);
 }
 
 RegistersX86Any DomainHVM::get_cpu_context(VCPU_ID vcpu_id) const {
@@ -143,6 +150,7 @@ struct hvm_hw_cpu DomainHVM::get_cpu_context_raw(VCPU_ID vcpu_id) const {
                        std::to_string(vcpu_id) + " of domain " +
                        std::to_string(_domid), -err);
   }
+
   return context;
 }
 

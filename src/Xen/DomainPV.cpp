@@ -9,6 +9,7 @@ using xd::reg::RegistersX86Any;
 using xd::reg::x86_32::RegistersX86_32;
 using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::DomainPV;
+using xd::xen::PagePermissions;
 using xd::util::overloaded;
 
 #define GET_PV(_regs, _pv, _reg) \
@@ -24,6 +25,15 @@ DomainPV::DomainPV(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
   : Domain(domid, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
 {
+}
+
+std::optional<PagePermissions> DomainPV::get_page_permissions(Address address) const {
+  const auto pte = get_page_table_entry(address);
+
+  if (!pte || !pte->is_present())
+    return std::nullopt;
+
+  return PagePermissions(*pte);
 }
 
 vcpu_guest_context_any_t DomainPV::get_cpu_context_raw(VCPU_ID vcpu_id) const {

@@ -49,7 +49,7 @@ namespace xd {
           _debugger->attach();
 
           _gdb_connection = connection;
-          _request_handler.emplace(*_debugger, *_gdb_server, *_gdb_connection);
+          _request_handler.emplace(*_debugger, *_gdb_connection);
           connection->read([this, &server](auto &connection, const auto &packet) {
             try {
               std::visit(*_request_handler, packet);

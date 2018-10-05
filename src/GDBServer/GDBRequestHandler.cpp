@@ -7,7 +7,7 @@ void GDBRequestHandler::operator()(
     const req::InterruptRequest &) const
 {
   _debugger.get_domain().pause();
-  broadcast(rsp::StopReasonSignalResponse(SIGSTOP, 1));
+  send(rsp::StopReasonSignalResponse(SIGSTOP, 1));
 }
 
 template <>
@@ -99,33 +99,38 @@ template <>
 void GDBRequestHandler::operator()(
     const req::QueryMemoryRegionInfoRequest &req) const
 {
+  send(rsp::NotSupportedResponse());
+
+  /*
   const auto address = req.get_address();
 
-  auto pte = _debugger.get_domain().get_page_table_entry(address);
-  if (pte && pte->is_present()) {
+  auto perms = _debugger.get_domain().get_page_permissions(address);
+  if (perms) {
 
     send(rsp::QueryMemoryRegionInfoResponse(
           address & XC_PAGE_MASK, XC_PAGE_SIZE,
-          true, pte->is_rw(), !pte->is_nx()));
+          perms->read, perms->write, perms->execute));
 
   } else {
 
-    /* If the current region (page) isn't present, LLDB expects that we
+    \* If the current region (page) isn't present, LLDB expects that we
      * provide a region that represents the space before the next
      * one that IS present.
-     */
+     *\
 
     const auto MAX_ADDRESS = _debugger.get_domain().get_max_gpfn() << XC_PAGE_SHIFT;
     auto address_end = address;
+
     do {
-      address_end += XC_PAGE_SIZE;
-      pte = _debugger.get_domain().get_page_table_entry(address_end);
-    } while (address_end < MAX_ADDRESS && !pte && !pte->is_present());
+      address_end += std::min(XC_PAGE_SIZE, MAX_ADDRESS - address);
+      perms = _debugger.get_domain().get_page_permissions(address_end);
+    } while (address_end < MAX_ADDRESS && !perms);
 
     send(rsp::QueryMemoryRegionInfoResponse(
           address & XC_PAGE_MASK, address_end - address,
           false, false, false));
   }
+  */
 }
 
 template <>
@@ -161,7 +166,7 @@ void GDBRequestHandler::operator()(
     const req::KillRequest&) const
 {
   _debugger.get_domain().destroy();
-  broadcast(rsp::TerminatedResponse(SIGKILL));
+  send(rsp::TerminatedResponse(SIGKILL));
 }
 
 template <>
@@ -304,9 +309,19 @@ template <>
 void GDBRequestHandler::operator()(
     const req::BreakpointInsertRequest &req) const
 {
-  const auto address = req.get_address();
-  _debugger.insert_breakpoint(address);
-  send(rsp::OKResponse());
+  switch (req.get_type()) {
+    case 0: { // Breakpoint
+      const auto address = req.get_address();
+      _debugger.insert_breakpoint(address);
+      send(rsp::OKResponse());
+    }; break;
+    case 1: { // Watchpoint
+      send(rsp::NotSupportedResponse());
+    }; break;
+    case 2: { // Catchpoint
+      send(rsp::NotSupportedResponse());
+    }; break;
+  }
 }
 
 template <>

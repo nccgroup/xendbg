@@ -30,7 +30,7 @@ namespace xd::parser::token {
 
   public:
     static TokenMatchResult<Constant> match(std::string::const_iterator begin, std::string::const_iterator end) {
-      if (begin == end || *begin == '-')
+      if (begin == end || *begin == '-' || *begin == '+')
         return std::make_pair(std::nullopt, begin);
 
       // stoi doesn't handle the 0b prefix, so we have to do this manually

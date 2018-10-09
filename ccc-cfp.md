@@ -1,5 +1,22 @@
 See https://events.ccc.de/2018/09/11/35c3-call-for-participation-and-submission-guidelines/
 
+# Bio
+
+## Abstract
+
+Spencer is a security consultant at NCC Group, where he focuses on
+virtualization, operating systems, embedded devices, and network penetration
+testing. In his spare time, Spencer enjoys speaking Mandarin and collecting
+obscure recordings of comically talentless opera singers.
+
+## Description
+
+Before joining NCC Group, Spencer graduated from Harvey Mudd College with a
+degree in Computer Science. He has previously presented his work on assessing
+and exploiting unikernels at Toorcon San Diego, and his research on the Zigbee
+protocol has been published in the proceedings of the IEEE Conference on
+Communications and Network Security.
+
 # CCC CFP submission
 
 * Title: `Xen VMI Debugging`
@@ -10,7 +27,11 @@ See https://events.ccc.de/2018/09/11/35c3-call-for-participation-and-submission-
 * Language: `English`
 * Logo: `N/A`
 
-Event classifiers: `Resilience` `(and Security?)`
+Event classifiers:
+- Resilience: 80%
+- Security: 20%
+- Entertainment: 35%
+- Novelty: 20%
 
 # Summary
 
@@ -24,24 +45,23 @@ they are extremely poorly documented and rarely used in practice. In this talk,
 I will detail Xen's VMI APIs in full, as well as introducing `xendbg`, a
 feature-complete reference implementation of a Xen VMI debugger.
 
-# Long description 
+# Long description
 
 The Xen hypervisor is a gold standard for virtualization, employed across a
-wide variety of major products and platforms, from AWS on the cloud to
-QubesOS on the desktop. Researchers have long been interested in the security
-standing of Xen itself, but this is not by any means the only facet of
-hypervisor security worthy of attention. With so many critical applications now
-running on top of Xen, it is imperative that developers _also_ be able to test
-the security and correctness of their applications when run as Xen guests.
+wide variety of major products and platforms, from AWS on the cloud to QubesOS
+on the desktop. Researchers have long been interested in the security standing
+of Xen itself, but this is not by any means the only facet of hypervisor
+security worthy of attention. With so many critical applications now running on
+top of Xen, it is imperative that developers _also_ be able to test the
+security and correctness of their applications when run as Xen guests.
 
 The traditional method of debugging Xen guests is to run a debugger inside the
 guest itself, but doing so has several limitations. Firstly, this only allows
 inspecting the guest as it sees itself, not as the hypervisor can see it; any
-truly comprehensive review of a hypervisor guest requires examining it
-from both sides. Secondly, more exotic types of guest (e.g. unikernels,
-which run only a single process in kernel space) possess no debugging
-facilities of their own, and are practically undebuggable without external
-introspection.
+truly comprehensive review of a hypervisor guest requires examining it from
+both sides. Secondly, more exotic types of guest (e.g. unikernels, which run
+only a single process in kernel space) possess no debugging facilities of their
+own, and are practically undebuggable without external introspection.
 
 While Xen does provide introspection and debugging functionality, the APIs are
 lacking and difficult to use. Hardware virtualized (HVM) guests support a
@@ -67,7 +87,7 @@ misconfigurations.
 By introducing Xen's VMI APIs in detail, as well as providing a
 feature-complete reference implementation in `xendbg`, I hope to enable the
 development of additional tools for Xen that will help to improve the security
-and correctness of applications targeting the platform.
+and correctness of applications targeting the platform. 
 
 # Links
 

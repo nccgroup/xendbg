@@ -32,6 +32,8 @@ namespace xd::xen {
     Port bind_interdomain(const Domain &domain, Port remote_port);
     void unbind(Port port);
 
+    void notify(Port port);
+
   private:
     std::unique_ptr<xenevtchn_handle, decltype(&xenevtchn_close)> _xenevtchn;
 

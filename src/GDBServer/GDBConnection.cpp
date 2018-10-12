@@ -91,7 +91,8 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
 }
 
 void GDBConnection::stop() {
-  _tcp->stop();
+  if (!_tcp->closing())
+    _tcp->stop();
 }
 
 void GDBConnection::send(const rsp::GDBResponse &packet)

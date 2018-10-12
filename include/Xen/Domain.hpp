@@ -12,6 +12,7 @@
 #include "Common.hpp"
 #include "PagePermissions.hpp"
 #include "PageTableEntry.hpp"
+#include "PrivCmd.hpp"
 #include "XenEventChannel.hpp"
 #include "XenCtrl.hpp"
 #include "XenForeignMemory.hpp"
@@ -23,7 +24,7 @@ namespace xd::xen {
 
   class Domain {
   public:
-    Domain(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+    Domain(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
         XenForeignMemory &xenforeignmemory, XenStore &xenstore);
     virtual ~Domain() = default;
 
@@ -40,6 +41,9 @@ namespace xd::xen {
     DomInfo get_info() const;
     int get_word_size() const;
 
+    void set_debugging(bool enabled, VCPU_ID vcpu_id = 0) const;
+
+    Address translate_foreign_address(Address vaddr, VCPU_ID vcpu_id = 0) const;
     MemInfo map_meminfo() const;
     std::optional<PageTableEntry> get_page_table_entry(Address address) const;
     virtual std::optional<PagePermissions> get_page_permissions(Address address) const = 0;
@@ -47,20 +51,37 @@ namespace xd::xen {
     virtual xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const = 0;
     virtual void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const = 0;
 
+    xen_domctl_gdbsx_domstatus get_domstatus() const {
+      auto u = hypercall_domctl(XEN_DOMCTL_gdbsx_domstatus);
+      return u.gdbsx_domstatus;
+    };
+
+    void pause_vcpu(VCPU_ID vcpu_id) const {
+      pause_unpause_vcpu(XEN_DOMCTL_gdbsx_pausevcpu, vcpu_id);
+    };
+
+    void unpause_vcpu(VCPU_ID vcpu_id) const {
+      pause_unpause_vcpu(XEN_DOMCTL_gdbsx_unpausevcpu, vcpu_id);
+    };
+
+    void pause_vcpus_except(VCPU_ID vcpu_id) const {
+      pause_unpause_vcpus_except(XEN_DOMCTL_gdbsx_pausevcpu, vcpu_id);
+    };
+
+    void unpause_vcpus_except(VCPU_ID vcpu_id) const {
+      pause_unpause_vcpus_except(XEN_DOMCTL_gdbsx_unpausevcpu, vcpu_id);
+    };
+
     void pause() const;
     void unpause() const;
     void shutdown(int reason) const;
     void destroy() const;
 
-    xen_pfn_t pfn_to_mfn_pv(xen_pfn_t pfn) const;
     xen_pfn_t get_max_gpfn() const;
 
-    /*
-    template<typename InitFn_t, typename CleanupFn_t>
-    void hypercall_domctl(uint32_t command, InitFn_t init_domctl = {}, CleanupFn_t cleanup = {}) const {
-      _xen->get_privcmd().hypercall_domctl(*this, command, init_domctl, cleanup);
+    PrivCmd::DomctlUnion hypercall_domctl(uint32_t command, PrivCmd::InitFn init = {}, PrivCmd::CleanupFn cleanup = {}) const {
+      return _privcmd.hypercall_domctl(*this, command, std::move(init), std::move(cleanup));
     }
-    */
 
     template <typename Memory_t>
     XenForeignMemory::MappedMemory<Memory_t> map_memory(Address address, size_t size, int prot) const {
@@ -76,14 +97,19 @@ namespace xd::xen {
     void reboot() const;
     void read_memory(Address address, void *data, size_t size) const;
     void write_memory(Address address, void *data, size_t size) const;
-    */
+     */
 
   protected:
     DomID _domid;
+    PrivCmd &_privcmd;
     XenEventChannel &_xenevtchn;
     XenCtrl &_xenctrl;
     XenForeignMemory &_xenforeignmemory;
     XenStore &_xenstore;
+
+  private:
+    void pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id) const;
+    void pause_unpause_vcpus_except(uint32_t hypercall, VCPU_ID vcpu_id) const;
   };
 
 }

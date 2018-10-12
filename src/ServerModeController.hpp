@@ -38,6 +38,7 @@ namespace xd {
     void run_multi();
 
   private:
+    xen::PrivCmd _privcmd;
     xen::XenEventChannel _xenevtchn;
     xen::XenCtrl _xenctrl;
     xen::XenDeviceModel _xendevicemodel;

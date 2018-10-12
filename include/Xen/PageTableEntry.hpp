@@ -31,6 +31,7 @@ namespace xd::xen {
     operator bool() const { return is_present(); };
 
     Address get_mfn() const;
+    uint64_t get_raw() const { return _pte; }
 
     bool is_present() const;
     bool is_rw() const;

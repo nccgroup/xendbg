@@ -12,6 +12,8 @@ using xd::xen::DomainPV;
 using xd::xen::PagePermissions;
 using xd::util::overloaded;
 
+#define X86_EFLAGS_TF 0x00000100
+
 #define GET_PV(_regs, _pv, _reg) \
   _regs.get<_reg>() = _pv._reg;
 #define GET_PV_USER(_regs, _pv, _reg) \
@@ -21,9 +23,9 @@ using xd::util::overloaded;
 #define SET_PV_USER(_regs, _pv, _reg) \
   _pv.user_regs._reg = _regs.get<_reg>();
 
-DomainPV::DomainPV(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+DomainPV::DomainPV(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
-  : Domain(domid, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
+  : Domain(domid, privcmd, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
 {
 }
 
@@ -88,6 +90,28 @@ RegistersX86Any DomainPV::get_cpu_context(VCPU_ID vcpu_id) const {
         "Unsupported word size " + std::to_string(word_size) + " for domain " +
         std::to_string(_domid) + "!");
   }
+}
+
+void DomainPV::set_trap_flag(bool enable, VCPU_ID vcpu_id) const {
+  auto context_any = get_cpu_context(vcpu_id);
+  std::visit(util::overloaded {
+    [enable](reg::x86_64::RegistersX86_64 &context) {
+      auto &flags = context.get<reg::x86_64::rflags>();
+      if (enable)
+        flags |= X86_EFLAGS_TF;
+      else
+        flags &= ~X86_EFLAGS_TF;
+    },
+    [enable](reg::x86_32::RegistersX86_32 &context) {
+      auto &flags = context.get<reg::x86_32::eflags>();
+      if (enable)
+        flags |= X86_EFLAGS_TF;
+      else
+        flags &= ~X86_EFLAGS_TF;
+    }
+  }, context_any);
+
+  set_cpu_context(context_any, vcpu_id);
 }
 
 RegistersX86_64 DomainPV::convert_regs_from_pv64(const vcpu_guest_context_any_t &pv) {

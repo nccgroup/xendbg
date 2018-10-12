@@ -55,7 +55,7 @@ namespace xd::dbg {
     virtual ~Debugger() = default;
 
     virtual const xen::Domain &get_domain() = 0;
-    virtual size_t get_vcpu_id() = 0;
+    virtual xen::VCPU_ID get_vcpu_id() = 0;
 
     virtual void attach() = 0;
     virtual void detach() = 0;
@@ -101,23 +101,32 @@ namespace xd::dbg {
 
     ~DebuggerImpl() override {
       cs_close(&_capstone);
+
+      if (_is_attached)
+        this->detach();
     }
 
     const xen::Domain &get_domain() override { return _domain; };
-    size_t get_vcpu_id() override { return _vcpu_id; }
+    xen::VCPU_ID get_vcpu_id() override { return _vcpu_id; }
 
     void attach() override {
+      _is_attached = true;
+      _domain.template set_debugging(true);
       _domain.template pause();
     };
 
     void detach() override {
       cleanup();
       _domain.template unpause();
+      _domain.template set_debugging(false);
+      _is_attached = false;
     }
 
     void cleanup() override {
-      for (const auto &bp : _breakpoints)
+      for (const auto &bp : _breakpoints) {
+        std::cout << bp.first << std::endl;
         remove_breakpoint(bp.first);
+      }
     }
 
     void insert_breakpoint(xen::Address address) override {
@@ -169,9 +178,13 @@ namespace xd::dbg {
     {
         const auto mem_handle = _domain.template map_memory<char>(
             address, length, PROT_READ);
-
         const auto mem_masked = (unsigned char*)malloc(length);
         memcpy(mem_masked, mem_handle.get(), length);
+
+        /*
+        unsigned char *mem_masked = (unsigned char*)malloc(length);
+        _domain.read_memory(address, mem_masked, length);
+        */
 
         const auto address_end = address + length;
         for (const auto [bp_address, bp_orig_bytes] : _breakpoints) {
@@ -206,6 +219,15 @@ namespace xd::dbg {
           bp_addresses.push_back(bp_address);
         }
       }
+
+      /*
+      unsigned char *mem = (unsigned char*)malloc(length);
+      _domain.read_memory(address, mem, length);
+
+      const auto mem_orig = mem + (length - length_orig);
+      memcpy((void*)mem_orig, data, length_orig);
+      _domain.write_memory(address + (length - length_orig), mem, length);
+      */
 
       const auto mem_handle = _domain.template map_memory<char>(address, length, PROT_WRITE);
       const auto mem_orig = (char*)mem_handle.get() + (length - length_orig);
@@ -317,9 +339,12 @@ namespace xd::dbg {
     Domain_t _domain;
     BreakpointMap _breakpoints;
 
+    void set_vcpu_id(xen::VCPU_ID vcpu_id) { _vcpu_id = vcpu_id; };
+
   private:
     csh _capstone;
     xen::VCPU_ID _vcpu_id;
+    bool _is_attached;
   };
 
 }

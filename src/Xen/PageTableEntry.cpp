@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <sys/mman.h>
 #include <variant>
 
@@ -42,7 +44,9 @@ PageTableEntry PageTableEntry::read_level(const Domain &domain,
   const auto table = domain.map_memory_by_mfn<RawPTE>(
       mfn, 0, XC_PAGE_SIZE, PROT_READ);
   const auto offset = get_pte_offset(virtual_address, level);
+  std::cout << std::hex << "Offset: " << offset << std::endl;
   const auto pte = (table.get())[offset];
+  std::cout << "PTE: " << pte << std::endl;
   return PageTableEntry(pte);
 }
 

@@ -7,8 +7,10 @@
 
 #include <optional>
 
+#include <spdlog/spdlog.h>
 #include <uvw.hpp>
 
+#include <Globals.hpp>
 #include <Debugger/DebuggerHVM.hpp>
 #include <Debugger/DebuggerPV.hpp>
 #include <GDBServer/GDBServer.hpp>
@@ -54,6 +56,7 @@ namespace xd {
             try {
               std::visit(*_request_handler, packet);
             } catch (const xen::XenException &e) {
+              spdlog::get(LOGNAME_CONSOLE)->error("Error {0:d} ({1:s}): {2:s}", e.get_err(), std::strerror(e.get_err()), e.what());
               connection.send_error(e.get_err(), e.what());
             }
           }, [this]() {
@@ -62,6 +65,7 @@ namespace xd {
           }, on_error);
         }, on_error);
     }
+
   private:
     std::shared_ptr<Debugger_t> _debugger;
     std::shared_ptr<gdb::GDBServer> _gdb_server;

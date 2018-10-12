@@ -11,13 +11,15 @@ namespace xd::xen {
 
   class DomainPV : public Domain {
   public:
-    DomainPV(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+    DomainPV(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
         XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
 
     std::optional<PagePermissions> get_page_permissions(Address address) const override;
 
     reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const override;
     void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const override;
+
+    void set_trap_flag(bool enable, VCPU_ID vcpu_id = 0) const;
 
   private:
     vcpu_guest_context_any_t get_cpu_context_raw(VCPU_ID vcpu_id) const;

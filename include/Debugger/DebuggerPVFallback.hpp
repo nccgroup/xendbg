@@ -16,11 +16,11 @@
 
 #include "Debugger.hpp"
 
-#define X86_INT3 0xCC
+#define X86_INFINITE_LOOP 0xFEEB
 
 namespace xd::dbg {
 
-  class DebuggerPV : public DebuggerImpl<xen::DomainPV, uint8_t, X86_INT3> {
+  class DebuggerPV : public DebuggerImpl<xen::DomainPV, uint16_t, X86_INFINITE_LOOP> {
   public:
     DebuggerPV(uvw::Loop &loop, xen::DomainPV domain);
     ~DebuggerPV() = default;
@@ -38,13 +38,13 @@ namespace xd::dbg {
     std::shared_ptr<uvw::TimerHandle> _timer;
     OnStopFn _on_stop;
     int _last_stop_signal;
-    xen::VCPU_ID _last_single_step_vcpu_id;
-    std::optional<xen::Address> _last_single_step_breakpoint_addr;
-    bool _is_single_stepping;
 
+    std::optional<xen::Address> check_breakpoint_hit();
+
+    void single_step_internal();
     void on_stop_internal(int signal);
 
-    using Base = DebuggerImpl<xen::DomainPV, uint8_t, X86_INT3>;
+    using Base = DebuggerImpl<xen::DomainPV, uint16_t, X86_INFINITE_LOOP>;
   };
 
 }

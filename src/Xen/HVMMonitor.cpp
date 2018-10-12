@@ -49,8 +49,16 @@ void HVMMonitor::start() {
 }
 
 void HVMMonitor::stop() {
+  _domain.monitor_singlestep(false);
+  _domain.monitor_software_breakpoint(false);
+  _domain.monitor_debug_exceptions(false, false);
+  _domain.monitor_cpuid(false);
+  _domain.monitor_descriptor_access(false);
+  _domain.monitor_privileged_call(false);
   _domain.disable_monitor();
-  _poll->stop();
+
+  if (!_poll->closing())
+    _poll->stop();
 }
 
 vm_event_request_t HVMMonitor::get_request() {
@@ -88,6 +96,8 @@ void HVMMonitor::read_events() {
   while (RING_HAS_UNCONSUMED_REQUESTS(&_back_ring)) {
     auto req = get_request();
 
+    std::cout << "got req" << std::endl;
+
     vm_event_response_t rsp;
     memset(&rsp, 0, sizeof(rsp));
     rsp.version = VM_EVENT_INTERFACE_VERSION;
@@ -98,10 +108,13 @@ void HVMMonitor::read_events() {
     if (req.version != VM_EVENT_INTERFACE_VERSION)
       continue; // TODO: error
 
+
     switch (req.reason) {
       case VM_EVENT_REASON_MEM_ACCESS:
+        std::cout << "mem access" << std::endl;
         break;
       case VM_EVENT_REASON_SOFTWARE_BREAKPOINT:
+        std::cout << "SW BP" << std::endl;
         _xendevicemodel.inject_event(
             _domain, req.vcpu_id, X86_TRAP_INT3,
             req.u.software_breakpoint.type, -1,
@@ -110,21 +123,28 @@ void HVMMonitor::read_events() {
           _on_software_breakpoint(req);
         break;
       case VM_EVENT_REASON_PRIVILEGED_CALL:
+        std::cout << "priv call" << std::endl;
         break;
       case VM_EVENT_REASON_SINGLESTEP:
+        std::cout << "SINGLE STEP" << std::endl;
         if (_on_singlestep)
           _on_singlestep(req);
         break;
       case VM_EVENT_REASON_DEBUG_EXCEPTION:
+        std::cout << "debug exception" << std::endl;
         break;
       case VM_EVENT_REASON_CPUID:
+        std::cout << "cpu id" << std::endl;
         break;
       case VM_EVENT_REASON_DESCRIPTOR_ACCESS:
+        std::cout << "descriptor access" << std::endl;
         break;
     }
 
     put_response(rsp);
   }
+
+  _xenevtchn.notify(_port);
 }
 
 void HVMMonitor::unmap_ring_page(void *ring_page) {

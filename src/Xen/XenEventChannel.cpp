@@ -45,3 +45,7 @@ void XenEventChannel::unbind(Port port) {
   if (ret < 0)
     throw XenException("Failed to unbind!", errno);
 }
+
+void XenEventChannel::notify(Port port) {
+  xenevtchn_notify(_xenevtchn.get(), port);
+}

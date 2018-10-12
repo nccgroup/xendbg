@@ -22,9 +22,9 @@ using xd::xen::XenEventChannel;
 #define SET_HVM2(_regs, _hvm, _reg, _hvm_reg) \
   _hvm._hvm_reg = _regs.get<_reg>();
 
-DomainHVM::DomainHVM(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+DomainHVM::DomainHVM(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
-  : Domain(domid, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
+  : Domain(domid, privcmd, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
 {
 }
 
@@ -53,21 +53,6 @@ void DomainHVM::set_cpu_context(RegistersX86Any regs, VCPU_ID vcpu_id) const {
   }
 
   set_cpu_context_raw(new_context, vcpu_id);
-}
-
-void DomainHVM::set_debugging(bool enable, VCPU_ID vcpu_id) const {
-  if (vcpu_id > get_info().max_vcpu_id)
-    throw XenException(
-        "Tried to " + std::string(enable ? "enable" : "disable") +
-        " debugging for nonexistent VCPU " + std::to_string(vcpu_id) +
-        " on domain " + std::to_string(_domid));
-
-  int err;
-  if ((err = xc_domain_setdebugging(_xenctrl.get(), _domid, (unsigned int)enable))) {
-    throw XenException(
-        "Failed to enable debugging on domain " +
-        std::to_string(_domid), -err);
-  }
 }
 
 void DomainHVM::set_single_step(bool enable, VCPU_ID vcpu_id) const {

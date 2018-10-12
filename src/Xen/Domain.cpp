@@ -7,6 +7,7 @@
 #include <Registers/RegistersX86.hpp>
 
 using xd::reg::RegistersX86Any;
+using xd::xen::Address;
 using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::MemInfo;
@@ -23,9 +24,24 @@ DomInfo xd::xen::get_domain_info(XenCtrl &xenctrl, DomID domid) {
   return dominfo;
 }
 
-Domain::Domain(DomID domid, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+void Domain::set_debugging(bool enable, VCPU_ID vcpu_id) const {
+  if (vcpu_id > get_info().max_vcpu_id)
+    throw XenException(
+        "Tried to " + std::string(enable ? "enable" : "disable") +
+        " debugging for nonexistent VCPU " + std::to_string(vcpu_id) +
+        " on domain " + std::to_string(_domid));
+
+  int err;
+  if ((err = xc_domain_setdebugging(_xenctrl.get(), _domid, (unsigned int)enable))) {
+    throw XenException(
+        "Failed to enable debugging on domain " +
+        std::to_string(_domid), -err);
+  }
+}
+
+Domain::Domain(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforeignmemory, XenStore &xenstore)
-    : _domid(domid), _xenevtchn(xenevtchn), _xenctrl(xenctrl),
+    : _domid(domid), _privcmd(privcmd), _xenevtchn(xenevtchn), _xenctrl(xenctrl),
       _xenforeignmemory(xenforeignmemory), _xenstore(xenstore)
 {
   get_info();
@@ -58,6 +74,10 @@ int Domain::get_word_size() const {
   return word_size;
 }
 
+Address Domain::translate_foreign_address(Address vaddr, VCPU_ID vcpu_id) const {
+  return xc_translate_foreign_address(_xenctrl.get(), _domid, vcpu_id, vaddr);
+}
+
 MemInfo Domain::map_meminfo() const {
   auto xenctrl_ptr = _xenctrl.get();
   auto deleter = [xenctrl_ptr](xc_domain_meminfo *p) {
@@ -87,11 +107,19 @@ std::optional<xd::xen::PageTableEntry> Domain::get_page_table_entry(Address addr
       return regs.template get<reg::x86::cr3>();
     }}, get_cpu_context());
 
+  std::cout << "vaddr: " << address << std::endl;
+  std::cout << "max gpfn: " << get_max_gpfn() << std::endl;
+  std::cout << "CR3:   " << std::hex << cr3 << std::endl;
+
+  std::cout << "L4 base MFN: " << (cr3 >> XC_PAGE_SHIFT) << std::endl;
+
   const auto l4 = PageTableEntry::read_level(*this, address, cr3 >> XC_PAGE_SHIFT,
       PageTableEntry::Level::L4);
 
   if (!(l4.is_present()))
     return std::nullopt;
+
+  std::cout << "L3 base MFN: " << l4.get_mfn() << std::endl;
 
   const auto l3 = PageTableEntry::read_level(*this, address, l4.get_mfn(),
       PageTableEntry::Level::L3);
@@ -99,14 +127,40 @@ std::optional<xd::xen::PageTableEntry> Domain::get_page_table_entry(Address addr
   if (!(l3.is_present()))
     return std::nullopt;
 
+  std::cout << "L2 base MFN: " << l3.get_mfn() << std::endl;
+
   const auto l2 = PageTableEntry::read_level(*this, address, l3.get_mfn(),
       PageTableEntry::Level::L2);
 
   if (!(l2.is_present()))
     return std::nullopt;
 
-  return PageTableEntry::read_level(*this, address, l2.get_mfn(),
+  std::cout << "L1 base MFN: " << l2.get_mfn() << std::endl;
+
+  const auto l1 = PageTableEntry::read_level(*this, address, l2.get_mfn(),
       PageTableEntry::Level::L1);
+
+  std::cout << "MFN for vaddr: " << l1.get_mfn() << std::endl;
+
+  return l1;
+}
+
+void Domain::pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id) const {
+  hypercall_domctl(hypercall,
+    [vcpu_id](auto &u) {
+      auto &op = u.gdbsx_pauseunp_vcpu;
+      op.vcpu = vcpu_id;
+    });
+}
+
+void Domain::pause_unpause_vcpus_except(uint32_t hypercall, VCPU_ID vcpu_id) const {
+  auto max_vcpu_id = get_info().max_vcpu_id;
+
+  for (VCPU_ID id = 0; id <= max_vcpu_id; ++id) {
+    if (id == vcpu_id)
+      continue;
+    pause_unpause_vcpu(hypercall, id);
+  }
 }
 
 void Domain::pause() const {
@@ -147,22 +201,6 @@ void Domain::destroy() const {
     throw XenException(
         "Failed to destroy domain " + std::to_string(_domid), -err);}
 
-// See xen/tools/libxc/xc_offline_page.c:389
-xen_pfn_t Domain::pfn_to_mfn_pv(xen_pfn_t pfn) const {
-  const auto meminfo = map_meminfo();
-  const auto word_size = get_word_size();
-
-  if (pfn > meminfo->p2m_size)
-    throw XenException("Invalid PFN!");
-
-  if (word_size == sizeof(uint64_t)) {
-    return ((uint64_t*)meminfo->p2m_table)[pfn];
-  } else {
-    uint32_t mfn = ((uint32_t*)meminfo->p2m_table)[pfn];
-    return (mfn == ~0U) ? INVALID_MFN : mfn;
-  }
-}
-
 xen_pfn_t Domain::get_max_gpfn() const {
   xen_pfn_t max_gpfn;
   int err;
@@ -180,38 +218,38 @@ void Domain::reboot() const {
   libxl_domain_reboot(ctx, _domid);
   libxl_ctx_free(ctx);
 }
-*/
 
-/*
 void Domain::read_memory(Address address, void *data, size_t size) const {
-  hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio, [address, data, size](auto u) {
-    auto& memio = u->gdbsx_guest_memio;
-    memio.pgd3val = 0;
-    memio.gva = address;
-    memio.uva = (uint64_aligned_t)((unsigned long)data);
-    memio.len = size;
-    memio.gwr = 0;
+  hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio,
+    [address, data, size](auto u) {
+      auto& memio = u->gdbsx_guest_memio;
+      memio.pgd3val = 0;
+      memio.gva = address;
+      memio.uva = (uint64_aligned_t)((unsigned long)data);
+      memio.len = size;
+      memio.gwr = 0;
 
-    if (mlock(data, size))
-      throw XenException("mlock failed!", errno);
-  }, [data, size]() {
-    munlock(data, size);
-  });
+      if (mlock(data, size))
+        throw XenException("mlock failed!", errno);
+    }, [data, size]() {
+      munlock(data, size);
+    });
 }
 
 void Domain::write_memory(Address address, void *data, size_t size) const {
-  hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio, [address, data, size](auto u) {
-    auto& memio = u->gdbsx_guest_memio;
-    memio.pgd3val = 0;
-    memio.gva = address;
-    memio.uva = (uint64_aligned_t)((unsigned long)data);
-    memio.len = size;
-    memio.gwr = 1;
+  hypercall_domctl(XEN_DOMCTL_gdbsx_guestmemio,
+    [address, data, size](auto u) {
+      auto& memio = u->gdbsx_guest_memio;
+      memio.pgd3val = 0;
+      memio.gva = address;
+      memio.uva = (uint64_aligned_t)((unsigned long)data);
+      memio.len = size;
+      memio.gwr = 1;
 
-    if (mlock(data, size))
-      throw XenException("mlock failed!", errno);
-  }, [data, size]() {
-    munlock(data, size);
-  });
+      if (mlock(data, size))
+        throw XenException("mlock failed!", errno);
+    }, [data, size]() {
+      munlock(data, size);
+    });
 }
 */

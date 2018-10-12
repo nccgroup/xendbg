@@ -90,10 +90,13 @@ namespace xd::reg {
 
     Register()
       : _Register_impl<Value_t, sizeof(Value_t)>(_value)
-    {};
+    {
+    };
+
     Register(Value_t value)
       : _value(value), _Register_impl<Value_t, sizeof(Value_t)>(_value)
-    {};
+    {
+    };
 
     void clear() { _value = 0; };
 
@@ -104,6 +107,26 @@ namespace xd::reg {
 
     operator Value_t() const {
       return (Value_t)_value;
+    }
+
+    Register &operator-=(Value_t value) {
+      _value -= value;
+      return *this;
+    }
+
+    Register &operator+=(Value_t value) {
+      _value += value;
+      return *this;
+    }
+
+    Register &operator|=(Value_t value) {
+      _value |= value;
+      return *this;
+    }
+
+    Register &operator&=(Value_t value) {
+      _value &= value;
+      return *this;
     }
 
   private:

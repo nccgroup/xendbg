@@ -24,7 +24,7 @@ ServerModeController::ServerModeController(uint16_t base_port)
 }
 
 void ServerModeController::run_single(const std::string &name) {
-  const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+  const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   auto found = std::find_if(domains.begin(), domains.end(), [&](const auto &domain) {
     return std::visit(util::overloaded {
@@ -52,7 +52,7 @@ void ServerModeController::run_single(xen::DomID domid) {
 
   _poll->start(uvw::PollHandle::Event::READABLE);
 
-  auto domain = xen::init_domain(domid, _xenevtchn, _xenctrl,
+  auto domain = xen::init_domain(domid, _privcmd, _xenevtchn, _xenctrl,
       _xenforeignmemory, _xenstore);
 
   add_instance(std::move(domain));
@@ -80,20 +80,21 @@ void ServerModeController::run_multi() {
 }
 
 void ServerModeController::run() {
-  _signal->once<uvw::SignalEvent>([](const auto &event, auto &handle) {
-    handle.loop().stop();
+  _signal->once<uvw::SignalEvent>([this](const auto &event, auto &handle) {
+    handle.loop().walk([](auto &handle) {
+      handle.close();
+    });
+    handle.loop().run();
+    _instances.clear();
   });
   
   _signal->start(SIGINT);
 
   _loop->run();
-  _loop->walk([](auto &handle) {
-    handle.close();
-  });
 }
 
 size_t ServerModeController::add_new_instances() {
-  const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+  const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   size_t num_added = 0;
   for (const auto &domain_any : domains) {
@@ -108,7 +109,7 @@ size_t ServerModeController::add_new_instances() {
 }
 
 size_t ServerModeController::prune_instances() {
-  const auto domains = get_domains(_xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+  const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   size_t num_removed = 0;
   auto it = _instances.begin();

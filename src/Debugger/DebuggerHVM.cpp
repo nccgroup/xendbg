@@ -35,6 +35,7 @@ void DebuggerHVM::detach() {
 }
 
 void DebuggerHVM::continue_() {
+  single_step(); // TODO
   _domain.unpause();
 }
 
@@ -76,6 +77,7 @@ void DebuggerHVM::on_stop(OnStopFn on_stop) {
     _domain.set_single_step(false, vcpu);
     _domain.set_debugging(false, vcpu);
     set_vcpu_id(vcpu);
+
     on_stop(SIGTRAP); // TODO
   });
 }

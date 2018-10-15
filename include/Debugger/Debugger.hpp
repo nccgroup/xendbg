@@ -111,14 +111,12 @@ namespace xd::dbg {
 
     void attach() override {
       _is_attached = true;
-      _domain.template set_debugging(true);
       _domain.template pause();
     };
 
     void detach() override {
       cleanup();
       _domain.template unpause();
-      _domain.template set_debugging(false);
       _is_attached = false;
     }
 

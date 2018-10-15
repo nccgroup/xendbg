@@ -55,13 +55,15 @@ namespace xd::xen {
         pages[i] = base_mfn + i;
       }
 
-      char *mem_page_base = (char*)xenforeignmemory_map(_xen_foreign_memory.get(),
-          domain.get_domid(), prot, num_pages, pages, errors);
+      char *mem_page_base =
+        (char*)xenforeignmemory_map(_xen_foreign_memory.get(),
+            domain.get_domid(), prot, num_pages, pages, errors);
       Memory_t *mem = (Memory_t*)(mem_page_base + offset);
 
       for (size_t i = 0; i < num_pages; ++i) {
         if (errors[i])
-          throw XenException("Failed to map page " + std::to_string(i+1) + " of " +
+          throw XenException("Failed to map page " +
+              std::to_string(i+1) + " of " +
               std::to_string(num_pages), -errors[i]);
       }
 

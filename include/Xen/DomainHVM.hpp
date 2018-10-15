@@ -11,8 +11,13 @@ namespace xd::xen {
 
   class DomainHVM : public Domain {
   public:
-    DomainHVM(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
-        XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
+    DomainHVM(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn,
+        XenCtrl &xenctrl, XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
+
+    struct MonitorCapabilities {
+      bool mov_to_msr, singlestep, software_breakpoint, descriptor_access,
+           guest_request, debug_exception, cpuid_privileged_call;
+    };
 
     std::optional<PagePermissions> get_page_permissions(Address address) const override;
 
@@ -24,12 +29,15 @@ namespace xd::xen {
     XenEventChannel::RingPageAndPort enable_monitor() const;
     void disable_monitor() const;
 
+    MonitorCapabilities monitor_get_capabilities();
+    void monitor_mov_to_msr(uint32_t msr, bool enable);
     void monitor_singlestep(bool enable);
     void monitor_software_breakpoint(bool enable);
     void monitor_debug_exceptions(bool enable, bool sync);
     void monitor_cpuid(bool enable);
     void monitor_descriptor_access(bool enable);
     void monitor_privileged_call(bool enable);
+    void monitor_guest_request(bool enable, bool sync);
 
   private:
     struct hvm_hw_cpu get_cpu_context_raw(VCPU_ID vcpu_id) const;

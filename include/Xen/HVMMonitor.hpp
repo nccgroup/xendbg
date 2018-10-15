@@ -24,12 +24,19 @@ namespace xd::xen {
   public:
     using OnEventFn = std::function<void(vm_event_request_t)>;
 
+    struct Capabilities {
+      bool mov_to_msr, singlestep, software_breakpoint, descriptor_access,
+           guest_request, _debug_exceptions, cpuid_privileged_call;
+    };
+
     HVMMonitor(xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn,
         uvw::Loop &loop, DomainHVM &domain);
     ~HVMMonitor();
 
     void start();
     void stop();
+
+    Capabilities get_capabilities();
 
     void on_software_breakpoint(OnEventFn callback) {
       _on_software_breakpoint = callback;

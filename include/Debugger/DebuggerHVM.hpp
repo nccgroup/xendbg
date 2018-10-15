@@ -37,6 +37,8 @@ namespace xd::dbg {
 
   private:
     std::shared_ptr<xen::HVMMonitor> _monitor;
+    xen::VCPU_ID _last_single_step_vcpu_id;
+    std::optional<xen::Address> _last_single_step_breakpoint_addr;
 
     using Base = DebuggerImpl<xen::DomainHVM, uint8_t, X86_INT3>;
   };

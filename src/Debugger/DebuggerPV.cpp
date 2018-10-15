@@ -27,12 +27,14 @@ DebuggerPV::DebuggerPV(uvw::Loop &loop, DomainPV domain)
 
 void DebuggerPV::attach() {
   Base::attach();
+  _domain.set_debugging(true);
   _timer->data(shared_from_this());
 }
 
 void DebuggerPV::detach() {
   if (!_timer->closing())
     _timer->stop();
+  _domain.set_debugging(false);
   Base::detach();
 }
 

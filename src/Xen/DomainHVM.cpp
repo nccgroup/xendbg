@@ -4,6 +4,7 @@
 
 #include <Xen/DomainHVM.hpp>
 #include <Xen/BridgeHeaders/hvm_save.h>
+#include <Xen/BridgeHeaders/vm_event.h>
 
 using xd::reg::RegistersX86Any;
 using xd::reg::x86_32::RegistersX86_32;
@@ -101,6 +102,25 @@ void DomainHVM::disable_monitor() const {
   xc_monitor_disable(_xenctrl.get(), _domid);
 }
 
+DomainHVM::MonitorCapabilities DomainHVM::monitor_get_capabilities() {
+  uint32_t capabilities;
+  xc_monitor_get_capabilities(_xenctrl.get(), _domid, &capabilities);
+
+  return MonitorCapabilities {
+    .mov_to_msr = (bool) (capabilities & VM_EVENT_REASON_MOV_TO_MSR),
+    .singlestep = (bool) (capabilities & VM_EVENT_REASON_SINGLESTEP),
+    .software_breakpoint = (bool) (capabilities & VM_EVENT_REASON_SOFTWARE_BREAKPOINT),
+    .descriptor_access = (bool) (capabilities & VM_EVENT_REASON_DESCRIPTOR_ACCESS),
+    .guest_request = (bool) (capabilities & VM_EVENT_REASON_GUEST_REQUEST),
+    .debug_exception = (bool) (capabilities & VM_EVENT_REASON_DEBUG_EXCEPTION),
+    .cpuid_privileged_call = (bool) (capabilities & VM_EVENT_REASON_PRIVILEGED_CALL),
+  };
+}
+
+void DomainHVM::monitor_mov_to_msr(uint32_t msr, bool enable) {
+  xc_monitor_mov_to_msr(_xenctrl.get(), _domid, msr, enable);
+}
+
 void DomainHVM::monitor_singlestep(bool enable) {
   xc_monitor_singlestep(_xenctrl.get(), _domid, enable);
 }
@@ -123,6 +143,10 @@ void DomainHVM::monitor_descriptor_access(bool enable) {
 
 void DomainHVM::monitor_privileged_call(bool enable) {
   xc_monitor_privileged_call(_xenctrl.get(), _domid, enable);
+}
+
+void DomainHVM::monitor_guest_request(bool enable, bool sync) {
+  xc_monitor_guest_request(_xenctrl.get(), _domid, enable, sync);
 }
 
 struct hvm_hw_cpu DomainHVM::get_cpu_context_raw(VCPU_ID vcpu_id) const {

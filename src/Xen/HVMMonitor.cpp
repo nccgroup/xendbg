@@ -33,16 +33,22 @@ void HVMMonitor::start() {
 
   _domain.monitor_singlestep(true);
   _domain.monitor_software_breakpoint(true);
-  _domain.monitor_debug_exceptions(true, true);
-  _domain.monitor_cpuid(true);
-  _domain.monitor_descriptor_access(true);
-  _domain.monitor_privileged_call(true);
+  //_domain.monitor_debug_exceptions(true, true);
+  //_domain.monitor_cpuid(true);
+  //_domain.monitor_descriptor_access(true);
+  //_domain.monitor_privileged_call(true);
 
   // TODO: this capture fails if moved
+  const auto l_port = _port;
   _poll->data(shared_from_this());
-  _poll->on<uvw::PollEvent>([](const auto &event, auto &handle) {
+  _poll->on<uvw::PollEvent>([l_port](const auto &event, auto &handle) {
       auto self = handle.template data<HVMMonitor>();
-      self->read_events();
+      const auto port = self->_xenevtchn.get_next_pending_channel();
+      if (port == l_port)
+        self->read_events();
+      else
+        std::cout << "port != l_port" << std::endl;
+      self->_xenevtchn.unmask_channel(port);
   });
 
   _poll->start(uvw::PollHandle::Event::READABLE);
@@ -51,10 +57,10 @@ void HVMMonitor::start() {
 void HVMMonitor::stop() {
   _domain.monitor_singlestep(false);
   _domain.monitor_software_breakpoint(false);
-  _domain.monitor_debug_exceptions(false, false);
-  _domain.monitor_cpuid(false);
-  _domain.monitor_descriptor_access(false);
-  _domain.monitor_privileged_call(false);
+  //_domain.monitor_debug_exceptions(false, false);
+  //_domain.monitor_cpuid(false);
+  //_domain.monitor_descriptor_access(false);
+  //_domain.monitor_privileged_call(false);
   _domain.disable_monitor();
 
   if (!_poll->closing())
@@ -96,8 +102,6 @@ void HVMMonitor::read_events() {
   while (RING_HAS_UNCONSUMED_REQUESTS(&_back_ring)) {
     auto req = get_request();
 
-    std::cout << "got req" << std::endl;
-
     vm_event_response_t rsp;
     memset(&rsp, 0, sizeof(rsp));
     rsp.version = VM_EVENT_INTERFACE_VERSION;
@@ -108,36 +112,42 @@ void HVMMonitor::read_events() {
     if (req.version != VM_EVENT_INTERFACE_VERSION)
       continue; // TODO: error
 
-
     switch (req.reason) {
       case VM_EVENT_REASON_MEM_ACCESS:
-        std::cout << "mem access" << std::endl;
+        std::cout << ">>> mem access" << std::endl;
         break;
       case VM_EVENT_REASON_SOFTWARE_BREAKPOINT:
-        std::cout << "SW BP" << std::endl;
+        std::cout << ">>> software breakpoint" << std::endl;
+
         _xendevicemodel.inject_event(
             _domain, req.vcpu_id, X86_TRAP_INT3,
             req.u.software_breakpoint.type, -1,
             req.u.software_breakpoint.insn_length, 0);
+
+        _domain.pause();
+
         if (_on_software_breakpoint)
           _on_software_breakpoint(req);
         break;
       case VM_EVENT_REASON_PRIVILEGED_CALL:
-        std::cout << "priv call" << std::endl;
+        std::cout << ">>> privileged call" << std::endl;
         break;
       case VM_EVENT_REASON_SINGLESTEP:
-        std::cout << "SINGLE STEP" << std::endl;
+        std::cout << ">>> single step" << std::endl;
         if (_on_singlestep)
           _on_singlestep(req);
         break;
       case VM_EVENT_REASON_DEBUG_EXCEPTION:
-        std::cout << "debug exception" << std::endl;
+        std::cout << ">>> debug exception" << std::endl;
         break;
       case VM_EVENT_REASON_CPUID:
-        std::cout << "cpu id" << std::endl;
+        std::cout << ">>> cpu id" << std::endl;
         break;
       case VM_EVENT_REASON_DESCRIPTOR_ACCESS:
-        std::cout << "descriptor access" << std::endl;
+        std::cout << ">>> descriptor access" << std::endl;
+        break;
+      default:
+        std::cout << ">>> unknown" << std::endl;
         break;
     }
 

@@ -36,9 +36,14 @@ namespace xd::dbg {
     int get_last_stop_signal() override { return SIGSTOP; }; // TODO
 
   private:
-    std::shared_ptr<xen::HVMMonitor> _monitor;
+    std::shared_ptr<uvw::TimerHandle> _timer;
+    OnStopFn _on_stop;
+    int _last_stop_signal;
     xen::VCPU_ID _last_single_step_vcpu_id;
-    bool _is_continuing;
+    std::optional<xen::Address> _last_single_step_breakpoint_addr;
+    bool _is_single_stepping;
+
+    void on_stop_internal(int signal);
 
     using Base = DebuggerImpl<xen::DomainHVM, uint8_t, X86_INT3>;
   };

@@ -93,6 +93,8 @@ namespace xd::xen {
       return _xenforeignmemory.map_by_mfn<Memory_t>(*this, mfn, offset, size, prot);
     };
 
+    void set_access_required(bool required);
+
     /*
     void reboot() const;
     void read_memory(Address address, void *data, size_t size) const;

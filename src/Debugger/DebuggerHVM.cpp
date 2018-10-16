@@ -35,19 +35,17 @@ void DebuggerHVM::detach() {
 }
 
 void DebuggerHVM::continue_() {
-  single_step(); // TODO
-  _domain.unpause();
+  _is_continuing = true;
+  single_step();
 }
 
 void DebuggerHVM::single_step() {
   const auto vcpu = get_vcpu_id();
 
   const auto context = _domain.get_cpu_context(vcpu);
-  const auto instr_ptr = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(context);
-  if (_breakpoints.count(instr_ptr)) {
-    _last_single_step_breakpoint_addr = instr_ptr;
-    remove_breakpoint(instr_ptr);
-  }
+  const auto instr_ptr = reg::read_register<
+    reg::x86_32::eip, reg::x86_64::rip>(context);
+
   _last_single_step_vcpu_id = vcpu;
 
   _domain.pause_vcpus_except(vcpu);
@@ -58,6 +56,7 @@ void DebuggerHVM::single_step() {
 
 void DebuggerHVM::on_stop(OnStopFn on_stop) {
   _monitor->on_software_breakpoint([this, on_stop](const auto &req) {
+    _domain.pause();
     on_stop(SIGTRAP); // TODO
   });
 
@@ -66,18 +65,16 @@ void DebuggerHVM::on_stop(OnStopFn on_stop) {
         ? _last_single_step_vcpu_id
         : req.vcpu_id;
 
-    // If we're stopping after a single step and there was a BP at the
-    // address we came from, put it back
-    if (_last_single_step_breakpoint_addr) {
-      insert_breakpoint(*_last_single_step_breakpoint_addr);
-      _last_single_step_breakpoint_addr = std::nullopt;
-    }
-
-    _domain.unpause_vcpus_except(vcpu);
     _domain.set_single_step(false, vcpu);
     _domain.set_debugging(false, vcpu);
-    set_vcpu_id(vcpu);
 
-    on_stop(SIGTRAP); // TODO
+    if (_is_continuing) {
+      _is_continuing = false;
+      _domain.unpause();
+    } else {
+      _domain.unpause_vcpus_except(vcpu);
+      set_vcpu_id(vcpu);
+      on_stop(SIGTRAP); // TODO
+    }
   });
 }

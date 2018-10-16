@@ -88,7 +88,7 @@ namespace xd::dbg {
 
   public:
     explicit DebuggerImpl(Domain_t domain)
-        : _domain(std::move(domain)), _vcpu_id(0)
+        : _domain(std::move(domain)), _vcpu_id(0), _is_attached(false)
     {
       const auto mode =
           (_domain.template get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;

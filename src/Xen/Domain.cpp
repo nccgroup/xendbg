@@ -13,6 +13,7 @@ using xd::xen::DomInfo;
 using xd::xen::MemInfo;
 using xd::xen::XenCtrl;
 using xd::xen::XenEventChannel;
+using xd::xen::XenException;
 
 DomInfo xd::xen::get_domain_info(XenCtrl &xenctrl, DomID domid) {
   xc_dominfo_t dominfo;
@@ -208,6 +209,11 @@ xen_pfn_t Domain::get_max_gpfn() const {
     throw XenException(
         "Failed to destroy domain " + std::to_string(_domid), -err);
   return max_gpfn;
+}
+
+void Domain::set_access_required(bool required) {
+  if (const auto err = xc_domain_set_access_required(_xenctrl.get(), _domid, required))
+    throw XenException("xc_domain_set_access_required", -err);
 }
 
 // TODO: This doesn't seem to have any effect.

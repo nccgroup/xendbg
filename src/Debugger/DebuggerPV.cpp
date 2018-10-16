@@ -67,17 +67,6 @@ void DebuggerPV::single_step() {
   _is_single_stepping = true;
   _timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
   _domain.unpause();
-
-  /*
-  auto vcpu = get_vcpu_id();
-
-  _domain.pause_vcpus_except(vcpu);
-  _domain.set_trap_flag(true, vcpu);
-  _last_single_step_vcpu_id = vcpu;
-
-  _timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
-  _domain.unpause();
-  */
 }
 
 void DebuggerPV::on_stop(OnStopFn on_stop) {

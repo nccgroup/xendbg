@@ -36,6 +36,7 @@ namespace xd::dbg {
     int get_last_stop_signal() override { return SIGSTOP; }; // TODO
 
   private:
+    std::shared_ptr<xen::HVMMonitor> _monitor;
     std::shared_ptr<uvw::TimerHandle> _timer;
     OnStopFn _on_stop;
     int _last_stop_signal;

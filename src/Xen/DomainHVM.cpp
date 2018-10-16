@@ -44,15 +44,6 @@ void DomainHVM::set_cpu_context(RegistersX86Any regs, VCPU_ID vcpu_id) const {
   const auto old_context = get_cpu_context_raw(vcpu_id);
   const auto new_context = convert_regs_to_hvm(regs64, old_context);
 
-  int err;
-  if ((err = xc_domain_hvm_getcontext_partial(_xenctrl.get(), _domid,
-      HVM_SAVE_CODE(CPU), (uint16_t)vcpu_id, (void*)&new_context, sizeof(old_context))))
-  {
-    throw XenException("Failed get HVM CPU context for VCPU " +
-                       std::to_string(vcpu_id) + " of domain " +
-                       std::to_string(_domid), -err);
-  }
-
   set_cpu_context_raw(new_context, vcpu_id);
 }
 
@@ -175,15 +166,15 @@ void DomainHVM::set_cpu_context_raw(struct hvm_hw_cpu context, VCPU_ID vcpu_id) 
       HVM_SAVE_TYPE(END) end;
   } context_update;
 
-  int size = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, nullptr, 0);
-  if (size <= 0)
-    throw std::runtime_error("Failed to get HVM domain context!");
+  uint32_t size = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, nullptr, 0);
+  if (size == ((uint32_t)-1))
+    throw std::runtime_error("Failed to get HVM domain context (1)!");
 
   std::unique_ptr<uint8_t> full_context((uint8_t*)calloc(1, size));
 
-  int ret = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, full_context.get(), 0);
-  if (ret <= 0)
-    throw std::runtime_error("Failed to get HVM domain context!");
+  size = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, full_context.get(), size);
+  if (size == ((uint32_t)-1))
+    throw std::runtime_error("Failed to get HVM domain context (2)!");
 
   memset(&context_update, 0, sizeof(context_update));
   memcpy(&context_update, full_context.get(),
@@ -193,7 +184,7 @@ void DomainHVM::set_cpu_context_raw(struct hvm_hw_cpu context, VCPU_ID vcpu_id) 
   context_update.header_d.typecode = HVM_SAVE_CODE(HEADER);
   context_update.header_d.instance = vcpu_id;
   context_update.header_d.length = HVM_SAVE_LENGTH(HEADER);
-  */
+   */
 
   context_update.cpu_d.typecode = HVM_SAVE_CODE(CPU);
   context_update.cpu_d.instance = vcpu_id;
@@ -205,10 +196,10 @@ void DomainHVM::set_cpu_context_raw(struct hvm_hw_cpu context, VCPU_ID vcpu_id) 
   context_update.end_d.instance = vcpu_id;
   context_update.end_d.length = HVM_SAVE_LENGTH(END);
 
-  ret = xc_domain_hvm_setcontext(_xenctrl.get(), _domid,
+  const int ret = xc_domain_hvm_setcontext(_xenctrl.get(), _domid,
       (uint8_t*)&context_update, sizeof(context_update));
-  if (ret <= 0)
-    throw std::runtime_error("Failed to get HVM domain context!");
+  if (ret)
+    throw std::runtime_error("Failed to set HVM domain context!");
 }
 
 RegistersX86Any DomainHVM::convert_regs_from_hvm(const struct hvm_hw_cpu &hvm) {

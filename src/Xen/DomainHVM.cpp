@@ -23,7 +23,7 @@ using xd::xen::XenEventChannel;
 #define SET_HVM2(_regs, _hvm, _reg, _hvm_reg) \
   _hvm._hvm_reg = _regs.get<_reg>();
 
-DomainHVM::DomainHVM(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+DomainHVM::DomainHVM(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
   : Domain(domid, privcmd, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
 {
@@ -47,7 +47,7 @@ void DomainHVM::set_cpu_context(RegistersX86Any regs, VCPU_ID vcpu_id) const {
   set_cpu_context_raw(new_context, vcpu_id);
 }
 
-void DomainHVM::set_single_step(bool enable, VCPU_ID vcpu_id) const {
+void DomainHVM::set_singlestep(bool enable, VCPU_ID vcpu_id) const {
   uint32_t op = enable
                 ? XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_ON
                 : XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_OFF;

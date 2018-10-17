@@ -5,6 +5,7 @@
 #ifndef XENDBG_DOMAINANY_HPP
 #define XENDBG_DOMAINANY_HPP
 
+#include <memory>
 #include <variant>
 
 #include "DomainHVM.hpp"
@@ -14,13 +15,11 @@ namespace xd::xen {
 
   using DomainAny = std::variant<DomainPV, DomainHVM>;
 
-  DomainAny init_domain(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn,
+  std::shared_ptr<Domain> init_domain(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn,
       XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore);
 
-  std::vector<DomainAny> get_domains(PrivCmd &privcmd, XenEventChannel &xenevtchn,
+  std::vector<std::shared_ptr<Domain>> get_domains(XenCall &privcmd, XenEventChannel &xenevtchn,
       XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore);
-
-  xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain);
 }
 
 #endif //XENDBG_DOMAINANY_HPP

@@ -35,7 +35,7 @@ namespace xd::xen {
     template <typename Memory_t, typename Domain_t>
     MappedMemory<Memory_t> map(const Domain_t &domain, Address address, size_t size, int prot) const {
       return map_by_mfn<Memory_t, Domain_t>(
-          domain, domain.translate_foreign_address(address),
+          domain, domain.translate_foreign_address(address, 0), // TODO: OK?
           address % XC_PAGE_SIZE, size, prot);
     }
 
@@ -58,7 +58,6 @@ namespace xd::xen {
       char *mem_page_base =
         (char*)xenforeignmemory_map(_xen_foreign_memory.get(),
             domain.get_domid(), prot, num_pages, pages, errors);
-      Memory_t *mem = (Memory_t*)(mem_page_base + offset);
 
       for (size_t i = 0; i < num_pages; ++i) {
         if (errors[i])
@@ -66,6 +65,8 @@ namespace xd::xen {
               std::to_string(i+1) + " of " +
               std::to_string(num_pages), -errors[i]);
       }
+
+      Memory_t *mem = (Memory_t*)(mem_page_base + offset);
 
       auto fmem = _xen_foreign_memory;
       return std::shared_ptr<Memory_t>(mem, [fmem, mem_page_base, num_pages](void *memory) {

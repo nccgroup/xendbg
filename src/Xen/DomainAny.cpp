@@ -9,18 +9,18 @@ using xd::xen::DomainAny;
 using xd::xen::DomID;
 using xd::xen::get_domain_info;
 
-DomainAny xd::xen::init_domain(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn,
+std::shared_ptr<Domain> xd::xen::init_domain(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn,
     XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore)
 {
   auto dominfo = get_domain_info(xenctrl, domid);
   if (dominfo.hvm)
-    return DomainHVM(domid, privcmd, xenevtchn, xenctrl, xenforeignmemory, xenstore);
+    return std::make_shared<DomainHVM>(domid, privcmd, xenevtchn, xenctrl, xenforeignmemory, xenstore);
   else
-    return DomainPV(domid, privcmd, xenevtchn, xenctrl, xenforeignmemory, xenstore);
+    return std::make_shared<DomainPV>(domid, privcmd, xenevtchn, xenctrl, xenforeignmemory, xenstore);
 }
 
 
-std::vector<DomainAny> xd::xen::get_domains(PrivCmd &privcmd, XenEventChannel &xenevtchn,
+std::vector<std::shared_ptr<Domain>> xd::xen::get_domains(XenCall &privcmd, XenEventChannel &xenevtchn,
     XenCtrl &xenctrl, XenForeignMemory &xenforeignmemory, XenStore &xenstore)
 {
   auto domid_strs = xenstore.read_directory("/local/domain");
@@ -28,7 +28,7 @@ std::vector<DomainAny> xd::xen::get_domains(PrivCmd &privcmd, XenEventChannel &x
   // Exclude domain 0
   domid_strs.erase(std::remove(domid_strs.begin(), domid_strs.end(), "0"));
 
-  std::vector<DomainAny> domains;
+  std::vector<std::shared_ptr<Domain>> domains;
   domains.reserve(domid_strs.size());
   std::transform(domid_strs.begin(), domid_strs.end(), std::back_inserter(domains),
     [&](const auto& domid_str) {
@@ -38,10 +38,3 @@ std::vector<DomainAny> xd::xen::get_domains(PrivCmd &privcmd, XenEventChannel &x
   return domains;
 }
 
-DomID xd::xen::get_domid_any(const xd::xen::DomainAny &domain) {
-  return std::visit(xd::util::overloaded {
-    [](const auto &domain) {
-      return domain.get_domid();
-    },
-  }, domain);
-}

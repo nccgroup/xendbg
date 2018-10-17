@@ -11,8 +11,8 @@
 
 #include <uvw.hpp>
 
-#include <Debugger/DebuggerPV.hpp>
 #include <Xen/DomainAny.hpp>
+#include <Xen/XenDeviceModel.hpp>
 
 #include "DebugSession.hpp"
 
@@ -20,7 +20,7 @@ namespace xd {
 
   class DomainAlreadyAddedException : public std::exception {
   public:
-    DomainAlreadyAddedException(xen::DomID domid)
+    explicit DomainAlreadyAddedException(xen::DomID domid)
       : _domid(domid) {};
 
     xen::DomID get_domid() { return _domid; };
@@ -38,7 +38,7 @@ namespace xd {
     void run_multi();
 
   private:
-    xen::PrivCmd _privcmd;
+    xen::XenCall _privcmd;
     xen::XenEventChannel _xenevtchn;
     xen::XenCtrl _xenctrl;
     xen::XenDeviceModel _xendevicemodel;
@@ -51,7 +51,7 @@ namespace xd {
     std::shared_ptr<uvw::PollHandle> _poll;
 
     uint16_t _next_port;
-    std::unordered_map<xen::DomID, std::unique_ptr<DebugSessionBase>> _instances;
+    std::unordered_map<xen::DomID, std::unique_ptr<DebugSession>> _instances;
 
   private:
     void run();
@@ -59,7 +59,7 @@ namespace xd {
     size_t add_new_instances();
     size_t prune_instances();
 
-    void add_instance(xen::DomainAny domain_any);
+    void add_instance(std::shared_ptr<xen::Domain> domain);
   };
 
 }

@@ -20,28 +20,27 @@
 #include "XenException.hpp"
 
 #include "BridgeHeaders/domctl.h"
-#include "BridgeHeaders/privcmd.h"
+#include "BridgeHeaders/xencall.h"
 
 namespace xd::xen {
 
   class Domain;
 
-  class PrivCmd {
+  class XenCall {
   private:
     static xen_domctl _dummy_domctl;
 
   public:
-    using DomctlUnion = decltype(PrivCmd::_dummy_domctl.u);
+    using DomctlUnion = decltype(XenCall::_dummy_domctl.u);
     using InitFn = std::function<void(DomctlUnion&)>;
     using CleanupFn = std::function<void()>;
 
-    PrivCmd();
-    ~PrivCmd();
+    XenCall();
 
-    DomctlUnion hypercall_domctl(const Domain &domain, uint32_t command, InitFn init = {}, CleanupFn cleanup = {}) const;
+    DomctlUnion do_domctl(const Domain &domain, uint32_t command, InitFn init = {}, CleanupFn cleanup = {}) const;
 
   private:
-    int _privcmd_fd;
+    std::unique_ptr<xencall_handle, decltype(&xencall_close)> _xencall;
   };
 
 }

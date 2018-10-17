@@ -23,7 +23,7 @@ using xd::util::overloaded;
 #define SET_PV_USER(_regs, _pv, _reg) \
   _pv.user_regs._reg = _regs.get<_reg>();
 
-DomainPV::DomainPV(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+DomainPV::DomainPV(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
   : Domain(domid, privcmd, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
 {
@@ -92,7 +92,7 @@ RegistersX86Any DomainPV::get_cpu_context(VCPU_ID vcpu_id) const {
   }
 }
 
-void DomainPV::set_trap_flag(bool enable, VCPU_ID vcpu_id) const {
+void DomainPV::set_singlestep(bool enable, VCPU_ID vcpu_id) const {
   auto context_any = get_cpu_context(vcpu_id);
   std::visit(util::overloaded {
     [enable](reg::x86_64::RegistersX86_64 &context) {

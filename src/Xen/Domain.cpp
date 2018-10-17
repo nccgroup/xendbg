@@ -40,7 +40,7 @@ void Domain::set_debugging(bool enable, VCPU_ID vcpu_id) const {
   }
 }
 
-Domain::Domain(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
+Domain::Domain(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
     XenForeignMemory &xenforeignmemory, XenStore &xenstore)
     : _domid(domid), _privcmd(privcmd), _xenevtchn(xenevtchn), _xenctrl(xenctrl),
       _xenforeignmemory(xenforeignmemory), _xenstore(xenstore)
@@ -106,7 +106,7 @@ std::optional<xd::xen::PageTableEntry> Domain::get_page_table_entry(Address addr
   const auto cr3 = std::visit(util::overloaded {
     [](const auto &regs) {
       return regs.template get<reg::x86::cr3>();
-    }}, get_cpu_context());
+    }}, get_cpu_context(0)); // TODO: is cr3 the same for every VCPU? I think it should be
 
   std::cout << "vaddr: " << address << std::endl;
   std::cout << "max gpfn: " << get_max_gpfn() << std::endl;

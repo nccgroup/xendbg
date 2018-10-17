@@ -11,7 +11,7 @@ namespace xd::xen {
 
   class DomainHVM : public Domain {
   public:
-    DomainHVM(DomID domid, PrivCmd &privcmd, XenEventChannel &xenevtchn,
+    DomainHVM(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn,
         XenCtrl &xenctrl, XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
 
     struct MonitorCapabilities {
@@ -21,10 +21,10 @@ namespace xd::xen {
 
     std::optional<PagePermissions> get_page_permissions(Address address) const override;
 
-    xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id = 0) const override;
-    void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id = 0) const override;
+    xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const override;
+    void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;
 
-    void set_single_step(bool enabled, VCPU_ID vcpu_id = 0) const;
+    void set_singlestep(bool enabled, VCPU_ID vcpu_id) const override;
 
     XenEventChannel::RingPageAndPort enable_monitor() const;
     void disable_monitor() const;

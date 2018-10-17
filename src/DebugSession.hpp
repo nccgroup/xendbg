@@ -11,8 +11,6 @@
 #include <uvw.hpp>
 
 #include <Globals.hpp>
-#include <Debugger/DebuggerHVM.hpp>
-#include <Debugger/DebuggerPV.hpp>
 #include <GDBServer/GDBServer.hpp>
 
 #include "GDBServer/GDBRequestHandler.hpp"
@@ -20,24 +18,14 @@
 
 namespace xd {
 
-  class DebugSessionBase {
+  class DebugSession {
   public:
-    virtual ~DebugSessionBase() = default;
-    virtual void run(const std::string& address_str, uint16_t port) = 0;
-  };
-
-  template <typename Debugger_t>
-  class DebugSession : public DebugSessionBase {
-  public:
-    template <typename Domain_t, typename... DebuggerArgs_t>
-    DebugSession(uvw::Loop &loop, Domain_t domain, DebuggerArgs_t&&... debugger_args)
-      : _debugger(std::make_shared<Debugger_t>(
-            loop, std::move(domain), std::forward<DebuggerArgs_t>(debugger_args)...)),
-        _gdb_server(std::make_shared<gdb::GDBServer>(loop))
+    DebugSession(uvw::Loop &loop, std::shared_ptr<xen::Domain> domain)
+      : _debugger(std::make_shared<dbg::Debugger>(loop, std::move(domain))), _gdb_server(std::make_shared<gdb::GDBServer>(loop))
     {
     };
 
-    void run(const std::string& address_str, uint16_t port) override {
+    void run(const std::string& address_str, uint16_t port) {
       const auto on_error = [](auto error) {
         std::cout << "Error: " << error.what() << std::endl;
       };
@@ -67,14 +55,11 @@ namespace xd {
     }
 
   private:
-    std::shared_ptr<Debugger_t> _debugger;
+    std::shared_ptr<dbg::Debugger> _debugger;
     std::shared_ptr<gdb::GDBServer> _gdb_server;
     std::shared_ptr<gdb::GDBConnection> _gdb_connection;
     std::optional<gdb::GDBRequestHandler> _request_handler;
   };
-
-  using DebugSessionHVM = DebugSession<dbg::DebuggerHVM>;
-  using DebugSessionPV = DebugSession<dbg::DebuggerPV>;
 
 }
 

@@ -10,9 +10,6 @@
 
 using xd::ServerModeController;
 using xd::DebugSession;
-using xd::DebugSessionHVM;
-using xd::DebugSessionPV;
-using xd::xen::get_domid_any;
 using xd::xen::get_domains;
 
 ServerModeController::ServerModeController(uint16_t base_port)
@@ -27,17 +24,13 @@ void ServerModeController::run_single(const std::string &name) {
   const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   auto found = std::find_if(domains.begin(), domains.end(), [&](const auto &domain) {
-    return std::visit(util::overloaded {
-      [&](const auto &domain) {
-        return domain.get_name() == name;
-      }
-    }, domain);
+    return domain->get_name() == name;
   });
 
   if (found == domains.end())
     throw std::runtime_error("No such domain!");
 
-  run_single(get_domid_any(*found));
+  run_single((*found)->get_domid());
 }
 
 void ServerModeController::run_single(xen::DomID domid) {
@@ -97,10 +90,10 @@ size_t ServerModeController::add_new_instances() {
   const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
 
   size_t num_added = 0;
-  for (const auto &domain_any : domains) {
-    const auto domid = get_domid_any(domain_any);
+  for (const auto &domain : domains) {
+    const auto domid = domain->get_domid();
     if (!_instances.count(domid)) {
-      add_instance(domain_any);
+      add_instance(domain);
       ++num_added;
     }
   }
@@ -116,7 +109,7 @@ size_t ServerModeController::prune_instances() {
   while (it != _instances.end()) {
     if (std::none_of(domains.begin(), domains.end(),
       [&](const auto &domain) {
-        return get_domid_any(domain) == it->first;
+        return domain->get_domid() == it->first;
       }))
     {
       spdlog::get(LOGNAME_CONSOLE)->info(
@@ -131,8 +124,8 @@ size_t ServerModeController::prune_instances() {
   return num_removed;
 }
 
-void ServerModeController::add_instance(xen::DomainAny domain_any) {
-  const auto domid = get_domid_any(domain_any);
+void ServerModeController::add_instance(std::shared_ptr<xen::Domain> domain) {
+  const auto domid = domain->get_domid();
 
   if (_instances.count(domid))
     throw DomainAlreadyAddedException(domid);
@@ -140,18 +133,6 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   spdlog::get(LOGNAME_CONSOLE)->info(
       "UP: Domain {0:d} @ port {1:d}", domid, _next_port);
 
-  std::visit(util::overloaded {
-      [&](xen::DomainPV domain) {
-        auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<DebugSessionPV>(
-              *_loop, std::move(domain))); // TODO
-        kv->second->run("127.0.0.1", _next_port++);
-      },
-      [&](xen::DomainHVM domain) {
-        auto [kv, _] = _instances.emplace(domid,
-            std::make_unique<DebugSessionHVM>(
-              *_loop, std::move(domain), _xendevicemodel, _xenevtchn)); // TODO
-        kv->second->run("127.0.0.1", _next_port++);
-      }
-  }, domain_any);
+  auto [kv, _] = _instances.emplace(domid, std::make_unique<DebugSession>(*_loop, std::move(domain)));
+  kv->second->run("127.0.0.1", _next_port++);
 }

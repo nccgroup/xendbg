@@ -183,7 +183,8 @@ void GDBRequestHandler::operator()(
 {
   const auto id = req.get_register_id();
   const auto thread_id = req.get_thread_id();
-  const auto regs = _debugger.get_domain().get_cpu_context(thread_id-1);
+  const auto vcpu_id = (thread_id == (size_t)-1) ? 0 : thread_id-1;
+  const auto regs = _debugger.get_domain().get_cpu_context(vcpu_id);
 
   std::visit(util::overloaded {
       [&](const auto &regs) {
@@ -202,8 +203,10 @@ void GDBRequestHandler::operator()(
 {
   const auto id = req.get_register_id();
   const auto value = req.get_value();
+  const auto thread_id = req.get_thread_id();
+  const auto vcpu_id = (thread_id == (size_t)-1) ? 0 : thread_id-1;
 
-  auto regs = _debugger.get_domain().get_cpu_context();
+  auto regs = _debugger.get_domain().get_cpu_context(vcpu_id);
   std::visit(util::overloaded {
       [&](auto &regs) {
         regs.find_by_id(id, [&value](const auto&, auto &reg) {
@@ -213,7 +216,7 @@ void GDBRequestHandler::operator()(
         });
       }
   }, regs);
-  _debugger.get_domain().set_cpu_context(regs);
+  _debugger.get_domain().set_cpu_context(regs, vcpu_id);
   send(rsp::OKResponse());
 }
 
@@ -225,14 +228,14 @@ void GDBRequestHandler::operator()(
       [&](const auto &regs) {
         send(rsp::GeneralRegistersBatchReadResponse(regs));
       }
-  }, _debugger.get_domain().get_cpu_context());
+  }, _debugger.get_domain().get_cpu_context(_debugger.get_vcpu_id()));
 }
 
 template <>
 void GDBRequestHandler::operator()(
     const req::GeneralRegistersBatchWriteRequest &req) const
 {
-  auto regs_any = _debugger.get_domain().get_cpu_context();
+  auto regs_any = _debugger.get_domain().get_cpu_context(_debugger.get_vcpu_id());
   auto values = req.get_values();
 
   std::visit(util::overloaded {
@@ -261,7 +264,7 @@ void GDBRequestHandler::operator()(
       }
   }, regs_any);
 
-  _debugger.get_domain().set_cpu_context(regs_any);
+  _debugger.get_domain().set_cpu_context(regs_any, _debugger.get_vcpu_id());
 
   send(rsp::OKResponse());
 }

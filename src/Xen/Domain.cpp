@@ -11,9 +11,7 @@ using xd::xen::Address;
 using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::MemInfo;
-using xd::xen::XenCtrl;
-using xd::xen::XenEventChannel;
-using xd::xen::XenException;
+using xd::xen::Xen;
 
 #define CR0_PG 0x80000000
 #define CR4_PAE 0x2
@@ -45,16 +43,6 @@ static int xc_ffs64(uint64_t x) {
   return l ? xc_ffs32(l) : h ? xc_ffs32(h) + 32 : 0;
 }
 
-DomInfo xd::xen::get_domain_info(XenCtrl &xenctrl, DomID domid) {
-  xc_dominfo_t dominfo;
-  int ret = xc_domain_getinfo(xenctrl.get(), domid, 1, &dominfo);
-
-  if (ret != 1 || dominfo.domid != domid)
-    throw XenException("Failed to get domain info!", errno);
-
-  return dominfo;
-}
-
 void Domain::set_debugging(bool enable, VCPU_ID vcpu_id) const {
   if (vcpu_id > get_dominfo().max_vcpu_id)
     throw XenException(
@@ -63,41 +51,39 @@ void Domain::set_debugging(bool enable, VCPU_ID vcpu_id) const {
         " on domain " + std::to_string(_domid));
 
   int err;
-  if ((err = xc_domain_setdebugging(_xenctrl.get(), _domid, (unsigned int)enable))) {
+  if ((err = xc_domain_setdebugging(_xen->xenctrl.get(), _domid, (unsigned int)enable))) {
     throw XenException(
         "Failed to enable debugging on domain " +
         std::to_string(_domid), -err);
   }
 }
 
-Domain::Domain(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
-    XenForeignMemory &xenforeignmemory, XenStore &xenstore)
-    : _domid(domid), _privcmd(privcmd), _xenevtchn(xenevtchn), _xenctrl(xenctrl),
-      _xenforeignmemory(xenforeignmemory), _xenstore(xenstore)
+Domain::Domain(DomID domid, Xen::SharedPtr xen)
+    : _domid(domid), _xen(std::move(xen))
 {
   get_dominfo();
 }
 
 std::string Domain::get_name() const {
   const auto path = "/local/domain/" + std::to_string(_domid) + "/name";
-  return _xenstore.read(path);
+  return _xen->xenstore.read(path);
 }
 
 std::string Domain::get_kernel_path() const {
   const auto vm_path = "/local/domain/" + std::to_string(_domid) + "/vm";
-  const auto vm = _xenstore.read(vm_path);
+  const auto vm = _xen->xenstore.read(vm_path);
   const auto kernel_path = vm + "/image/kernel";
-  return _xenstore.read(kernel_path);
+  return _xen->xenstore.read(kernel_path);
 }
 
 DomInfo Domain::get_dominfo() const {
-  return get_domain_info(_xenctrl, _domid);
+  return _xen->xenctrl.get_domain_info(_domid);
 }
 
 int Domain::get_word_size() const {
   int err;
   unsigned int word_size;
-  if ((err = xc_domain_get_guest_width(_xenctrl.get(), _domid, &word_size))) {
+  if ((err = xc_domain_get_guest_width(_xen->xenctrl.get(), _domid, &word_size))) {
     throw XenException(
         "Failed to get word size for domain " + std::to_string(_domid),
         -err);
@@ -106,11 +92,11 @@ int Domain::get_word_size() const {
 }
 
 Address Domain::translate_foreign_address(Address vaddr, VCPU_ID vcpu_id) const {
-  return xc_translate_foreign_address(_xenctrl.get(), _domid, vcpu_id, vaddr);
+  return xc_translate_foreign_address(_xen->xenctrl.get(), _domid, vcpu_id, vaddr);
 }
 
 MemInfo Domain::map_meminfo() const {
-  auto xenctrl_ptr = _xenctrl.get();
+  auto xenctrl_ptr = _xen->xenctrl.get();
   auto deleter = [xenctrl_ptr](xc_domain_meminfo *p) {
     xc_unmap_domain_meminfo(xenctrl_ptr, p);
   };
@@ -122,7 +108,7 @@ MemInfo Domain::map_meminfo() const {
 
   int err;
   xc_domain_meminfo minfo;
-  if ((err = xc_map_domain_meminfo(_xenctrl.get(), _domid, meminfo.get()))) {
+  if ((err = xc_map_domain_meminfo(_xen->xenctrl.get(), _domid, meminfo.get()))) {
     throw XenException(
         "Failed to map meminfo for domain " + std::to_string(_domid),
         -err);
@@ -195,13 +181,13 @@ std::optional<xd::xen::PageTableEntry> Domain::get_page_table_entry(Address vadd
 }
 
 void Domain::set_mem_access(xenmem_access_t access, Address start_pfn, uint32_t num_pages) const {
-  if (const auto err = xc_set_mem_access(_xenctrl.get(), _domid, access, start_pfn, num_pages))
+  if (const auto err = xc_set_mem_access(_xen->xenctrl.get(), _domid, access, start_pfn, num_pages))
     throw XenException("xc_set_mem_access", -err);
 }
 
 xenmem_access_t Domain::get_mem_access(Address pfn) const {
   xenmem_access_t access;
-  if (const auto err = xc_get_mem_access(_xenctrl.get(), _domid, pfn, &access))
+  if (const auto err = xc_get_mem_access(_xen->xenctrl.get(), _domid, pfn, &access))
     throw XenException("xc_get_mem_access", -err);
   return access;
 }
@@ -230,7 +216,7 @@ void Domain::pause() const {
     return;
 
   int err;
-  if ((err = xc_domain_pause(_xenctrl.get(), _domid)))
+  if ((err = xc_domain_pause(_xen->xenctrl.get(), _domid)))
     throw XenException(
         "Failed to pause domain " + std::to_string(_domid), -err);
 }
@@ -241,14 +227,14 @@ void Domain::unpause() const {
     return;
 
   int err;
-  if ((err = xc_domain_unpause(_xenctrl.get(), _domid)))
+  if ((err = xc_domain_unpause(_xen->xenctrl.get(), _domid)))
     throw XenException(
         "Failed to unpause domain " + std::to_string(_domid), -err);
 }
 
 void Domain::shutdown(int reason) const {
   int err;
-  if ((err = xc_domain_shutdown(_xenctrl.get(), _domid, reason)))
+  if ((err = xc_domain_shutdown(_xen->xenctrl.get(), _domid, reason)))
     throw XenException(
         "Failed to shutdown domain " + std::to_string(_domid), -err);
 }
@@ -258,21 +244,21 @@ void Domain::destroy() const {
   shutdown(SHUTDOWN_poweroff);
 
   int err;
-  if ((err = xc_domain_destroy(_xenctrl.get(), _domid)))
+  if ((err = xc_domain_destroy(_xen->xenctrl.get(), _domid)))
     throw XenException(
         "Failed to destroy domain " + std::to_string(_domid), -err);}
 
 xen_pfn_t Domain::get_max_gpfn() const {
   xen_pfn_t max_gpfn;
   int err;
-  if ((err = xc_domain_maximum_gpfn(_xenctrl.get(), _domid, &max_gpfn)))
+  if ((err = xc_domain_maximum_gpfn(_xen->xenctrl.get(), _domid, &max_gpfn)))
     throw XenException(
         "Failed to destroy domain " + std::to_string(_domid), -err);
   return max_gpfn;
 }
 
 void Domain::set_access_required(bool required) {
-  if (const auto err = xc_domain_set_access_required(_xenctrl.get(), _domid, required))
+  if (const auto err = xc_domain_set_access_required(_xen->xenctrl.get(), _domid, required))
     throw XenException("xc_domain_set_access_required", -err);
 }
 

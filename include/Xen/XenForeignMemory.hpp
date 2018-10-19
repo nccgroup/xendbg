@@ -51,28 +51,25 @@ namespace xd::xen {
       if (!errors)
         throw XenException("Failed to allocate error table: ", errno);
 
-      for (size_t i = 0; i < num_pages; ++i) {
+      for (size_t i = 0; i < num_pages; ++i)
         pages[i] = base_mfn + i;
-      }
 
       char *mem_page_base =
         (char*)xenforeignmemory_map(_xen_foreign_memory.get(),
             domain.get_domid(), prot, num_pages, pages, errors);
 
-      for (size_t i = 0; i < num_pages; ++i) {
+      for (size_t i = 0; i < num_pages; ++i)
         if (errors[i])
           throw XenException("Failed to map page " +
               std::to_string(i+1) + " of " +
               std::to_string(num_pages), -errors[i]);
-      }
 
       Memory_t *mem = (Memory_t*)(mem_page_base + offset);
 
       auto fmem = _xen_foreign_memory;
       return std::shared_ptr<Memory_t>(mem, [fmem, mem_page_base, num_pages](void *memory) {
-        if (memory) {
+        if (memory)
           xenforeignmemory_unmap(fmem.get(), (void*)mem_page_base, num_pages);
-        }
       });
     }
 

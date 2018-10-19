@@ -12,18 +12,19 @@
 
 using xd::ServerModeController;
 using xd::DebugSession;
-using xd::xen::get_domains;
+using xd::xen::Xen;
 
 ServerModeController::ServerModeController(uint16_t base_port)
-  : _loop(uvw::Loop::getDefault()),
+  : _xen(Xen::create()),
+    _loop(uvw::Loop::getDefault()),
     _signal(_loop->resource<uvw::SignalHandle>()),
-    _poll(_loop->resource<uvw::PollHandle>(_xenstore.get_fileno())),
+    _poll(_loop->resource<uvw::PollHandle>(_xen->xenstore.get_fileno())),
     _next_port(base_port)
 {
 }
 
 void ServerModeController::run_single(const std::string &name) {
-  const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+  const auto domains = _xen->get_domains();
 
   auto found = std::find_if(domains.begin(), domains.end(), [&](const auto &domain) {
     return domain->get_name() == name;
@@ -36,7 +37,7 @@ void ServerModeController::run_single(const std::string &name) {
 }
 
 void ServerModeController::run_single(xen::DomID domid) {
-  auto &watch_release = _xenstore.add_watch();
+  auto &watch_release = _xen->xenstore.add_watch();
   watch_release.add_path("@releaseDomain");
 
   _poll->on<uvw::PollEvent>([&](const auto &event, auto &handle) {
@@ -47,8 +48,7 @@ void ServerModeController::run_single(xen::DomID domid) {
 
   _poll->start(uvw::PollHandle::Event::READABLE);
 
-  auto domain = xen::init_domain(domid, _privcmd, _xenevtchn, _xenctrl,
-      _xenforeignmemory, _xenstore);
+  auto domain = _xen->init_domain(domid);
 
   add_instance(std::move(domain));
 
@@ -56,10 +56,10 @@ void ServerModeController::run_single(xen::DomID domid) {
 }
 
 void ServerModeController::run_multi() {
-  auto &watch_introduce = _xenstore.add_watch();
+  auto &watch_introduce = _xen->xenstore.add_watch();
   watch_introduce.add_path("@introduceDomain");
 
-  auto &watch_release = _xenstore.add_watch();
+  auto &watch_release = _xen->xenstore.add_watch();
   watch_release.add_path("@releaseDomain");
 
   _poll->on<uvw::PollEvent>([&](const auto&, auto&) {
@@ -90,7 +90,7 @@ void ServerModeController::run() {
 }
 
 size_t ServerModeController::add_new_instances() {
-  const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+  const auto domains = _xen->get_domains();
 
   size_t num_added = 0;
   for (const auto &domain : domains) {
@@ -105,7 +105,7 @@ size_t ServerModeController::add_new_instances() {
 }
 
 size_t ServerModeController::prune_instances() {
-  const auto domains = get_domains(_privcmd, _xenevtchn, _xenctrl, _xenforeignmemory, _xenstore);
+  const auto domains = _xen->get_domains();
 
   size_t num_removed = 0;
   auto it = _instances.begin();

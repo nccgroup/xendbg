@@ -33,6 +33,8 @@ namespace xd::xen {
     xc_interface *get() const { return _xenctrl.get(); };
     XenVersion get_xen_version() const;
 
+    DomInfo get_domain_info(DomID domid) const;
+
   private:
     std::shared_ptr<xc_interface> _xenctrl;
   };

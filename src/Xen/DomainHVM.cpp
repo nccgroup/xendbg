@@ -12,7 +12,7 @@ using xd::reg::x86_64::RegistersX86_64;
 using xd::xen::DomainHVM;
 using xd::xen::PagePermissions;
 using xd::xen::VCPU_ID;
-using xd::xen::XenEventChannel;
+using xd::xen::Xen;
 
 #define GET_HVM(_regs, _hvm, _reg) \
   _regs.get<_reg>() = _hvm._reg;
@@ -23,9 +23,8 @@ using xd::xen::XenEventChannel;
 #define SET_HVM2(_regs, _hvm, _reg, _hvm_reg) \
   _hvm._hvm_reg = _regs.get<_reg>();
 
-DomainHVM::DomainHVM(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
-    XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
-  : Domain(domid, privcmd, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
+DomainHVM::DomainHVM(DomID domid, Xen::SharedPtr xen)
+  : Domain(domid, std::move(xen))
 {
 }
 
@@ -53,7 +52,7 @@ void DomainHVM::set_singlestep(bool enable, VCPU_ID vcpu_id) const {
         " on domain " + std::to_string(_domid));
 
   int err;
-  if ((err = xc_domain_debug_control(_xenctrl.get(), _domid, op, vcpu_id))) {
+  if ((err = xc_domain_debug_control(_xen->xenctrl.get(), _domid, op, vcpu_id))) {
     throw XenException(
         "Failed to " + std::string(enable ? "enable" : "disable") +
         " single-step mode for VCPU " + std::to_string(vcpu_id) + " on domain " +
@@ -63,7 +62,7 @@ void DomainHVM::set_singlestep(bool enable, VCPU_ID vcpu_id) const {
 
 XenEventChannel::RingPageAndPort DomainHVM::enable_monitor() const {
   uint32_t port;
-  void *ring_page = xc_monitor_enable(_xenctrl.get(), _domid, &port);
+  void *ring_page = xc_monitor_enable(_xen->xenctrl.get(), _domid, &port);
 
   if (!ring_page) {
     switch (errno) {
@@ -84,12 +83,12 @@ XenEventChannel::RingPageAndPort DomainHVM::enable_monitor() const {
 }
 
 void DomainHVM::disable_monitor() const {
-  xc_monitor_disable(_xenctrl.get(), _domid);
+  xc_monitor_disable(_xen->xenctrl.get(), _domid);
 }
 
 DomainHVM::MonitorCapabilities DomainHVM::monitor_get_capabilities() {
   uint32_t capabilities;
-  xc_monitor_get_capabilities(_xenctrl.get(), _domid, &capabilities);
+  xc_monitor_get_capabilities(_xen->xenctrl.get(), _domid, &capabilities);
 
   return MonitorCapabilities {
     .mov_to_msr = (bool) (capabilities & VM_EVENT_REASON_MOV_TO_MSR),
@@ -103,41 +102,41 @@ DomainHVM::MonitorCapabilities DomainHVM::monitor_get_capabilities() {
 }
 
 void DomainHVM::monitor_mov_to_msr(uint32_t msr, bool enable) {
-  xc_monitor_mov_to_msr(_xenctrl.get(), _domid, msr, enable);
+  xc_monitor_mov_to_msr(_xen->xenctrl.get(), _domid, msr, enable);
 }
 
 void DomainHVM::monitor_singlestep(bool enable) {
-  xc_monitor_singlestep(_xenctrl.get(), _domid, enable);
+  xc_monitor_singlestep(_xen->xenctrl.get(), _domid, enable);
 }
 
 void DomainHVM::monitor_software_breakpoint(bool enable) {
-  xc_monitor_software_breakpoint(_xenctrl.get(), _domid, enable);
+  xc_monitor_software_breakpoint(_xen->xenctrl.get(), _domid, enable);
 }
 
 void DomainHVM::monitor_debug_exceptions(bool enable, bool sync) {
-  xc_monitor_debug_exceptions(_xenctrl.get(), _domid, enable, sync);
+  xc_monitor_debug_exceptions(_xen->xenctrl.get(), _domid, enable, sync);
 }
 
 void DomainHVM::monitor_cpuid(bool enable) {
-  xc_monitor_cpuid(_xenctrl.get(), _domid, enable);
+  xc_monitor_cpuid(_xen->xenctrl.get(), _domid, enable);
 }
 
 void DomainHVM::monitor_descriptor_access(bool enable) {
-  xc_monitor_descriptor_access(_xenctrl.get(), _domid, enable);
+  xc_monitor_descriptor_access(_xen->xenctrl.get(), _domid, enable);
 }
 
 void DomainHVM::monitor_privileged_call(bool enable) {
-  xc_monitor_privileged_call(_xenctrl.get(), _domid, enable);
+  xc_monitor_privileged_call(_xen->xenctrl.get(), _domid, enable);
 }
 
 void DomainHVM::monitor_guest_request(bool enable, bool sync) {
-  xc_monitor_guest_request(_xenctrl.get(), _domid, enable, sync);
+  xc_monitor_guest_request(_xen->xenctrl.get(), _domid, enable, sync);
 }
 
 struct hvm_hw_cpu DomainHVM::get_cpu_context_raw(VCPU_ID vcpu_id) const {
   int err;
   struct hvm_hw_cpu context;
-  if ((err = xc_domain_hvm_getcontext_partial(_xenctrl.get(), _domid,
+  if ((err = xc_domain_hvm_getcontext_partial(_xen->xenctrl.get(), _domid,
       HVM_SAVE_CODE(CPU), (uint16_t)vcpu_id, &context, sizeof(context))))
   {
     throw XenException("Failed get HVM CPU context for VCPU " +
@@ -160,13 +159,13 @@ void DomainHVM::set_cpu_context_raw(struct hvm_hw_cpu context, VCPU_ID vcpu_id) 
       HVM_SAVE_TYPE(END) end;
   } context_update;
 
-  uint32_t size = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, nullptr, 0);
+  uint32_t size = xc_domain_hvm_getcontext(_xen->xenctrl.get(), _domid, nullptr, 0);
   if (size == ((uint32_t)-1))
     throw std::runtime_error("Failed to get HVM domain context (1)!");
 
   std::unique_ptr<uint8_t> full_context((uint8_t*)calloc(1, size));
 
-  size = xc_domain_hvm_getcontext(_xenctrl.get(), _domid, full_context.get(), size);
+  size = xc_domain_hvm_getcontext(_xen->xenctrl.get(), _domid, full_context.get(), size);
   if (size == ((uint32_t)-1))
     throw std::runtime_error("Failed to get HVM domain context (2)!");
 
@@ -190,7 +189,7 @@ void DomainHVM::set_cpu_context_raw(struct hvm_hw_cpu context, VCPU_ID vcpu_id) 
   context_update.end_d.instance = vcpu_id;
   context_update.end_d.length = HVM_SAVE_LENGTH(END);
 
-  const int ret = xc_domain_hvm_setcontext(_xenctrl.get(), _domid,
+  const int ret = xc_domain_hvm_setcontext(_xen->xenctrl.get(), _domid,
       (uint8_t*)&context_update, sizeof(context_update));
   if (ret)
     throw std::runtime_error("Failed to set HVM domain context!");

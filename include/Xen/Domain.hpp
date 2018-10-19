@@ -12,20 +12,13 @@
 #include "Common.hpp"
 #include "PagePermissions.hpp"
 #include "PageTableEntry.hpp"
-#include "XenCall.hpp"
-#include "XenEventChannel.hpp"
-#include "XenCtrl.hpp"
-#include "XenForeignMemory.hpp"
-#include "XenStore.hpp"
+#include "Xen.hpp"
 
 namespace xd::xen {
 
-  DomInfo get_domain_info(XenCtrl &xenctrl, DomID domid);
-
   class Domain {
   public:
-    Domain(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
-        XenForeignMemory &xenforeignmemory, XenStore &xenstore);
+    Domain(DomID domid, Xen::SharedPtr xen);
     virtual ~Domain() = default;
 
     bool operator==(const Domain &other) const {
@@ -83,17 +76,17 @@ namespace xd::xen {
     xen_pfn_t get_max_gpfn() const;
 
     XenCall::DomctlUnion hypercall_domctl(uint32_t command, XenCall::InitFn init = {}, XenCall::CleanupFn cleanup = {}) const {
-      return _privcmd.do_domctl(*this, command, std::move(init), std::move(cleanup));
+      return _xen->get_xencall().do_domctl(*this, command, std::move(init), std::move(cleanup));
     }
 
     template <typename Memory_t>
     XenForeignMemory::MappedMemory<Memory_t> map_memory(Address address, size_t size, int prot) const {
-      return _xenforeignmemory.map<Memory_t>(*this, address, size, prot);
+      return _xen->get_xenforeignmemory().map<Memory_t>(*this, address, size, prot);
     };
 
     template <typename Memory_t>
     XenForeignMemory::MappedMemory<Memory_t> map_memory_by_mfn(Address mfn, Address offset, size_t size, int prot) const {
-      return _xenforeignmemory.map_by_mfn<Memory_t>(*this, mfn, offset, size, prot);
+      return _xen->get_xenforeignmemory().map_by_mfn<Memory_t>(*this, mfn, offset, size, prot);
     };
 
     void set_access_required(bool required);
@@ -106,11 +99,7 @@ namespace xd::xen {
 
   protected:
     DomID _domid;
-    XenCall &_privcmd;
-    XenEventChannel &_xenevtchn;
-    XenCtrl &_xenctrl;
-    XenForeignMemory &_xenforeignmemory;
-    XenStore &_xenstore;
+    Xen::SharedPtr _xen;
 
   private:
     void pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id) const;

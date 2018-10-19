@@ -11,8 +11,7 @@ namespace xd::xen {
 
   class DomainPV : public Domain {
   public:
-    DomainPV(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
-        XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
+    DomainPV(DomID domid, Xen::SharedPtr xen);
 
     reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const override;
     void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;

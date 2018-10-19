@@ -11,8 +11,7 @@
 
 #include <uvw.hpp>
 
-#include <Xen/DomainAny.hpp>
-#include <Xen/XenDeviceModel.hpp>
+#include <Xen/Xen.hpp>
 
 #include "DebugSession.hpp"
 
@@ -38,12 +37,7 @@ namespace xd {
     void run_multi();
 
   private:
-    xen::XenCall _privcmd;
-    xen::XenEventChannel _xenevtchn;
-    xen::XenCtrl _xenctrl;
-    xen::XenDeviceModel _xendevicemodel;
-    xen::XenForeignMemory _xenforeignmemory;
-    xen::XenStore _xenstore;
+    xen::Xen::SharedPtr _xen;
 
     std::shared_ptr<uvw::Loop> _loop;
     std::shared_ptr<uvw::TcpHandle> _tcp;

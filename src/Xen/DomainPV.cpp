@@ -23,16 +23,15 @@ using xd::util::overloaded;
 #define SET_PV_USER(_regs, _pv, _reg) \
   _pv.user_regs._reg = _regs.get<_reg>();
 
-DomainPV::DomainPV(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
-    XenForeignMemory &xenforiegnmemory, XenStore &xenstore)
-  : Domain(domid, privcmd, xenevtchn, xenctrl, xenforiegnmemory, xenstore)
+DomainPV::DomainPV(DomID domid, Xen::SharedPtr xen)
+  : Domain(domid, std::move(xen))
 {
 }
 
 vcpu_guest_context_any_t DomainPV::get_cpu_context_raw(VCPU_ID vcpu_id) const {
   int err;
   vcpu_guest_context_any_t context_any;
-  if ((err = xc_vcpu_getcontext(_xenctrl.get(), _domid, (uint16_t)vcpu_id, &context_any))) {
+  if ((err = xc_vcpu_getcontext(_xen->xenctrl.get(), _domid, (uint16_t)vcpu_id, &context_any))) {
     throw XenException("Failed to get PV CPU context for VCPU " +
                        std::to_string(vcpu_id) + " of domain " +
                        std::to_string(_domid), -err);
@@ -59,7 +58,7 @@ void DomainPV::set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) c
 }
 
 void DomainPV::set_cpu_context_raw(vcpu_guest_context_any_t context, VCPU_ID vcpu_id) const {
-  int err = xc_vcpu_setcontext(_xenctrl.get(), _domid, vcpu_id, &context);
+  int err = xc_vcpu_setcontext(_xen->xenctrl.get(), _domid, vcpu_id, &context);
 
   if (err < 0) {
     throw XenException("Failed to set PV CPU context for VCPU " +

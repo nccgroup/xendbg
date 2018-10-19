@@ -11,8 +11,7 @@ namespace xd::xen {
 
   class DomainHVM : public Domain {
   public:
-    DomainHVM(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn,
-        XenCtrl &xenctrl, XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
+    DomainHVM(DomID domid, Xen::SharedPtr xen);
 
     struct MonitorCapabilities {
       bool mov_to_msr, singlestep, software_breakpoint, descriptor_access,

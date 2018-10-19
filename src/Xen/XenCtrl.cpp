@@ -5,6 +5,7 @@
 #include <Xen/XenCtrl.hpp>
 #include <Xen/XenException.hpp>
 
+using xd::xen::DomInfo ;
 using xd::xen::XenCtrl;
 using xd::xen::XenException;
 
@@ -21,6 +22,16 @@ XenCtrl::XenVersion XenCtrl::get_xen_version() const {
     version >> 16,
     version & ((1 << 16) - 1)
   };
+}
+
+DomInfo XenCtrl::get_domain_info(DomID domid) const {
+  xc_dominfo_t dominfo;
+  int ret = xc_domain_getinfo(_xenctrl.get(), domid, 1, &dominfo);
+
+  if (ret != 1 || dominfo.domid != domid)
+    throw XenException("Failed to get domain info!", errno);
+
+  return dominfo;
 }
 
 /*

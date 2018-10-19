@@ -9,7 +9,10 @@
 
 namespace xd::reg::x86 {
 
-  DECLARE_REGISTER(cr3,    uint64_t, -1);
+  DECLARE_REGISTER(cr0,      uint64_t, -1);
+  DECLARE_REGISTER(cr3,      uint64_t, -1);
+  DECLARE_REGISTER(cr4,      uint64_t, -1);
+  DECLARE_REGISTER(msr_efer, uint64_t, -1);
 
 }
 

@@ -19,8 +19,6 @@ namespace xd::xen {
            guest_request, debug_exception, cpuid_privileged_call;
     };
 
-    std::optional<PagePermissions> get_page_permissions(Address address) const override;
-
     xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const override;
     void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;
 

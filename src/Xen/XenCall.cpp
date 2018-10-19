@@ -39,7 +39,7 @@ XenCall::DomctlUnion XenCall::do_domctl(const Domain &domain,
     cleanup();
 
   if (err)
-    throw XenException("Hypercall failed: " + std::string(std::strerror(errno)));
+    throw XenException("Hypercall failed", -err);
 
   return domctl.u;
 }

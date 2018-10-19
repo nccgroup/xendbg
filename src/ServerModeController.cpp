@@ -5,6 +5,8 @@
 
 #include <Globals.hpp>
 
+#include "Debugger/Debugger.hpp"
+#include "Debugger/DebuggerHVM.hpp"
 #include "DebugSession.hpp"
 #include "ServerModeController.hpp"
 
@@ -78,7 +80,8 @@ void ServerModeController::run() {
       handle.close();
     });
     handle.loop().run();
-    _instances.clear();
+    //_instances.clear();
+    exit(0);
   });
   
   _signal->start(SIGINT);
@@ -133,6 +136,14 @@ void ServerModeController::add_instance(std::shared_ptr<xen::Domain> domain) {
   spdlog::get(LOGNAME_CONSOLE)->info(
       "UP: Domain {0:d} @ port {1:d}", domid, _next_port);
 
-  auto [kv, _] = _instances.emplace(domid, std::make_unique<DebugSession>(*_loop, std::move(domain)));
+  std::shared_ptr<dbg::Debugger> debugger;
+  if (domain->get_dominfo().hvm) {
+    auto domain_hvm = std::dynamic_pointer_cast<xen::DomainHVM>(domain);
+    debugger = std::make_shared<dbg::DebuggerHVM>(*_loop, domain_hvm, _xendevicemodel, _xenevtchn);
+  } else {
+    debugger = std::make_shared<dbg::Debugger>(*_loop, std::move(domain));
+  }
+
+  auto [kv, _] = _instances.emplace(domid, std::make_unique<DebugSession>(*_loop, std::move(debugger)));
   kv->second->run("127.0.0.1", _next_port++);
 }

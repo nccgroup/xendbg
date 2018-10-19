@@ -29,12 +29,6 @@ DomainHVM::DomainHVM(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, 
 {
 }
 
-std::optional<PagePermissions> DomainHVM::get_page_permissions(Address address) const {
-  xenmem_access_t access;
-  xc_get_mem_access(_xenctrl.get(), _domid, address >> XC_PAGE_SHIFT, &access);
-  return PagePermissions(access);
-}
-
 RegistersX86Any DomainHVM::get_cpu_context(VCPU_ID vcpu_id) const {
   return convert_regs_from_hvm(get_cpu_context_raw(vcpu_id));
 }
@@ -52,7 +46,7 @@ void DomainHVM::set_singlestep(bool enable, VCPU_ID vcpu_id) const {
                 ? XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_ON
                 : XEN_DOMCTL_DEBUG_OP_SINGLE_STEP_OFF;
 
-  if (vcpu_id > get_info().max_vcpu_id)
+  if (vcpu_id > get_dominfo().max_vcpu_id)
     throw XenException(
         "Tried to " + std::string(enable ? "enable" : "disable") +
         " single-step mode for nonexistent VCPU " + std::to_string(vcpu_id) +
@@ -231,7 +225,10 @@ RegistersX86Any DomainHVM::convert_regs_from_hvm(const struct hvm_hw_cpu &hvm) {
   GET_HVM2(regs, hvm, cs, cs_base);
   GET_HVM2(regs, hvm, ds, ds_base);
   GET_HVM2(regs, hvm, ss, ss_base);
+  GET_HVM(regs, hvm, cr0);
   GET_HVM(regs, hvm, cr3);
+  GET_HVM(regs, hvm, cr4);
+  GET_HVM(regs, hvm, msr_efer);
 
   return regs;
 }
@@ -263,7 +260,10 @@ struct hvm_hw_cpu DomainHVM::convert_regs_to_hvm(const RegistersX86_64 &regs, hv
   SET_HVM2(regs, hvm, cs, cs_base);
   SET_HVM2(regs, hvm, ds, ds_base);
   SET_HVM2(regs, hvm, ss, ss_base);
+  SET_HVM(regs, hvm, cr0);
   SET_HVM(regs, hvm, cr3);
+  SET_HVM(regs, hvm, cr4);
+  SET_HVM(regs, hvm, msr_efer);
 
   return hvm;
 }

@@ -1,8 +1,10 @@
 #include <Debugger/Debugger.hpp>
 
+using xd::xen::Address;
 using xd::xen::Domain;
+using xd::dbg::Debugger;
 
-xd::dbg::Debugger::Debugger(uvw::Loop &loop, std::shared_ptr<xen::Domain> domain)
+Debugger::Debugger(uvw::Loop &loop, std::shared_ptr<xen::Domain> domain)
     : _timer(loop.resource<uvw::TimerHandle>()), _domain(std::move(domain)), _vcpu_id(0), _is_attached(false),
       _last_stop_signal(SIGSTOP)
 {
@@ -15,21 +17,21 @@ xd::dbg::Debugger::Debugger(uvw::Loop &loop, std::shared_ptr<xen::Domain> domain
   cs_option(_capstone, CS_OPT_DETAIL, CS_OPT_ON);
 }
 
-xd::dbg::Debugger::~Debugger() {
+Debugger::~Debugger() {
   cs_close(&_capstone);
 
   if (_is_attached)
     this->detach();
 }
 
-void xd::dbg::Debugger::attach() {
+void Debugger::attach() {
   _is_attached = true;
   _domain->pause();
   _domain->set_debugging(true, _vcpu_id);
   _timer->data(shared_from_this());
 }
 
-void xd::dbg::Debugger::detach() {
+void Debugger::detach() {
   _domain->pause();
   cleanup();
   _domain->set_debugging(true, _vcpu_id);
@@ -37,7 +39,8 @@ void xd::dbg::Debugger::detach() {
   _is_attached = false;
 }
 
-void xd::dbg::Debugger::continue_() {
+void Debugger::continue_() {
+  /*
   // Single step first to get past the current BP, if any
   const auto prev_on_stop = _on_stop;
   _on_stop = [this, prev_on_stop](auto signal) {
@@ -47,9 +50,12 @@ void xd::dbg::Debugger::continue_() {
   };
 
   single_step();
+  */
+
+  _domain->unpause();
 }
 
-void xd::dbg::Debugger::single_step() {
+void Debugger::single_step() {
   const auto vcpu = _vcpu_id;
 
   const auto context = _domain->get_cpu_context(vcpu);
@@ -64,13 +70,14 @@ void xd::dbg::Debugger::single_step() {
   _last_single_step_vcpu_id = vcpu;
 
   _is_single_stepping = true;
-  _timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
+  //_timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
   _domain->unpause();
 }
 
-void xd::dbg::Debugger::on_stop(OnStopFn on_stop) {
+void Debugger::on_stop(OnStopFn on_stop) {
   _on_stop = std::move(on_stop);
 
+  /*
   _timer->on<uvw::TimerEvent>([](const auto &event, auto &handle) {
     auto self = handle.template data<Debugger>();
     auto status = self->_domain->hypercall_domctl(XEN_DOMCTL_gdbsx_domstatus).gdbsx_domstatus;
@@ -89,20 +96,20 @@ void xd::dbg::Debugger::on_stop(OnStopFn on_stop) {
       }
 
       if (!self->_is_single_stepping) {
-        /*
+        \*
          * Otherwise, we came from continuing into a breakpoint.
          * PV breaks are a bit weird; the guest pauses on the *next* instruction.
          * Since 0xCC BPs are 1 byte, we can just set RIP back by that amount to get
          * to the actual instruction that was broken on.
-         */
+         *\
         auto context_any = domain->get_cpu_context(vcpu);
         std::visit(util::overloaded {
-            [](reg::x86_64::RegistersX86_64 &context) {
-              context.get<reg::x86_64::rip>() -= 1;
-            },
-            [](reg::x86_32::RegistersX86_32 &context) {
-              context.get<reg::x86_32::eip>() -= 1;
-            }}, context_any);
+          [](reg::x86_64::RegistersX86_64 &context) {
+            context.get<reg::x86_64::rip>() -= 1;
+          },
+          [](reg::x86_32::RegistersX86_32 &context) {
+            context.get<reg::x86_32::eip>() -= 1;
+          }}, context_any);
         domain->set_cpu_context(context_any, vcpu);
       } else {
         self->_is_single_stepping = false;
@@ -114,22 +121,23 @@ void xd::dbg::Debugger::on_stop(OnStopFn on_stop) {
       self->on_stop_internal(SIGTRAP);
     }
   });
+*/
 }
 
-void xd::dbg::Debugger::on_stop_internal(int signal) {
+void Debugger::on_stop_internal(int signal) {
   _last_stop_signal = signal;
   if (_on_stop)
     _on_stop(signal);
 }
 
-void xd::dbg::Debugger::cleanup() {
+void Debugger::cleanup() {
   for (const auto &bp : _breakpoints) {
     std::cout << bp.first << std::endl;
     remove_breakpoint(bp.first);
   }
 }
 
-void xd::dbg::Debugger::insert_breakpoint(xd::xen::Address address) {
+void Debugger::insert_breakpoint(Address address) {
   spdlog::get(LOGNAME_CONSOLE)->debug("Inserting breakpoint at {0:x}", address);
 
   if (_breakpoints.count(address)) {
@@ -151,7 +159,7 @@ void xd::dbg::Debugger::insert_breakpoint(xd::xen::Address address) {
   *mem = 0xCC;
 }
 
-void xd::dbg::Debugger::remove_breakpoint(xd::xen::Address address) {
+void Debugger::remove_breakpoint(Address address) {
   spdlog::get(LOGNAME_CONSOLE)->debug("Removing breakpoint at {0:x}", address);
 
   if (!_breakpoints.count(address)) {
@@ -173,7 +181,15 @@ void xd::dbg::Debugger::remove_breakpoint(xd::xen::Address address) {
   _breakpoints.erase(_breakpoints.find(address));
 }
 
-xd::dbg::MaskedMemory xd::dbg::Debugger::read_memory_masking_breakpoints(xd::xen::Address address, size_t length) {
+void Debugger::insert_watchpoint(Address address, uint32_t bytes, xenmem_access_t access) {
+  throw FeatureNotSupportedException("insert watchpoint");
+}
+
+void Debugger::remove_watchpoint(Address address, uint32_t bytes, xenmem_access_t access) {
+  throw FeatureNotSupportedException("remove watchpoint");
+}
+
+xd::dbg::MaskedMemory Debugger::read_memory_masking_breakpoints(Address address, size_t length) {
   const auto mem_handle = _domain->map_memory<char>(
       address, length, PROT_READ);
   const auto mem_masked = (unsigned char*)malloc(length);
@@ -190,7 +206,7 @@ xd::dbg::MaskedMemory xd::dbg::Debugger::read_memory_masking_breakpoints(xd::xen
   return MaskedMemory(mem_masked);
 }
 
-void xd::dbg::Debugger::write_memory_retaining_breakpoints(xd::xen::Address address, size_t length, void *data) {
+void Debugger::write_memory_retaining_breakpoints(Address address, size_t length, void *data) {
   const auto half_overlap_start_address = address-1;
   const auto half_overlap_end_address = address+length-1;
 

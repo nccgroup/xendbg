@@ -15,24 +15,6 @@ namespace xd::xen {
       : read(read), write(write), execute(execute)
     {};
 
-    PagePermissions(xenmem_access_t access)
-      : read(access == XENMEM_access_r ||
-             access == XENMEM_access_rw ||
-             access == XENMEM_access_rx ||
-             access == XENMEM_access_rwx ||
-             access == XENMEM_access_rx2rw),
-        write(access == XENMEM_access_w ||
-              access == XENMEM_access_rw ||
-              access == XENMEM_access_wx ||
-              access == XENMEM_access_rwx),
-        execute(access == XENMEM_access_x ||
-                access == XENMEM_access_rx ||
-                access == XENMEM_access_wx ||
-                access == XENMEM_access_rwx ||
-                access == XENMEM_access_rx2rw)
-    {
-    }
-
     PagePermissions(const PageTableEntry &pte)
       : read(true),
         write(pte.is_rw()),

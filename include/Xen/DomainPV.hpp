@@ -14,8 +14,6 @@ namespace xd::xen {
     DomainPV(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, XenCtrl &xenctrl,
         XenForeignMemory &xenforiegnmemory, XenStore &xenstore);
 
-    std::optional<PagePermissions> get_page_permissions(Address address) const override;
-
     reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const override;
     void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;
 

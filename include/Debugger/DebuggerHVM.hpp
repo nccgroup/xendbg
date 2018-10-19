@@ -17,36 +17,22 @@
 
 #include "Debugger.hpp"
 
-#define X86_INT3 0xCC
-
 namespace xd::dbg {
 
-  class DebuggerHVM : public DebuggerImpl<xen::DomainHVM, uint8_t, X86_INT3> {
+  class DebuggerHVM : public Debugger {
   public:
-    DebuggerHVM(uvw::Loop &loop, xen::DomainHVM domain,
+    DebuggerHVM(uvw::Loop &loop, std::shared_ptr<xen::DomainHVM> domain,
         xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn);
 
     void attach() override;
     void detach() override;
 
-    void continue_() override;
-    void single_step() override;
-
-    void on_stop(Debugger::OnStopFn on_stop) override;
-    int get_last_stop_signal() override { return SIGSTOP; }; // TODO
+    void insert_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) override;
+    void remove_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) override;
 
   private:
+    std::shared_ptr<xen::DomainHVM> _domain;
     std::shared_ptr<xen::HVMMonitor> _monitor;
-    std::shared_ptr<uvw::TimerHandle> _timer;
-    OnStopFn _on_stop;
-    int _last_stop_signal;
-    xen::VCPU_ID _last_single_step_vcpu_id;
-    std::optional<xen::Address> _last_single_step_breakpoint_addr;
-    bool _is_single_stepping;
-
-    void on_stop_internal(int signal);
-
-    using Base = DebuggerImpl<xen::DomainHVM, uint8_t, X86_INT3>;
   };
 
 }

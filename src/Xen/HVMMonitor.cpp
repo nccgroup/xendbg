@@ -106,7 +106,7 @@ void HVMMonitor::read_events() {
     memset(&rsp, 0, sizeof(rsp));
     rsp.version = VM_EVENT_INTERFACE_VERSION;
     rsp.vcpu_id = req.vcpu_id;
-    rsp.flags = (req.flags & VM_EVENT_FLAG_VCPU_PAUSED);
+    rsp.flags = req.flags & VM_EVENT_FLAG_VCPU_PAUSED;
     rsp.reason = req.reason;
 
     if (req.version != VM_EVENT_INTERFACE_VERSION)
@@ -117,39 +117,30 @@ void HVMMonitor::read_events() {
         std::cout << ">>> mem access" << std::endl;
         break;
       case VM_EVENT_REASON_SOFTWARE_BREAKPOINT:
-        std::cout << ">>> software breakpoint" << std::endl;
-
+        std::cout << ">>> software BP" << std::endl;
         _xendevicemodel.inject_event(
             _domain, req.vcpu_id, X86_TRAP_INT3,
             req.u.software_breakpoint.type, -1,
             req.u.software_breakpoint.insn_length, 0);
-
-        _domain.pause();
-
-        if (_on_software_breakpoint)
-          _on_software_breakpoint(req);
         break;
       case VM_EVENT_REASON_PRIVILEGED_CALL:
-        std::cout << ">>> privileged call" << std::endl;
         break;
       case VM_EVENT_REASON_SINGLESTEP:
+        rsp.flags |= VM_EVENT_FLAG_TOGGLE_SINGLESTEP;
         std::cout << ">>> single step" << std::endl;
-        if (_on_singlestep)
-          _on_singlestep(req);
         break;
       case VM_EVENT_REASON_DEBUG_EXCEPTION:
-        std::cout << ">>> debug exception" << std::endl;
         break;
       case VM_EVENT_REASON_CPUID:
-        std::cout << ">>> cpu id" << std::endl;
         break;
       case VM_EVENT_REASON_DESCRIPTOR_ACCESS:
-        std::cout << ">>> descriptor access" << std::endl;
         break;
       default:
-        std::cout << ">>> unknown" << std::endl;
         break;
     }
+
+    if (_on_event)
+      _on_event(req);
 
     put_response(rsp);
   }

@@ -31,7 +31,8 @@ namespace xd::reg::x86_32 {
 
   using RegistersX86_32 = RegisterContext<
     eax, ebx, ecx, edx, esp, ss, ebp, esi, edi,
-    eip, eflags, cs, ds, es, fs, gs, x86::cr3>;
+    eip, eflags, cs, ds, es, fs, gs,
+    x86::cr0, x86::cr3, x86::cr4, x86::msr_efer>;
 
 }
 

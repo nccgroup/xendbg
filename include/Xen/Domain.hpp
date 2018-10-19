@@ -38,7 +38,7 @@ namespace xd::xen {
     DomID get_domid() const { return _domid; };
     std::string get_name() const;
     std::string get_kernel_path() const;
-    DomInfo get_info() const;
+    DomInfo get_dominfo() const;
     int get_word_size() const;
 
     void set_debugging(bool enabled, VCPU_ID vcpu_id) const;
@@ -46,8 +46,10 @@ namespace xd::xen {
 
     Address translate_foreign_address(Address vaddr, VCPU_ID vcpu_id) const;
     MemInfo map_meminfo() const;
-    std::optional<PageTableEntry> get_page_table_entry(Address address) const;
-    virtual std::optional<PagePermissions> get_page_permissions(Address address) const = 0;
+    std::optional<PageTableEntry> get_page_table_entry(Address address, VCPU_ID vcpu_id) const;
+
+    void set_mem_access(xenmem_access_t access, Address start_pfn, uint32_t num_pages) const;
+    xenmem_access_t get_mem_access(Address pfn) const;
 
     virtual xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const = 0;
     virtual void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const = 0;

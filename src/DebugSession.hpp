@@ -20,8 +20,9 @@ namespace xd {
 
   class DebugSession {
   public:
-    DebugSession(uvw::Loop &loop, std::shared_ptr<xen::Domain> domain)
-      : _debugger(std::make_shared<dbg::Debugger>(loop, std::move(domain))), _gdb_server(std::make_shared<gdb::GDBServer>(loop))
+    DebugSession(uvw::Loop &loop, std::shared_ptr<dbg::Debugger> debugger)
+      : _debugger(std::move(debugger)),
+        _gdb_server(std::make_shared<gdb::GDBServer>(loop))
     {
     };
 
@@ -46,6 +47,9 @@ namespace xd {
             } catch (const xen::XenException &e) {
               spdlog::get(LOGNAME_CONSOLE)->error("Error {0:d} ({1:s}): {2:s}", e.get_err(), std::strerror(e.get_err()), e.what());
               connection.send_error(e.get_err(), e.what());
+            } catch (const dbg::FeatureNotSupportedException &e) {
+              spdlog::get(LOGNAME_CONSOLE)->warn("Unsupported feature: {0:s}", e.what());
+              connection.send(gdb::rsp::NotSupportedResponse());
             }
           }, [this]() {
             _debugger->detach();

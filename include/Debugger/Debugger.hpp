@@ -40,10 +40,11 @@ namespace xd::dbg {
     xen::Address _address;
   };
 
-  class NoSuchSymbolException : public std::runtime_error {
+  class FeatureNotSupportedException : public std::runtime_error {
   public:
-    explicit NoSuchSymbolException(const std::string &name)
-        : std::runtime_error(name) {};
+    explicit FeatureNotSupportedException(const std::string &msg)
+      : std::runtime_error(msg)
+    {};
   };
 
   using MaskedMemory = std::unique_ptr<unsigned char>;
@@ -57,8 +58,8 @@ namespace xd::dbg {
 
     virtual const xen::Domain &get_domain() { return *_domain; };
 
-    void attach();
-    void detach();
+    virtual void attach();
+    virtual void detach();
 
     void continue_();
     void single_step();
@@ -67,6 +68,9 @@ namespace xd::dbg {
 
     void insert_breakpoint(xen::Address address);
     void remove_breakpoint(xen::Address address);
+
+    virtual void insert_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access);
+    virtual void remove_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access);
 
     void on_stop(OnStopFn on_stop);
     int get_last_stop_signal() { return _last_stop_signal; };
@@ -79,14 +83,17 @@ namespace xd::dbg {
     xen::VCPU_ID get_vcpu_id() { return _vcpu_id; };
     void set_vcpu_id(xen::VCPU_ID vcpu_id) { _vcpu_id = vcpu_id; };
 
+  protected:
+    void on_stop_internal(int signal);
+
   private:
     using BreakpointMap = std::unordered_map<xen::Address, uint8_t>;
 
     std::shared_ptr<xen::Domain> _domain;
     BreakpointMap _breakpoints;
-    OnStopFn _on_stop;
     csh _capstone;
     std::shared_ptr<uvw::TimerHandle> _timer;
+    OnStopFn _on_stop;
 
     xen::VCPU_ID _vcpu_id;
     bool _is_attached;
@@ -94,8 +101,6 @@ namespace xd::dbg {
     xen::VCPU_ID _last_single_step_vcpu_id;
     std::optional<xen::Address> _last_single_step_breakpoint_addr;
     bool _is_single_stepping;
-
-    void on_stop_internal(int signal);
   };
 
 }

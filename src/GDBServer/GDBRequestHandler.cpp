@@ -313,15 +313,27 @@ void GDBRequestHandler::operator()(
     const req::BreakpointInsertRequest &req) const
 {
   switch (req.get_type()) {
-    case 0: { // Breakpoint
-      const auto address = req.get_address();
-      _debugger.insert_breakpoint(address);
+    case 0: { // Software breakpoint
+      _debugger.insert_breakpoint(req.get_address());
       send(rsp::OKResponse());
     }; break;
-    case 1: { // Watchpoint
+    case 1: { // Hardware breakpoint
       send(rsp::NotSupportedResponse());
     }; break;
-    case 2: { // Catchpoint
+    case 2: { // Write watchpoint
+      // 'kind' indicates the number of bytes to watch
+      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_w);
+      send(rsp::OKResponse());
+    }; break;
+    case 3: { // Read watchpoint
+      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_r);
+      send(rsp::OKResponse());
+    }; break;
+    case 4: { // Access watchpoint
+      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_rwx);
+      send(rsp::OKResponse());
+    }; break;
+    default: {
       send(rsp::NotSupportedResponse());
     }; break;
   }
@@ -331,9 +343,31 @@ template <>
 void GDBRequestHandler::operator()(
     const req::BreakpointRemoveRequest &req) const
 {
-  const auto address = req.get_address();
-  _debugger.remove_breakpoint(address);
-  send(rsp::OKResponse());
+  switch (req.get_type()) {
+    case 0: { // Software breakpoint
+      _debugger.remove_breakpoint(req.get_address());
+      send(rsp::OKResponse());
+    }; break;
+    case 1: { // Hardware breakpoint
+      send(rsp::NotSupportedResponse());
+    }; break;
+    case 2: { // Write watchpoint
+      // 'kind' indicates the number of bytes to watch
+      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_w);
+      send(rsp::OKResponse());
+    }; break;
+    case 3: { // Read watchpoint
+      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_r);
+      send(rsp::OKResponse());
+    }; break;
+    case 4: { // Access watchpoint
+      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_rwx);
+      send(rsp::OKResponse());
+    }; break;
+    default: {
+      send(rsp::NotSupportedResponse());
+    }; break;
+  }
 }
 
 template <>

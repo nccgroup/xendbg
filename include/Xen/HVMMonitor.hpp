@@ -24,11 +24,6 @@ namespace xd::xen {
   public:
     using OnEventFn = std::function<void(vm_event_request_t)>;
 
-    struct Capabilities {
-      bool mov_to_msr, singlestep, software_breakpoint, descriptor_access,
-           guest_request, _debug_exceptions, cpuid_privileged_call;
-    };
-
     HVMMonitor(xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn,
         uvw::Loop &loop, DomainHVM &domain);
     ~HVMMonitor();
@@ -36,13 +31,8 @@ namespace xd::xen {
     void start();
     void stop();
 
-    Capabilities get_capabilities();
-
-    void on_software_breakpoint(OnEventFn callback) {
-      _on_software_breakpoint = callback;
-    };
-    void on_singlestep(OnEventFn callback) {
-      _on_singlestep = callback;
+    void on_event(OnEventFn callback) {
+      _on_event = std::move(callback);
     };
 
   private:
@@ -58,8 +48,7 @@ namespace xd::xen {
     vm_event_back_ring_t _back_ring;
     std::shared_ptr<uvw::PollHandle> _poll;
 
-    OnEventFn _on_software_breakpoint;
-    OnEventFn _on_singlestep;
+    OnEventFn _on_event;
 
   private:
     vm_event_request_t get_request();

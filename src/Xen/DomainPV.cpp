@@ -29,15 +29,6 @@ DomainPV::DomainPV(DomID domid, XenCall &privcmd, XenEventChannel &xenevtchn, Xe
 {
 }
 
-std::optional<PagePermissions> DomainPV::get_page_permissions(Address address) const {
-  const auto pte = get_page_table_entry(address);
-
-  if (!pte || !pte->is_present())
-    return std::nullopt;
-
-  return PagePermissions(*pte);
-}
-
 vcpu_guest_context_any_t DomainPV::get_cpu_context_raw(VCPU_ID vcpu_id) const {
   int err;
   vcpu_guest_context_any_t context_any;
@@ -145,7 +136,11 @@ RegistersX86_64 DomainPV::convert_regs_from_pv64(const vcpu_guest_context_any_t 
   GET_PV_USER(regs, pv64, ds);
   GET_PV_USER(regs, pv64, ss);
 
+  regs.get<cr0>() = pv.c.ctrlreg[0];
   regs.get<cr3>() = pv.c.ctrlreg[3];
+  regs.get<cr4>() = pv.c.ctrlreg[4];
+
+  regs.get<msr_efer>() = 0; // TODO
 
   return regs;
 }
@@ -180,7 +175,9 @@ vcpu_guest_context_any_t DomainPV::convert_regs_to_pv64(const RegistersX86_64 &r
   SET_PV_USER(regs, pv64, ds);
   SET_PV_USER(regs, pv64, ss);
 
+  pv.c.ctrlreg[0] = regs.get<cr0>();
   pv.c.ctrlreg[3] = regs.get<cr3>();
+  pv.c.ctrlreg[4] = regs.get<cr4>();
 
   return pv;
 }
@@ -209,7 +206,11 @@ RegistersX86_32 DomainPV::convert_regs_from_pv32(const vcpu_guest_context_any_t 
   GET_PV_USER(regs, pv32, fs);
   GET_PV_USER(regs, pv32, gs);
 
+  regs.get<cr0>() = pv.c.ctrlreg[0];
   regs.get<cr3>() = pv.c.ctrlreg[3];
+  regs.get<cr4>() = pv.c.ctrlreg[4];
+
+  regs.get<msr_efer>() = 0; // TODO
 
   return regs;
 }
@@ -237,7 +238,9 @@ vcpu_guest_context_any_t DomainPV::convert_regs_to_pv32(const RegistersX86_32 &r
   SET_PV_USER(regs, pv32, fs);
   SET_PV_USER(regs, pv32, gs);
 
+  pv.c.ctrlreg[0] = regs.get<cr0>();
   pv.c.ctrlreg[3] = regs.get<cr3>();
+  pv.c.ctrlreg[4] = regs.get<cr4>();
 
   return pv;
 }

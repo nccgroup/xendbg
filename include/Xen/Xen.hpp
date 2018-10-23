@@ -22,25 +22,25 @@ namespace xd::xen {
   using DomainAny = std::variant<DomainPV, DomainHVM>;
 
   class Xen : public std::enable_shared_from_this<Xen> {
-  public:
-    using SharedPtr = std::shared_ptr<Xen>;
+  private:
+    struct ConstructorAccess {};
 
-    static SharedPtr create() {
-      return std::make_shared<Xen>();
+  public:
+    Xen() = default;
+    explicit Xen(ConstructorAccess ca) : Xen() {};
+
+    static std::shared_ptr<Xen> create() {
+      return std::make_shared<Xen>(ConstructorAccess{});
     }
 
     DomainAny init_domain(DomID domid);
     std::vector<DomainAny> get_domains();
 
-    XenCall xencall;
     XenCtrl xenctrl;
     XenDeviceModel xendevicemodel;
-    XenEventChannel xenevtchan;
+    XenEventChannel xenevtchn;
     XenForeignMemory xenforeignmemory;
     XenStore xenstore;
-
-  private:
-    Xen() = default;
   };
 
 }

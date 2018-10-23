@@ -36,8 +36,14 @@ namespace xd::gdb::rsp {
       return ss.str();
     }
 
+    template <typename Value_t>
+    void add_list_entry(std::stringstream &ss, Value_t value) {
+      ss << value;
+      ss << ",";
+    }
+
     template <typename Key_t, typename Value_t>
-    void add_list_entry(std::stringstream &ss, Key_t key, Value_t value) {
+    void add_map_entry(std::stringstream &ss, Key_t key, Value_t value) {
       ss << key;
       ss << ":";
       ss << value;

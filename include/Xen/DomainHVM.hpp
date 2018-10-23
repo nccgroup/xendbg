@@ -6,25 +6,26 @@
 #define XENDBG_DOMAINHVM_HPP
 
 #include "Domain.hpp"
+#include "XenEventChannel.hpp"
 
 namespace xd::xen {
 
   class DomainHVM : public Domain {
   public:
-    DomainHVM(DomID domid, Xen::SharedPtr xen);
+    DomainHVM(DomID domid, std::shared_ptr<Xen> xen);
 
-    struct MonitorCapabilities {
-      bool mov_to_msr, singlestep, software_breakpoint, descriptor_access,
-           guest_request, debug_exception, cpuid_privileged_call;
-    };
-
-    xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const override;
-    void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;
+    reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const override;
+    void set_cpu_context(reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;
 
     void set_singlestep(bool enabled, VCPU_ID vcpu_id) const override;
 
     XenEventChannel::RingPageAndPort enable_monitor() const;
     void disable_monitor() const;
+
+    struct MonitorCapabilities {
+      bool mov_to_msr, singlestep, software_breakpoint, descriptor_access,
+           guest_request, debug_exception, cpuid_privileged_call;
+    };
 
     MonitorCapabilities monitor_get_capabilities();
     void monitor_mov_to_msr(uint32_t msr, bool enable);

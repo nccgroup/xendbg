@@ -47,6 +47,11 @@ namespace xd::gdb {
     {
     }
 
+    void send_stop_reply() const {
+      const auto stop_info = _debugger.get_last_stop_info();
+      _connection.send(rsp::StopReasonSignalResponse(stop_info.first, stop_info.second+1, get_thread_ids()));
+    }
+
     void send_error(uint8_t code, std::string message = "") const {
       _connection.send_error(code, std::move(message));
     }
@@ -58,6 +63,8 @@ namespace xd::gdb {
   private:
     xd::dbg::Debugger &_debugger;
     GDBConnection &_connection;
+
+    std::vector<size_t> get_thread_ids() const;
 
   public:
     // Default to a "not supported" response

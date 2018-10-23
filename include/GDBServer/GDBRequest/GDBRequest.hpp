@@ -78,6 +78,9 @@ namespace xd::gdb::req {
       General,
     };
 
+    Op get_op() const { return _op; }
+    size_t get_thread_id() const { return _thread_id; }
+
   private:
     Op _op;
     size_t _thread_id;

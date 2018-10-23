@@ -60,10 +60,10 @@ std::string QueryHostInfoResponse::to_string() const {
   std::stringstream ss;
 
   ss << "triple:7838365f36342d70632d6c696e75782d676e75;ptrsize:8;endian:little;hostname:7468696e6b706164;";
-  //add_list_entry(ss, "triple", hexify(make_triple()));
-  add_list_entry(ss, "endian", "little"); // TODO can this ever be big?
-  add_list_entry(ss, "ptrsize", _word_size);
-  //add_list_entry(ss, "hostname", hexify(_hostname));
+  //add_map_entry(ss, "triple", hexify(make_triple()));
+  add_map_entry(ss, "endian", "little"); // TODO can this ever be big?
+  add_map_entry(ss, "ptrsize", _word_size);
+  //add_map_entry(ss, "hostname", hexify(_hostname));
   return ss.str();
 };
 
@@ -84,9 +84,9 @@ std::string QueryHostInfoResponse::make_triple() const {
 
 std::string QueryProcessInfoResponse::to_string() const {
   std::stringstream ss;
-  add_list_entry(ss, "pid", _pid);
-  add_list_entry(ss, "ptrsize", sizeof(uint64_t));
-  add_list_entry(ss, "endian", "little");     // TODO
+  add_map_entry(ss, "pid", _pid);
+  add_map_entry(ss, "ptrsize", sizeof(uint64_t));
+  add_map_entry(ss, "endian", "little");     // TODO
   return ss.str();
 };
 
@@ -95,25 +95,25 @@ std::string QueryProcessInfoResponse::to_string() const {
 std::string QueryMemoryRegionInfoResponse::to_string() const {
   std::stringstream ss;
   ss << std::hex;
-  add_list_entry(ss, "start", _start_address);
-  add_list_entry(ss, "size", _size);
-  add_list_entry(ss, "permissions", make_permissions_string());
+  add_map_entry(ss, "start", _start_address);
+  add_map_entry(ss, "size", _size);
+  add_map_entry(ss, "permissions", make_permissions_string());
   if (!_name.empty())
-    add_list_entry(ss, "name", _start_address);
+    add_map_entry(ss, "name", _start_address);
   return ss.str();
 };
 
 std::string QueryRegisterInfoResponse::to_string() const {
   std::stringstream ss;
-  add_list_entry(ss, "name", _name);
-  add_list_entry(ss, "bitsize", _width);
-  add_list_entry(ss, "offset", _offset);
-  add_list_entry(ss, "encoding", "uint");
-  add_list_entry(ss, "format", "hex");
-  add_list_entry(ss, "set", "General Purpose Registers");
+  add_map_entry(ss, "name", _name);
+  add_map_entry(ss, "bitsize", _width);
+  add_map_entry(ss, "offset", _offset);
+  add_map_entry(ss, "encoding", "uint");
+  add_map_entry(ss, "format", "hex");
+  add_map_entry(ss, "set", "General Purpose Registers");
   if (_gcc_register_id != (size_t)-1) {
-    add_list_entry(ss, "ehframe", _gcc_register_id);
-    add_list_entry(ss, "dwarf", _gcc_register_id); // TODO
+    add_map_entry(ss, "ehframe", _gcc_register_id);
+    add_map_entry(ss, "dwarf", _gcc_register_id); // TODO
   }
   return ss.str();
 };

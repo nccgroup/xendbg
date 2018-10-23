@@ -3,6 +3,8 @@
 //
 
 #include <Xen/Domain.hpp>
+#include <Xen/Xen.hpp>
+#include <Xen/XenForeignMemory.hpp>
 #include <Util/overloaded.hpp>
 #include <Registers/RegistersX86.hpp>
 
@@ -12,6 +14,8 @@ using xd::xen::Domain;
 using xd::xen::DomInfo;
 using xd::xen::MemInfo;
 using xd::xen::Xen;
+using xd::xen::XenCall;
+using xd::xen::XenForeignMemory;
 
 #define CR0_PG 0x80000000
 #define CR4_PAE 0x2
@@ -58,10 +62,11 @@ void Domain::set_debugging(bool enable, VCPU_ID vcpu_id) const {
   }
 }
 
-Domain::Domain(DomID domid, Xen::SharedPtr xen)
+Domain::Domain(DomID domid, std::shared_ptr<Xen> xen)
     : _domid(domid), _xen(std::move(xen))
 {
-  get_dominfo();
+  const auto vcpu_count = get_dominfo().max_vcpu_id + 1;
+  _vcpu_pause_state.resize(vcpu_count);
 }
 
 std::string Domain::get_name() const {
@@ -117,7 +122,7 @@ MemInfo Domain::map_meminfo() const {
   return meminfo;
 }
 
-// modifierd version of xc_translate_foreign_address in xc_pagetab.c
+// modified version of xc_translate_foreign_address in xc_pagetab.c
 std::optional<xd::xen::PageTableEntry> Domain::get_page_table_entry(Address vaddr, VCPU_ID vcpu_id) const {
   // FYI: "cr3" is the register that holds the base address of the page table
   const auto [cr0, cr3, cr4, msr_efer] = std::visit(util::overloaded {
@@ -192,7 +197,49 @@ xenmem_access_t Domain::get_mem_access(Address pfn) const {
   return access;
 }
 
-void Domain::pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id) const {
+void Domain::pause_vcpu(VCPU_ID vcpu_id) {
+  pause_unpause_vcpu(XEN_DOMCTL_gdbsx_pausevcpu, vcpu_id);
+};
+
+void Domain::unpause_vcpu(VCPU_ID vcpu_id) {
+  pause_unpause_vcpu(XEN_DOMCTL_gdbsx_unpausevcpu, vcpu_id);
+};
+
+void Domain::pause_vcpus_except(VCPU_ID vcpu_id) {
+  pause_unpause_vcpus_except(XEN_DOMCTL_gdbsx_pausevcpu, vcpu_id);
+};
+
+void Domain::unpause_vcpus_except(VCPU_ID vcpu_id) {
+  pause_unpause_vcpus_except(XEN_DOMCTL_gdbsx_unpausevcpu, vcpu_id);
+};
+
+void Domain::pause_all_vcpus() {
+  pause_unpause_all_vcpus(XEN_DOMCTL_gdbsx_pausevcpu);
+};
+
+void Domain::unpause_all_vcpus() {
+  pause_unpause_all_vcpus(XEN_DOMCTL_gdbsx_unpausevcpu);
+};
+
+void Domain::pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id) {
+  // (Un)pausing while (un)paused has no effect
+  // Otherwise the internal refcounts that Xen keeps get too complicated to manage
+  if (hypercall == XEN_DOMCTL_gdbsx_pausevcpu) {
+    if (_vcpu_pause_state[vcpu_id]) {
+      return;
+    } else {
+      _vcpu_pause_state[vcpu_id] = true;
+    }
+  } else if (hypercall == XEN_DOMCTL_gdbsx_unpausevcpu) {
+    if (_vcpu_pause_state[vcpu_id]) {
+      _vcpu_pause_state[vcpu_id] = false;
+    } else {
+      return;
+    }
+  } else {
+    throw std::runtime_error("Unknown domctl!");
+  }
+
   hypercall_domctl(hypercall,
     [vcpu_id](auto &u) {
       auto &op = u.gdbsx_pauseunp_vcpu;
@@ -200,14 +247,21 @@ void Domain::pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id) const {
     });
 }
 
-void Domain::pause_unpause_vcpus_except(uint32_t hypercall, VCPU_ID vcpu_id) const {
-  auto max_vcpu_id = get_dominfo().max_vcpu_id;
+void Domain::pause_unpause_vcpus_except(uint32_t hypercall, VCPU_ID vcpu_id) {
+  const auto max_vcpu_id = get_dominfo().max_vcpu_id;
 
   for (VCPU_ID id = 0; id <= max_vcpu_id; ++id) {
     if (id == vcpu_id)
       continue;
     pause_unpause_vcpu(hypercall, id);
   }
+}
+
+void Domain::pause_unpause_all_vcpus(uint32_t hypercall) {
+  const auto max_vcpu_id = get_dominfo().max_vcpu_id;
+
+  for (VCPU_ID id = 0; id <= max_vcpu_id; ++id)
+    pause_unpause_vcpu(hypercall, id);
 }
 
 void Domain::pause() const {
@@ -257,9 +311,17 @@ xen_pfn_t Domain::get_max_gpfn() const {
   return max_gpfn;
 }
 
+XenCall::DomctlUnion Domain::hypercall_domctl(uint32_t command, XenCall::InitFn init, XenCall::CleanupFn cleanup) const {
+  return _xen->xenctrl.xencall.do_domctl(*this, command, std::move(init), std::move(cleanup));
+}
+
 void Domain::set_access_required(bool required) {
   if (const auto err = xc_domain_set_access_required(_xen->xenctrl.get(), _domid, required))
     throw XenException("xc_domain_set_access_required", -err);
+}
+
+XenForeignMemory &Domain::get_xenforeignmemory() const {
+  return _xen->xenforeignmemory;
 }
 
 // TODO: This doesn't seem to have any effect.

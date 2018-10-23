@@ -3,6 +3,7 @@
 //
 
 #include <Xen/DomainPV.hpp>
+#include <Xen/Xen.hpp>
 #include <Util/overloaded.hpp>
 
 using xd::reg::RegistersX86Any;
@@ -23,7 +24,7 @@ using xd::util::overloaded;
 #define SET_PV_USER(_regs, _pv, _reg) \
   _pv.user_regs._reg = _regs.get<_reg>();
 
-DomainPV::DomainPV(DomID domid, Xen::SharedPtr xen)
+DomainPV::DomainPV(DomID domid, std::shared_ptr<Xen> xen)
   : Domain(domid, std::move(xen))
 {
 }

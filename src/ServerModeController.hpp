@@ -37,7 +37,7 @@ namespace xd {
     void run_multi();
 
   private:
-    xen::Xen::SharedPtr _xen;
+    std::shared_ptr<xen::Xen> _xen;
 
     std::shared_ptr<uvw::Loop> _loop;
     std::shared_ptr<uvw::TcpHandle> _tcp;
@@ -53,7 +53,7 @@ namespace xd {
     size_t add_new_instances();
     size_t prune_instances();
 
-    void add_instance(std::shared_ptr<xen::Domain> domain);
+    void add_instance(xen::DomainAny domain);
   };
 
 }

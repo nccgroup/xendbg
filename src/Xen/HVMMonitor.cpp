@@ -46,8 +46,6 @@ void HVMMonitor::start() {
       const auto port = self->_xenevtchn.get_next_pending_channel();
       if (port == l_port)
         self->read_events();
-      else
-        std::cout << "port != l_port" << std::endl;
       self->_xenevtchn.unmask_channel(port);
   });
 
@@ -107,6 +105,7 @@ void HVMMonitor::read_events() {
     rsp.version = VM_EVENT_INTERFACE_VERSION;
     rsp.vcpu_id = req.vcpu_id;
     rsp.flags = req.flags & VM_EVENT_FLAG_VCPU_PAUSED;
+
     rsp.reason = req.reason;
 
     if (req.version != VM_EVENT_INTERFACE_VERSION)
@@ -118,15 +117,16 @@ void HVMMonitor::read_events() {
         break;
       case VM_EVENT_REASON_SOFTWARE_BREAKPOINT:
         std::cout << ">>> software BP" << std::endl;
+        /*
         _xendevicemodel.inject_event(
             _domain, req.vcpu_id, X86_TRAP_INT3,
             req.u.software_breakpoint.type, -1,
             req.u.software_breakpoint.insn_length, 0);
+            */
         break;
       case VM_EVENT_REASON_PRIVILEGED_CALL:
         break;
       case VM_EVENT_REASON_SINGLESTEP:
-        rsp.flags |= VM_EVENT_FLAG_TOGGLE_SINGLESTEP;
         std::cout << ">>> single step" << std::endl;
         break;
       case VM_EVENT_REASON_DEBUG_EXCEPTION:
@@ -149,6 +149,6 @@ void HVMMonitor::read_events() {
 }
 
 void HVMMonitor::unmap_ring_page(void *ring_page) {
-if (ring_page)
-  munmap(ring_page, XC_PAGE_SIZE);
+  if (ring_page)
+    munmap(ring_page, XC_PAGE_SIZE);
 }

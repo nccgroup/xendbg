@@ -11,10 +11,10 @@ namespace xd::xen {
 
   class DomainPV : public Domain {
   public:
-    DomainPV(DomID domid, Xen::SharedPtr xen);
+    DomainPV(DomID domid, std::shared_ptr<Xen> xen);
 
     reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const override;
-    void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;
+    void set_cpu_context(reg::RegistersX86Any regs, VCPU_ID vcpu_id) const override;
 
     void set_singlestep(bool enabled, VCPU_ID vcpu_id) const override;
 

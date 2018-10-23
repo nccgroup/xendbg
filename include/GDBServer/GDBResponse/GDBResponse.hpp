@@ -56,8 +56,8 @@ namespace xd::gdb::rsp {
 
   class StopReasonSignalResponse : public GDBResponse {
   public:
-    StopReasonSignalResponse(uint8_t signal, size_t thread_id)
-      : _signal(signal), _thread_id(thread_id) {};
+    StopReasonSignalResponse(uint8_t signal, size_t thread_id, std::vector<size_t> thread_ids)
+      : _signal(signal), _thread_id(thread_id), _thread_ids(std::move(thread_ids)) {};
 
     std::string to_string() const override {
       std::stringstream ss;
@@ -66,9 +66,12 @@ namespace xd::gdb::rsp {
       ss << (unsigned)_signal;
       ss << "thread:";
       ss << _thread_id;
-      ss << ";name:test";
       ss << ";threads:";
-      ss << _thread_id;
+      if (_thread_ids.size() == 1)
+        ss << _thread_ids.front();
+      else
+        for (const auto thread_id : _thread_ids)
+          add_list_entry(ss, thread_id);
       ss << ";reason:signal;";
       return ss.str();
     };
@@ -76,6 +79,7 @@ namespace xd::gdb::rsp {
   private:
     uint8_t _signal;
     size_t _thread_id;
+    std::vector<size_t> _thread_ids;
   };
 
   class TerminatedResponse : public GDBResponse {

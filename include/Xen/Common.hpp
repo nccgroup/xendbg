@@ -14,7 +14,7 @@
 
 namespace xd::xen {
   using Address = uintptr_t;
-  using DomID = uint32_t;
+  using DomID = domid_t;
   using DomInfo = xc_dominfo_t;
   using MemInfo = std::unique_ptr<xc_domain_meminfo, std::function<void(xc_domain_meminfo *p)>>;
   using VCPU_ID = uint32_t;

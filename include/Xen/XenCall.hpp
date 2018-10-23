@@ -2,8 +2,8 @@
 // Created by Spencer Michaels on 8/17/18.
 //
 
-#ifndef XENDBG_PRIVCMD_HPP
-#define XENDBG_PRIVCMD_HPP
+#ifndef XENDBG_XENCALL_HPP
+#define XENDBG_XENCALL_HPP
 
 #include <cstring>
 #include <cstddef>
@@ -35,14 +35,15 @@ namespace xd::xen {
     using InitFn = std::function<void(DomctlUnion&)>;
     using CleanupFn = std::function<void()>;
 
-    XenCall();
+    explicit XenCall(std::shared_ptr<xc_interface> xenctrl);
 
     DomctlUnion do_domctl(const Domain &domain, uint32_t command, InitFn init = {}, CleanupFn cleanup = {}) const;
 
   private:
+    std::shared_ptr<xc_interface> _xenctrl;
     std::unique_ptr<xencall_handle, decltype(&xencall_close)> _xencall;
   };
 
 }
 
-#endif //XENDBG_PRIVCMD_HPP
+#endif //XENDBG_XENCALL_HPP

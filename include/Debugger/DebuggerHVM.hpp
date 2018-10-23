@@ -21,18 +21,24 @@ namespace xd::dbg {
 
   class DebuggerHVM : public Debugger {
   public:
-    DebuggerHVM(uvw::Loop &loop, std::shared_ptr<xen::DomainHVM> domain,
+    DebuggerHVM(uvw::Loop &loop, xen::DomainHVM domain,
         xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn);
 
     void attach() override;
     void detach() override;
 
+    void continue_() override;
+    void single_step() override;
+
     void insert_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) override;
     void remove_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) override;
 
   private:
-    std::shared_ptr<xen::DomainHVM> _domain;
+    xen::DomainHVM _domain;
     std::shared_ptr<xen::HVMMonitor> _monitor;
+
+    std::optional<xen::Address> _last_single_step_breakpoint_addr;
+    bool _is_continuing;
   };
 
 }

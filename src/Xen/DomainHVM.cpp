@@ -5,6 +5,7 @@
 #include <Xen/DomainHVM.hpp>
 #include <Xen/BridgeHeaders/hvm_save.h>
 #include <Xen/BridgeHeaders/vm_event.h>
+#include <Xen/Xen.hpp>
 
 using xd::reg::RegistersX86Any;
 using xd::reg::x86_32::RegistersX86_32;
@@ -23,7 +24,7 @@ using xd::xen::Xen;
 #define SET_HVM2(_regs, _hvm, _reg, _hvm_reg) \
   _hvm._hvm_reg = _regs.get<_reg>();
 
-DomainHVM::DomainHVM(DomID domid, Xen::SharedPtr xen)
+DomainHVM::DomainHVM(DomID domid, std::shared_ptr<Xen> xen)
   : Domain(domid, std::move(xen))
 {
 }
@@ -60,7 +61,7 @@ void DomainHVM::set_singlestep(bool enable, VCPU_ID vcpu_id) const {
   }
 }
 
-XenEventChannel::RingPageAndPort DomainHVM::enable_monitor() const {
+xd::xen::XenEventChannel::RingPageAndPort DomainHVM::enable_monitor() const {
   uint32_t port;
   void *ring_page = xc_monitor_enable(_xen->xenctrl.get(), _domid, &port);
 

@@ -35,8 +35,7 @@ add_executable(xendbg
   include/Xen/BridgeHeaders/xenstore.h
   include/Xen/Common.hpp
   include/Xen/Domain.hpp
-  include/Xen/DomainAny.hpp
-  include/Xen/HVMMonitor.hpp
+        include/Xen/HVMMonitor.hpp
   include/Xen/PageTableEntry.hpp
   include/Xen/XenCall.hpp
   include/Xen/XenCtrl.hpp
@@ -52,8 +51,7 @@ add_executable(xendbg
         src/ServerModeController.cpp
         src/ServerModeController.hpp
   src/Xen/Domain.cpp
-  src/Xen/DomainAny.cpp
-  src/Xen/HVMMonitor.cpp
+        src/Xen/HVMMonitor.cpp
   src/Xen/PageTableEntry.cpp
   src/Xen/XenCall.cpp
   src/Xen/XenCtrl.cpp
@@ -62,7 +60,7 @@ add_executable(xendbg
   src/Xen/XenForeignMemory.cpp
   src/Xen/XenStore.cpp
   src/main.cpp
-        include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp include/Xen/DomainAny.hpp src/Xen/DomainAny.cpp
+        include/Xen/DomainPV.hpp include/Xen/DomainHVM.hpp src/Xen/DomainPV.cpp src/Xen/DomainHVM.cpp
         include/GDBServer/GDBRequestHandler.hpp
         src/GDBServer/GDBRequestHandler.cpp
         include/GDBServer/GDBServer.hpp

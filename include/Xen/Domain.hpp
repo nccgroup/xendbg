@@ -6,19 +6,23 @@
 #define XENDBG_DOMAIN_HPP
 
 #include <string>
+#include <vector>
 
 #include <Registers/RegistersX86Any.hpp>
 
 #include "Common.hpp"
 #include "PagePermissions.hpp"
 #include "PageTableEntry.hpp"
-#include "Xen.hpp"
+#include "XenCall.hpp"
+#include "XenForeignMemory.hpp"
 
 namespace xd::xen {
 
+  class Xen;
+
   class Domain {
   public:
-    Domain(DomID domid, Xen::SharedPtr xen);
+    Domain(DomID domid, std::shared_ptr<Xen> xen);
     virtual ~Domain() = default;
 
     bool operator==(const Domain &other) const {
@@ -47,26 +51,12 @@ namespace xd::xen {
     virtual xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const = 0;
     virtual void set_cpu_context(xd::reg::RegistersX86Any regs, VCPU_ID vcpu_id) const = 0;
 
-    xen_domctl_gdbsx_domstatus get_domstatus() const {
-      auto u = hypercall_domctl(XEN_DOMCTL_gdbsx_domstatus);
-      return u.gdbsx_domstatus;
-    };
-
-    void pause_vcpu(VCPU_ID vcpu_id) const {
-      pause_unpause_vcpu(XEN_DOMCTL_gdbsx_pausevcpu, vcpu_id);
-    };
-
-    void unpause_vcpu(VCPU_ID vcpu_id) const {
-      pause_unpause_vcpu(XEN_DOMCTL_gdbsx_unpausevcpu, vcpu_id);
-    };
-
-    void pause_vcpus_except(VCPU_ID vcpu_id) const {
-      pause_unpause_vcpus_except(XEN_DOMCTL_gdbsx_pausevcpu, vcpu_id);
-    };
-
-    void unpause_vcpus_except(VCPU_ID vcpu_id) const {
-      pause_unpause_vcpus_except(XEN_DOMCTL_gdbsx_unpausevcpu, vcpu_id);
-    };
+    void pause_vcpu(VCPU_ID vcpu_id);
+    void unpause_vcpu(VCPU_ID vcpu_id);
+    void pause_vcpus_except(VCPU_ID vcpu_id);
+    void unpause_vcpus_except(VCPU_ID vcpu_id);
+    void pause_all_vcpus();
+    void unpause_all_vcpus();
 
     void pause() const;
     void unpause() const;
@@ -75,18 +65,17 @@ namespace xd::xen {
 
     xen_pfn_t get_max_gpfn() const;
 
-    XenCall::DomctlUnion hypercall_domctl(uint32_t command, XenCall::InitFn init = {}, XenCall::CleanupFn cleanup = {}) const {
-      return _xen->get_xencall().do_domctl(*this, command, std::move(init), std::move(cleanup));
-    }
+    XenCall::DomctlUnion hypercall_domctl(uint32_t command, XenCall::InitFn init = {}, XenCall::CleanupFn cleanup = {}) const;
 
     template <typename Memory_t>
     XenForeignMemory::MappedMemory<Memory_t> map_memory(Address address, size_t size, int prot) const {
-      return _xen->get_xenforeignmemory().map<Memory_t>(*this, address, size, prot);
+      return get_xenforeignmemory().map_by_mfn<Memory_t>(
+          *this, translate_foreign_address(address, 0), address % XC_PAGE_SIZE, size, prot);
     };
 
     template <typename Memory_t>
     XenForeignMemory::MappedMemory<Memory_t> map_memory_by_mfn(Address mfn, Address offset, size_t size, int prot) const {
-      return _xen->get_xenforeignmemory().map_by_mfn<Memory_t>(*this, mfn, offset, size, prot);
+      return get_xenforeignmemory().map_by_mfn<Memory_t>(*this, mfn, offset, size, prot);
     };
 
     void set_access_required(bool required);
@@ -99,11 +88,15 @@ namespace xd::xen {
 
   protected:
     DomID _domid;
-    Xen::SharedPtr _xen;
+    std::shared_ptr<Xen> _xen;
+    std::vector<bool> _vcpu_pause_state;
 
   private:
-    void pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id) const;
-    void pause_unpause_vcpus_except(uint32_t hypercall, VCPU_ID vcpu_id) const;
+    void pause_unpause_vcpu(uint32_t hypercall, VCPU_ID vcpu_id);
+    void pause_unpause_vcpus_except(uint32_t hypercall, VCPU_ID vcpu_id);
+    void pause_unpause_all_vcpus(uint32_t hypercall);
+
+    XenForeignMemory &get_xenforeignmemory() const;
   };
 
 }

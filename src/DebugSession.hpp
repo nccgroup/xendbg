@@ -20,7 +20,7 @@ namespace xd {
 
   class DebugSession {
   public:
-    DebugSession(uvw::Loop &loop, dbg::Debugger debugger)
+    DebugSession(uvw::Loop &loop, std::shared_ptr<dbg::Debugger> debugger)
       : _debugger(std::move(debugger)),
         _gdb_server(std::make_shared<gdb::GDBServer>(loop))
     {
@@ -33,14 +33,14 @@ namespace xd {
 
       _gdb_server->listen(address_str, port,
         [this, on_error](auto &server, auto connection) {
-          _debugger.on_stop([connection](auto signal) {
-            connection->send(gdb::rsp::StopReasonSignalResponse(signal, 1));
-          };
-
-          _debugger.attach();
-
           _gdb_connection = connection;
-          _request_handler.emplace(_debugger, *_gdb_connection);
+          _request_handler.emplace(*_debugger, *_gdb_connection);
+
+          _debugger->on_stop([this, connection](auto signal, auto vcpu_id) {
+            _request_handler->send_stop_reply();
+          });
+          _debugger->attach();
+
           connection->read([this, &server](auto &connection, const auto &packet) {
             try {
               std::visit(*_request_handler, packet);
@@ -52,14 +52,14 @@ namespace xd {
               connection.send(gdb::rsp::NotSupportedResponse());
             }
           }, [this]() {
-            _debugger.detach();
+            _debugger->detach();
             _request_handler.reset();
           }, on_error);
         }, on_error);
     }
 
   private:
-    dbg::Debugger _debugger;
+    std::shared_ptr<dbg::Debugger> _debugger;
     std::shared_ptr<gdb::GDBServer> _gdb_server;
     std::shared_ptr<gdb::GDBConnection> _gdb_connection;
     std::optional<gdb::GDBRequestHandler> _request_handler;

@@ -15,6 +15,7 @@
 #include "BridgeHeaders/xenctrl.h"
 #include "BridgeHeaders/xenguest.h"
 #include "Common.hpp"
+#include "XenCall.hpp"
 #include "XenEventChannel.hpp"
 
 namespace xd::xen {
@@ -26,8 +27,13 @@ namespace xd::xen {
     struct XenVersion {
       int major, minor;
     };
+    static xen_domctl _dummy_domctl;
 
   public:
+    using DomctlUnion = decltype(XenCtrl::_dummy_domctl.u);
+    using InitFn = std::function<void(DomctlUnion&)>;
+    using CleanupFn = std::function<void()>;
+
     XenCtrl();
 
     xc_interface *get() const { return _xenctrl.get(); };
@@ -37,6 +43,9 @@ namespace xd::xen {
 
   private:
     std::shared_ptr<xc_interface> _xenctrl;
+
+  public:
+    XenCall xencall;
   };
 
 }

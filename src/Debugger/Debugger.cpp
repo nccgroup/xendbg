@@ -4,21 +4,25 @@ using xd::xen::Address;
 using xd::xen::Domain;
 using xd::dbg::Debugger;
 
-Debugger::Debugger(uvw::Loop &loop, std::shared_ptr<xen::Domain> domain)
-    : _timer(loop.resource<uvw::TimerHandle>()), _domain(std::move(domain)), _vcpu_id(0), _is_attached(false),
-      _last_stop_signal(SIGSTOP)
+Debugger::Debugger(xen::Domain &domain)
+    : _domain(domain), _vcpu_id(0), _is_attached(false),
+      _last_stop_info(SIGSTOP, 0)
 {
+  /*
   const auto mode =
-      (_domain->get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
+      (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
 
   if (cs_open(CS_ARCH_X86, mode, &_capstone) != CS_ERR_OK)
     throw CapstoneException("Failed to open Capstone handle!");
 
   cs_option(_capstone, CS_OPT_DETAIL, CS_OPT_ON);
+   */
 }
 
 Debugger::~Debugger() {
+  /*
   cs_close(&_capstone);
+   */
 
   if (_is_attached)
     this->detach();
@@ -26,61 +30,61 @@ Debugger::~Debugger() {
 
 void Debugger::attach() {
   _is_attached = true;
-  _domain->pause();
-  _domain->set_debugging(true, _vcpu_id);
-  _timer->data(shared_from_this());
+  _domain.pause();
+  //_domain.set_debugging(true, _vcpu_id);
 }
 
 void Debugger::detach() {
-  _domain->pause();
+  _domain.pause();
   cleanup();
-  _domain->set_debugging(true, _vcpu_id);
-  _domain->unpause();
+  //_domain.set_debugging(false, _vcpu_id);
+  _domain.unpause_all_vcpus();
+  _domain.unpause();
   _is_attached = false;
 }
 
+/*
 void Debugger::continue_() {
-  /*
   // Single step first to get past the current BP, if any
   const auto prev_on_stop = _on_stop;
   _on_stop = [this, prev_on_stop](auto signal) {
     _on_stop = prev_on_stop;
     _timer->start(uvw::TimerHandle::Time(10), uvw::TimerHandle::Time(100));
-    _domain->unpause();
+    _domain.unpause();
   };
 
   single_step();
-  */
 
-  _domain->unpause();
+  _domain.unpause();
 }
 
 void Debugger::single_step() {
   const auto vcpu = _vcpu_id;
 
-  const auto context = _domain->get_cpu_context(vcpu);
+  const auto context = _domain.get_cpu_context(vcpu);
   const auto instr_ptr = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(context);
   if (_breakpoints.count(instr_ptr)) {
     _last_single_step_breakpoint_addr = instr_ptr;
     remove_breakpoint(instr_ptr);
   }
 
-  _domain->pause_vcpus_except(vcpu);
-  _domain->set_singlestep(true, vcpu);
+  _domain.pause_vcpus_except(vcpu);
+  _domain.set_singlestep(true, vcpu);
   _last_single_step_vcpu_id = vcpu;
 
   _is_single_stepping = true;
   //_timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
-  _domain->unpause();
+  _domain.unpause();
 }
+ */
 
+/*
 void Debugger::on_stop(OnStopFn on_stop) {
   _on_stop = std::move(on_stop);
 
-  /*
   _timer->on<uvw::TimerEvent>([](const auto &event, auto &handle) {
     auto self = handle.template data<Debugger>();
-    auto status = self->_domain->hypercall_domctl(XEN_DOMCTL_gdbsx_domstatus).gdbsx_domstatus;
+    auto status = self->_domain.hypercall_domctl(XEN_DOMCTL_gdbsx_domstatus).gdbsx_domstatus;
     if (status.paused) {
       handle.stop();
       auto &domain = self->_domain;
@@ -121,13 +125,13 @@ void Debugger::on_stop(OnStopFn on_stop) {
       self->on_stop_internal(SIGTRAP);
     }
   });
-*/
 }
+*/
 
-void Debugger::on_stop_internal(int signal) {
-  _last_stop_signal = signal;
+void Debugger::did_stop(int signal, xen::VCPU_ID vcpu_id) {
+  _last_stop_info = std::make_pair(signal, vcpu_id);
   if (_on_stop)
-    _on_stop(signal);
+    _on_stop(signal, vcpu_id);
 }
 
 void Debugger::cleanup() {
@@ -149,7 +153,7 @@ void Debugger::insert_breakpoint(Address address) {
     return;
   }
 
-  const auto mem_handle = _domain->map_memory<uint8_t>(
+  const auto mem_handle = _domain.map_memory<uint8_t>(
       address, sizeof(uint8_t), PROT_READ | PROT_WRITE);
   const auto mem = mem_handle.get();
 
@@ -171,7 +175,7 @@ void Debugger::remove_breakpoint(Address address) {
     return;
   }
 
-  const auto mem_handle = _domain->map_memory<uint8_t>(
+  const auto mem_handle = _domain.map_memory<uint8_t>(
       address, sizeof(uint8_t), PROT_WRITE);
   const auto mem = mem_handle.get();
 
@@ -190,7 +194,7 @@ void Debugger::remove_watchpoint(Address address, uint32_t bytes, xenmem_access_
 }
 
 xd::dbg::MaskedMemory Debugger::read_memory_masking_breakpoints(Address address, size_t length) {
-  const auto mem_handle = _domain->map_memory<char>(
+  const auto mem_handle = _domain.map_memory<char>(
       address, length, PROT_READ);
   const auto mem_masked = (unsigned char*)malloc(length);
   memcpy(mem_masked, mem_handle.get(), length);
@@ -227,7 +231,7 @@ void Debugger::write_memory_retaining_breakpoints(Address address, size_t length
     }
   }
 
-  const auto mem_handle = _domain->map_memory<char>(address, length, PROT_WRITE);
+  const auto mem_handle = _domain.map_memory<char>(address, length, PROT_WRITE);
   const auto mem_orig = (char*)mem_handle.get() + (length - length_orig);
   memcpy((void*)mem_orig, data, length_orig);
 

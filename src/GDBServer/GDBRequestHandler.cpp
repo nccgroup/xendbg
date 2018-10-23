@@ -2,12 +2,20 @@
 
 using xd::gdb::GDBRequestHandler;
 
+std::vector<size_t> GDBRequestHandler::get_thread_ids() const {
+  const auto max_vcpu_id = _debugger.get_domain().get_dominfo().max_vcpu_id;
+  std::vector<size_t> thread_ids;
+  for (unsigned long vcpu_id = 0; vcpu_id <= max_vcpu_id; ++vcpu_id)
+    thread_ids.push_back(vcpu_id+1);
+  return thread_ids;
+}
+
 template <>
 void GDBRequestHandler::operator()(
     const req::InterruptRequest &) const
 {
   _debugger.get_domain().pause();
-  send(rsp::StopReasonSignalResponse(SIGSTOP, 1));
+  send(rsp::StopReasonSignalResponse(SIGSTOP, 1, get_thread_ids()));
 }
 
 template <>
@@ -137,14 +145,14 @@ template <>
 void GDBRequestHandler::operator()(
     const req::QueryCurrentThreadIDRequest &) const
 {
-  send(rsp::QueryCurrentThreadIDResponse(1));
+  send(rsp::QueryCurrentThreadIDResponse(_debugger.get_vcpu_id()));
 }
 
 template <>
 void GDBRequestHandler::operator()(
     const req::QueryThreadInfoStartRequest &) const
 {
-  send(rsp::QueryThreadInfoResponse({1}));
+  send(rsp::QueryThreadInfoResponse(get_thread_ids()));
 }
 
 template <>
@@ -158,7 +166,8 @@ template <>
 void GDBRequestHandler::operator()(
     const req::StopReasonRequest &) const
 {
-  send(rsp::StopReasonSignalResponse(_debugger.get_last_stop_signal(), 1));
+  const auto stop_info = _debugger.get_last_stop_info();
+  send(rsp::StopReasonSignalResponse(stop_info.first, stop_info.second, get_thread_ids()));
 }
 
 template <>
@@ -171,9 +180,12 @@ void GDBRequestHandler::operator()(
 
 template <>
 void GDBRequestHandler::operator()(
-    const req::SetThreadRequest&) const
+    const req::SetThreadRequest &req) const
 {
-  // TODO
+  // TODO: -1 means "all threads"... need to implement better support for this
+  const auto thread_id = req.get_thread_id();
+  if (thread_id != -1 && thread_id != 0)
+    _debugger.set_vcpu_id(thread_id);
   send(rsp::OKResponse());
 }
 

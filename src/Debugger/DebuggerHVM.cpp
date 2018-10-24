@@ -38,21 +38,19 @@ void DebuggerHVM::attach() {
       did_stop(SIGTRAP, event.vcpu_id);
     };
 
+    if (_last_single_step_breakpoint_addr) {
+      insert_breakpoint(*_last_single_step_breakpoint_addr);
+      _last_single_step_breakpoint_addr = std::nullopt;
+    }
+
     bool was_continuing = _is_continuing;
     _is_continuing = false;
 
     if (event.reason == VM_EVENT_REASON_SINGLESTEP) {
-      std::cout << "SS" << std::endl;
-      if (was_continuing) {
-        if (_last_single_step_breakpoint_addr) {
-          insert_breakpoint(*_last_single_step_breakpoint_addr);
-          _last_single_step_breakpoint_addr = std::nullopt;
-        }
-      } else {
+      if (!was_continuing)
         stop_and_signal(_domain);
-      }
       _domain.set_singlestep(false, get_vcpu_id());
-    } if (event.reason == VM_EVENT_REASON_SOFTWARE_BREAKPOINT) {
+    } else if (event.reason == VM_EVENT_REASON_SOFTWARE_BREAKPOINT) {
       stop_and_signal(_domain);
     }
   });

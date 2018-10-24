@@ -7,6 +7,7 @@
 
 #include "Debugger/Debugger.hpp"
 #include "Debugger/DebuggerHVM.hpp"
+#include "Debugger/DebuggerPV.hpp"
 #include "DebugSession.hpp"
 #include "ServerModeController.hpp"
 
@@ -151,17 +152,15 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   spdlog::get(LOGNAME_CONSOLE)->info(
       "UP: Domain {0:d} @ port {1:d}", domid, _next_port);
 
-  std::shared_ptr<dbg::Debugger> debugger;
-  std::visit(util::overloaded {
+  auto debugger = std::visit(util::overloaded {
     [&](xen::DomainHVM domain) {
-      debugger = std::static_pointer_cast<dbg::Debugger>(
+      return std::static_pointer_cast<dbg::Debugger>(
           std::make_shared<dbg::DebuggerHVM>(
               *_loop, std::move(domain), _xen->xendevicemodel, _xen->xenevtchn));
     },
     [&](xen::DomainPV domain) {
-      /*std::static_pointer_cast<dbg::Debugger>(
-          std::make_shared<dbg::Debugger>(
-              *_loop, std::move(domain)));*/
+      return std::static_pointer_cast<dbg::Debugger>(
+          std::make_shared<dbg::DebuggerPV>(*_loop, std::move(domain)));
     },
   }, domain_any);
 

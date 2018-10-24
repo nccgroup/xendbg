@@ -13,6 +13,8 @@ include_directories(
 
 add_executable(xendbg
         include/Debugger/Debugger.hpp
+        include/Debugger/DebuggerPV.hpp
+        src/Debugger/DebuggerPV.cpp
         include/Debugger/DebuggerHVM.hpp
   include/GDBServer/GDBConnection.hpp
         include/GDBServer/GDBPacketQueue.hpp

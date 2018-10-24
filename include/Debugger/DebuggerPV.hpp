@@ -20,10 +20,9 @@
 
 namespace xd::dbg {
 
-  class DebuggerPV : public DebuggerImpl<xen::DomainPV, uint8_t, X86_INT3> {
+  class DebuggerPV : public Debugger {
   public:
     DebuggerPV(uvw::Loop &loop, xen::DomainPV domain);
-    ~DebuggerPV() = default;
 
     void attach() override;
     void detach() override;
@@ -31,20 +30,13 @@ namespace xd::dbg {
     void continue_() override;
     void single_step() override;
 
-    void on_stop(Debugger::OnStopFn on_stop) override;
-    int get_last_stop_signal() override { return _last_stop_signal; };
-
   private:
+    xen::DomainPV _domain;
     std::shared_ptr<uvw::TimerHandle> _timer;
-    OnStopFn _on_stop;
-    int _last_stop_signal;
+    bool _is_in_pre_continue_singlestep, _is_continuing;
+
     xen::VCPU_ID _last_single_step_vcpu_id;
     std::optional<xen::Address> _last_single_step_breakpoint_addr;
-    bool _is_single_stepping;
-
-    void on_stop_internal(int signal);
-
-    using Base = DebuggerImpl<xen::DomainPV, uint8_t, X86_INT3>;
   };
 
 }

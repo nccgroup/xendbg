@@ -125,6 +125,7 @@ GDBRequest GDBConnection::parse_packet(const GDBPacket &packet) {
       { "qfThreadInfo",             make_parser<QueryThreadInfoStartRequest>() },
       { "qsThreadInfo",             make_parser<QueryThreadInfoContinuingRequest>() },
       { "qC",                       make_parser<QueryCurrentThreadIDRequest>() },
+      { "qWatchpointSupportInfo", make_parser<QueryWatchpointSupportInfo>() },
       { "qSupported",               make_parser<QuerySupportedRequest>() },
       { "qHostInfo",                make_parser<QueryHostInfoRequest>() },
       { "qProcessInfo",             make_parser<QueryProcessInfoRequest>() },

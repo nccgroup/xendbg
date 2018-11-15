@@ -28,6 +28,13 @@ void GDBRequestHandler::operator()(
 
 template <>
 void GDBRequestHandler::operator()(
+    const req::QueryWatchpointSupportInfo &) const
+{
+  send(rsp::QueryWatchpointSupportInfoResponse(std::numeric_limits<uint32_t>::max()));
+}
+
+template <>
+void GDBRequestHandler::operator()(
     const req::QuerySupportedRequest &) const
 {
   send(rsp::QuerySupportedResponse({
@@ -234,13 +241,15 @@ void GDBRequestHandler::operator()(
 
 template <>
 void GDBRequestHandler::operator()(
-    const req::GeneralRegistersBatchReadRequest &) const
+    const req::GeneralRegistersBatchReadRequest &req) const
 {
+  const auto thread_id = req.get_thread_id();
+  const auto vcpu_id = (thread_id == (size_t)-1) ? 0 : thread_id-1;
   std::visit(util::overloaded {
       [&](const auto &regs) {
         send(rsp::GeneralRegistersBatchReadResponse(regs));
       }
-  }, _debugger.get_domain().get_cpu_context(_debugger.get_vcpu_id()));
+  }, _debugger.get_domain().get_cpu_context(vcpu_id));
 }
 
 template <>

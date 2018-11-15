@@ -89,6 +89,7 @@ namespace xd::gdb::req {
   using GDBRequest = std::variant<
     StartNoAckModeRequest,
     InterruptRequest,
+    QueryWatchpointSupportInfo,
     QuerySupportedRequest,
     QueryEnableErrorStrings,
     QueryThreadSuffixSupportedRequest,

@@ -16,8 +16,6 @@
 
 #include "Debugger.hpp"
 
-#define X86_INT3 0xCC
-
 namespace xd::dbg {
 
   class DebuggerPV : public Debugger {

@@ -6,6 +6,13 @@
 
 using namespace xd::gdb::rsp;
 
+std::string QueryWatchpointSupportInfoResponse::to_string() const {
+  std::stringstream ss;
+  // See https://github.com/llvm-mirror/lldb/blob/88f4df8050f1f0ed64f8e2a2e48256bbf0a208cb/source/Plugins/Process/gdb-remote/GDBRemoteCommunicationServerLLGS.cpp#L3041
+  ss << "num:" << std::dec << _num;
+  return ss.str();
+}
+
 std::string QuerySupportedResponse::to_string() const {
   if (_features.empty())
     return "";

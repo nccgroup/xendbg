@@ -6,6 +6,19 @@
 
 using namespace xd::gdb::req;
 
+GeneralRegistersBatchReadRequest::GeneralRegistersBatchReadRequest(const std::string &data)
+  : GDBRequestBase(data, 'g')
+{
+  if (check_char(';')) {
+    expect_string("thread:");
+    _thread_id = read_hex_number<size_t>();
+    expect_char(';');
+  } else {
+    _thread_id = (size_t)-1;
+  }
+  expect_end();
+};
+
 RegisterReadRequest::RegisterReadRequest(const std::string &data)
   : GDBRequestBase(data, 'p')
 {

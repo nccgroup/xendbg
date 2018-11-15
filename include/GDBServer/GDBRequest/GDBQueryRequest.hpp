@@ -27,6 +27,11 @@ namespace xd::gdb::req {
 
   DECLARE_SIMPLE_REQUEST(QueryThreadInfoContinuingRequest, "qsThreadInfo");
 
+  class QueryWatchpointSupportInfo : public GDBRequestBase {
+  public:
+    explicit QueryWatchpointSupportInfo(const std::string &data);
+  };
+
   class QuerySupportedRequest : public GDBRequestBase {
   public:
     explicit QuerySupportedRequest(const std::string &data);

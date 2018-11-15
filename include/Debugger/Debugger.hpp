@@ -18,6 +18,7 @@
 #include <Xen/Common.hpp>
 #include <Xen/Domain.hpp>
 
+#define X86_INT3 0xCC
 #define X86_MAX_INSTRUCTION_SIZE 0x10
 
 namespace xd::dbg {

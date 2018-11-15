@@ -15,7 +15,15 @@
 
 namespace xd::gdb::req {
 
-  DECLARE_SIMPLE_REQUEST(GeneralRegistersBatchReadRequest, 'g');
+  class GeneralRegistersBatchReadRequest : public GDBRequestBase {
+  public:
+    explicit GeneralRegistersBatchReadRequest(const std::string &data);
+
+    size_t get_thread_id() const { return _thread_id; };
+
+  private:
+    size_t _thread_id;
+  };
 
   class RegisterReadRequest : public GDBRequestBase {
   public:

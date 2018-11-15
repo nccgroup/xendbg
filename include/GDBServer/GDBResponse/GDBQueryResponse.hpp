@@ -14,6 +14,17 @@
 
 namespace xd::gdb::rsp {
 
+  class QueryWatchpointSupportInfoResponse : public GDBResponse {
+  public:
+    explicit QueryWatchpointSupportInfoResponse(size_t num)
+      : _num(num) {};
+
+    std::string to_string() const override;
+
+  private:
+    size_t _num;
+  };
+
   class QuerySupportedResponse : public GDBResponse {
   public:
     explicit QuerySupportedResponse(std::vector<std::string> features)

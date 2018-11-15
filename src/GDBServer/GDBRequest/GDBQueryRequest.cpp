@@ -6,6 +6,13 @@
 
 using namespace xd::gdb::req;
 
+QueryWatchpointSupportInfo::QueryWatchpointSupportInfo(const std::string &data)
+  : GDBRequestBase(data, "qWatchpointSupportInfo")
+{
+  check_char(':');
+  expect_end();
+};
+
 QuerySupportedRequest::QuerySupportedRequest(const std::string &data)
   : GDBRequestBase(data, "qSupported")
 {

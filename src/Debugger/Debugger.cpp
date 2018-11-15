@@ -160,7 +160,7 @@ void Debugger::insert_breakpoint(Address address) {
   const auto orig_bytes = *mem;
 
   _breakpoints[address] = orig_bytes;
-  *mem = 0xCC;
+  *mem = X86_INT3;
 }
 
 void Debugger::remove_breakpoint(Address address) {

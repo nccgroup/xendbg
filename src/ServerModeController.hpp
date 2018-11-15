@@ -30,7 +30,7 @@ namespace xd {
 
   class ServerModeController {
   public:
-    explicit ServerModeController(uint16_t base_port);
+    explicit ServerModeController(uint16_t base_port, bool non_stop_mode);
 
     void run_single(const std::string &name);
     void run_single(xen::DomID domid);
@@ -45,6 +45,7 @@ namespace xd {
     std::shared_ptr<uvw::PollHandle> _poll;
 
     uint16_t _next_port;
+    bool _non_stop_mode;
     std::unordered_map<xen::DomID, std::unique_ptr<DebugSession>> _instances;
 
   private:

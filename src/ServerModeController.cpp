@@ -31,12 +31,12 @@ std::string get_name_any(const xd::xen::DomainAny &domain_any) {
   }, domain_any);
 }
 
-ServerModeController::ServerModeController(uint16_t base_port)
+ServerModeController::ServerModeController(uint16_t base_port, bool non_stop_mode)
   : _xen(Xen::create()),
     _loop(uvw::Loop::getDefault()),
     _signal(_loop->resource<uvw::SignalHandle>()),
     _poll(_loop->resource<uvw::PollHandle>(_xen->xenstore.get_fileno())),
-    _next_port(base_port)
+    _next_port(base_port), _non_stop_mode(non_stop_mode)
 {
 }
 
@@ -96,7 +96,7 @@ void ServerModeController::run() {
       handle.close();
     });
     handle.loop().run();
-    //_instances.clear();
+    _instances.clear();
     exit(0);
   });
   
@@ -156,7 +156,7 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
     [&](xen::DomainHVM domain) {
       return std::static_pointer_cast<dbg::Debugger>(
           std::make_shared<dbg::DebuggerHVM>(
-              *_loop, std::move(domain), _xen->xendevicemodel, _xen->xenevtchn));
+              *_loop, std::move(domain), _xen->xendevicemodel, _xen->xenevtchn, _non_stop_mode));
     },
     [&](xen::DomainPV domain) {
       return std::static_pointer_cast<dbg::Debugger>(

@@ -9,6 +9,11 @@ using xd::xen::XenException;
 CommandLine::CommandLine()
     : _app{"xendbg"}, _port(0)
 {
+  auto non_stop_mode = _app.add_flag(
+          "-n,--non-stop-mode",
+          "Enable non-stop mode: step/continue/BPs/etc. "
+          "only apply to current thread");
+
   auto server_mode = _app.add_option(
       "-s,--server", _port,
       "Start as an LLDB stub server on the given port.")
@@ -25,9 +30,9 @@ CommandLine::CommandLine()
 
   attach->needs(server_mode);
 
-  _app.callback([this, server_mode, attach] {
+  _app.callback([this, non_stop_mode, server_mode, attach] {
     if (server_mode->count()) {
-      xd::ServerModeController server(_port);
+      xd::ServerModeController server(_port, non_stop_mode->count());
       if (attach->count()) {
         if (!_domain.empty() &&
             std::all_of(_domain.begin(), _domain.end(),

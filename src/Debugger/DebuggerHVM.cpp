@@ -21,10 +21,11 @@ using xd::xen::DomainHVM;
 using xd::xen::HVMMonitor;
 
 DebuggerHVM::DebuggerHVM(uvw::Loop &loop, DomainHVM domain,
-    xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn)
+    xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn,
+    bool non_stop_mode)
   : _domain(std::move(domain)), Debugger(_domain),
     _monitor(std::make_shared<HVMMonitor>(xendevicemodel, xenevtchn, loop, _domain)),
-    _is_continuing(false)
+    _is_continuing(false), _non_stop_mode(non_stop_mode)
 {
 }
 
@@ -33,7 +34,14 @@ void DebuggerHVM::attach() {
   _monitor->on_event([this](auto event) {
     const auto stop_and_signal = [&](Domain &domain) {
       domain.pause();
-      domain.pause_vcpu(event.vcpu_id);
+      /*
+       * In non-stop mode, only the VCPU catching the event is paused, and
+       * all other threads keep running. Otherwise, the whole domain pauses.
+       */
+      if (_non_stop_mode)
+        domain.pause_vcpu(event.vcpu_id);
+      else
+        domain.pause_all_vcpus();
       domain.unpause();
       did_stop(SIGTRAP, event.vcpu_id);
     };
@@ -79,9 +87,13 @@ void DebuggerHVM::single_step() {
 
   // NOTE: The *domain* must be paused before individual VCPUs are paused/unpaused
   _domain.pause();
-  _domain.pause_all_vcpus();
+  if (!_non_stop_mode)
+    _domain.pause_all_vcpus();
+
   _domain.set_singlestep(true, vcpu);
-  _domain.unpause_vcpu(vcpu);
+
+  if (!_non_stop_mode)
+    _domain.unpause_vcpu(vcpu);
   _domain.unpause();
 }
 

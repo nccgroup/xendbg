@@ -32,7 +32,7 @@ CommandLine::CommandLine()
 
   _app.callback([this, non_stop_mode, server_mode, attach] {
     if (server_mode->count()) {
-      xd::ServerModeController server(_port, non_stop_mode->count());
+      xd::ServerModeController server(_port, non_stop_mode->count() > 0);
       if (attach->count()) {
         if (!_domain.empty() &&
             std::all_of(_domain.begin(), _domain.end(),

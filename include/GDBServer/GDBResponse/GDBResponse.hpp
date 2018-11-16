@@ -40,14 +40,7 @@ namespace xd::gdb::rsp {
     ErrorResponse(uint8_t error_code, std::string message)
       : _error_code(error_code), _message(std::move(message)) {};
 
-    std::string to_string() const override {
-      std::stringstream ss;
-      ss << "E";
-      ss << std::hex << std::setfill('0') << std::setw(2) << (unsigned)_error_code;
-      if (!_message.empty())
-        ss << ";" << _message;
-      return ss.str();
-    };
+    std::string to_string() const override;
 
   private:
     uint8_t _error_code;
@@ -57,29 +50,24 @@ namespace xd::gdb::rsp {
   class StopReasonSignalResponse : public GDBResponse {
   public:
     StopReasonSignalResponse(uint8_t signal, size_t thread_id, std::vector<size_t> thread_ids)
-      : _signal(signal), _thread_id(thread_id), _thread_ids(std::move(thread_ids)) {};
+      : _signal(signal), _thread_id(thread_id), _thread_ids(std::move(thread_ids)),
+        _stop_reason_key(""), _stop_reason_value("")
+    {};
 
-    std::string to_string() const override {
-      std::stringstream ss;
-      ss << "T";
-      ss << std::hex << std::setfill('0') << std::setw(2);
-      ss << (unsigned)_signal;
-      ss << "thread:";
-      ss << _thread_id;
-      ss << ";threads:";
-      if (_thread_ids.size() == 1)
-        ss << _thread_ids.front();
-      else
-        for (const auto thread_id : _thread_ids)
-          add_list_entry(ss, thread_id);
-      ss << ";reason:signal;";
-      return ss.str();
-    };
+    StopReasonSignalResponse(uint8_t signal, size_t thread_id, std::vector<size_t> thread_ids,
+        std::string stop_reason_key, std::string stop_reason_value)
+      : _signal(signal), _thread_id(thread_id), _thread_ids(std::move(thread_ids)),
+        _stop_reason_key(std::move(stop_reason_key)),
+        _stop_reason_value(std::move(stop_reason_value))
+    {};
+
+    std::string to_string() const override;
 
   private:
     uint8_t _signal;
     size_t _thread_id;
     std::vector<size_t> _thread_ids;
+    std::string _stop_reason_key, _stop_reason_value;
   };
 
   class TerminatedResponse : public GDBResponse {

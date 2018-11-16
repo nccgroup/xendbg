@@ -50,6 +50,7 @@ add_executable(xendbg
   src/CommandLine.hpp
         src/GDBServer/GDBConnection.cpp
         src/GDBServer/GDBPacketQueue.cpp
+  src/GDBServer/GDBResponse/GDBResponse.cpp
         src/ServerModeController.cpp
         src/ServerModeController.hpp
   src/Xen/Domain.cpp

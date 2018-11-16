@@ -169,12 +169,35 @@ void GDBRequestHandler::operator()(
   send(rsp::QueryThreadInfoEndResponse());
 }
 
+void GDBRequestHandler::send_stop_reply(dbg::StopReason reason_any) const {
+  std::visit(util::overloaded {
+    [this](dbg::StopReasonBreakpoint reason) {
+      send(rsp::StopReasonSignalResponse(reason.signal, reason.vcpu_id, get_thread_ids()));
+    }, [this](dbg::StopReasonWatchpoint reason) {
+      std::string type_str;
+      switch (reason.type) {
+        case dbg::WatchpointType::Access:
+          type_str = "awatch";
+        case dbg::WatchpointType::Read:
+          type_str = "rwatch";
+        case dbg::WatchpointType::Write:
+          type_str = "watch";
+      };
+
+      std::stringstream ss;
+      ss << std::hex << reason.address;
+
+      send(rsp::StopReasonSignalResponse(reason.signal, reason.vcpu_id, get_thread_ids(),
+            type_str, ss.str()));
+    }
+  }, reason_any);
+}
+
 template <>
 void GDBRequestHandler::operator()(
     const req::StopReasonRequest &) const
 {
-  const auto stop_info = _debugger.get_last_stop_info();
-  send(rsp::StopReasonSignalResponse(stop_info.first, stop_info.second, get_thread_ids()));
+  send_stop_reply(_debugger.get_last_stop_reason());
 }
 
 template <>
@@ -344,15 +367,15 @@ void GDBRequestHandler::operator()(
     case 2: { // Write watchpoint
       // 'kind' indicates the number of bytes to watch
       // set mem access to exclude writes
-      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_rx);
+      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), dbg::WatchpointType::Write);
       send(rsp::OKResponse());
     }; break;
     case 3: { // Read watchpoint
-      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_wx);
+      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), dbg::WatchpointType::Read);
       send(rsp::OKResponse());
     }; break;
     case 4: { // Access watchpoint
-      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_n);
+      _debugger.insert_watchpoint(req.get_address(), req.get_kind(), dbg::WatchpointType::Access);
       send(rsp::OKResponse());
     }; break;
     default: {
@@ -375,15 +398,15 @@ void GDBRequestHandler::operator()(
     }; break;
     case 2: { // Write watchpoint
       // 'kind' indicates the number of bytes to watch
-      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_w);
+      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), dbg::WatchpointType::Write);
       send(rsp::OKResponse());
     }; break;
     case 3: { // Read watchpoint
-      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_r);
+      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), dbg::WatchpointType::Read);
       send(rsp::OKResponse());
     }; break;
     case 4: { // Access watchpoint
-      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), XENMEM_access_rwx);
+      _debugger.remove_watchpoint(req.get_address(), req.get_kind(), dbg::WatchpointType::Access);
       send(rsp::OKResponse());
     }; break;
     default: {

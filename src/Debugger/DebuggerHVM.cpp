@@ -30,18 +30,13 @@ DebuggerHVM::DebuggerHVM(uvw::Loop &loop, DomainHVM domain,
 }
 
 void DebuggerHVM::on_event(vm_event_st event) {
-  const auto stop_and_signal = [&](Domain &domain) {
+  const auto pause_domain = [&](Domain &domain) {
     domain.pause();
-    /*
-     * In non-stop mode, only the VCPU catching the event is paused, and
-     * all other threads keep running. Otherwise, the whole domain pauses.
-     */
     if (_non_stop_mode)
       domain.pause_vcpu(event.vcpu_id);
     else
       domain.pause_all_vcpus();
     domain.unpause();
-    did_stop(SIGTRAP, event.vcpu_id);
   };
 
   if (_last_single_step_breakpoint_addr) {
@@ -53,13 +48,29 @@ void DebuggerHVM::on_event(vm_event_st event) {
   _is_continuing = false;
 
   if (event.reason == VM_EVENT_REASON_SINGLESTEP) {
-    if (!was_continuing)
-      stop_and_signal(_domain);
+    if (!was_continuing) {
+      pause_domain(_domain);
+      did_stop(StopReasonBreakpoint(SIGTRAP, event.vcpu_id));
+    }
     _domain.set_singlestep(false, get_vcpu_id());
   } else if (event.reason == VM_EVENT_REASON_SOFTWARE_BREAKPOINT) {
-    stop_and_signal(_domain);
+    pause_domain(_domain);
+    did_stop(StopReasonBreakpoint(SIGTRAP, event.vcpu_id));
   } else if (event.reason == VM_EVENT_REASON_MEM_ACCESS) {
-    stop_and_signal(_domain);
+    pause_domain(_domain);
+    const auto ma = event.u.mem_access;
+    const auto address = (ma.gfn << XC_PAGE_SHIFT) + ma.offset;
+
+    WatchpointType type;
+    if (ma.flags & MEM_ACCESS_R) {
+      type = WatchpointType::Read;
+    } else if (ma.flags & MEM_ACCESS_W) {
+      type = WatchpointType::Write;
+    } else {
+      type = WatchpointType::Access;
+    }
+
+    did_stop(StopReasonWatchpoint(SIGTRAP, event.vcpu_id, address, type));
   }
 }
 
@@ -103,10 +114,21 @@ void DebuggerHVM::single_step() {
   _domain.unpause();
 }
 
-void DebuggerHVM::insert_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) {
+void DebuggerHVM::insert_watchpoint(xen::Address address, uint32_t bytes, WatchpointType type) {
+  xenmem_access_t access = [type]() {
+    switch (type) {
+      case WatchpointType::Access:
+        return XENMEM_access_n;
+      case WatchpointType::Read:
+        return XENMEM_access_wx;
+      case WatchpointType::Write:
+        return XENMEM_access_rx;
+    }
+  }();
+
   _domain.set_mem_access(access, address, bytes);
 }
 
-void DebuggerHVM::remove_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t /*access*/) {
-  _domain.set_mem_access(XENMEM_access_n, address, bytes);
+void DebuggerHVM::remove_watchpoint(xen::Address address, uint32_t bytes, WatchpointType /*type*/) {
+  _domain.set_mem_access(XENMEM_access_rwx, address, bytes); // TODO: NOT SAFE
 }

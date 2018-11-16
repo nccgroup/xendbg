@@ -18,6 +18,8 @@
 #include <Xen/Common.hpp>
 #include <Xen/Domain.hpp>
 
+#include "StopReason.hpp"
+
 #define X86_INT3 0xCC
 #define X86_MAX_INSTRUCTION_SIZE 0x10
 
@@ -51,7 +53,7 @@ namespace xd::dbg {
 
   class Debugger : public std::enable_shared_from_this<Debugger> {
   public:
-    using OnStopFn = std::function<void(int, xen::VCPU_ID)>;
+    using OnStopFn = std::function<void(StopReason)>;
 
     explicit Debugger(xen::Domain &domain);
     virtual ~Debugger();
@@ -68,11 +70,11 @@ namespace xd::dbg {
     void insert_breakpoint(xen::Address address);
     void remove_breakpoint(xen::Address address);
 
-    virtual void insert_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access);
-    virtual void remove_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access);
+    virtual void insert_watchpoint(xen::Address address, uint32_t bytes, WatchpointType type);
+    virtual void remove_watchpoint(xen::Address address, uint32_t bytes, WatchpointType type);
 
     void on_stop(OnStopFn on_stop) { _on_stop = std::move(on_stop); };
-    std::pair<int, xen::VCPU_ID> get_last_stop_info() const { return _last_stop_info; };
+    StopReason get_last_stop_reason() const { return _last_stop_reason; };
 
     MaskedMemory read_memory_masking_breakpoints(
         xen::Address address, size_t length);
@@ -82,7 +84,7 @@ namespace xd::dbg {
     xen::VCPU_ID get_vcpu_id() { return _vcpu_id; };
     void set_vcpu_id(xen::VCPU_ID vcpu_id) { _vcpu_id = vcpu_id; };
 
-    void did_stop(int signal, xen::VCPU_ID vcpu_id);
+    void did_stop(StopReason reason);
 
   protected:
     std::unordered_map<xen::Address, uint8_t> _breakpoints;
@@ -94,7 +96,7 @@ namespace xd::dbg {
 
     xen::VCPU_ID _vcpu_id;
     bool _is_attached;
-    std::pair<int, xen::VCPU_ID> _last_stop_info;
+    StopReason _last_stop_reason;
   };
 
 }

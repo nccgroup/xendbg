@@ -15,6 +15,8 @@
 #include <Util/overloaded.hpp>
 #include <xen/domctl.h>
 
+#include <Debugger/StopReason.hpp>
+
 using xd::dbg::DebuggerPV;
 using xd::xen::Address;
 using xd::xen::DomainPV;
@@ -81,7 +83,7 @@ void DebuggerPV::attach() {
         domain.set_cpu_context(context_any, vcpu);
       }
 
-      self->did_stop(SIGTRAP, vcpu);
+      self->did_stop(StopReasonBreakpoint(SIGTRAP, vcpu));
     }
   });
 }

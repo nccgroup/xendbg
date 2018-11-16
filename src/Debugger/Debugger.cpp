@@ -6,7 +6,7 @@ using xd::dbg::Debugger;
 
 Debugger::Debugger(xen::Domain &domain)
     : _domain(domain), _vcpu_id(0), _is_attached(false),
-      _last_stop_info(SIGSTOP, 0)
+      _last_stop_reason(StopReasonBreakpoint(SIGSTOP, 0))
 {
   /*
   const auto mode =
@@ -128,10 +128,10 @@ void Debugger::on_stop(OnStopFn on_stop) {
 }
 */
 
-void Debugger::did_stop(int signal, xen::VCPU_ID vcpu_id) {
-  _last_stop_info = std::make_pair(signal, vcpu_id);
+void Debugger::did_stop(StopReason reason) {
+  _last_stop_reason = reason;
   if (_on_stop)
-    _on_stop(signal, vcpu_id);
+    _on_stop(reason);
 }
 
 void Debugger::cleanup() {
@@ -185,11 +185,11 @@ void Debugger::remove_breakpoint(Address address) {
   _breakpoints.erase(_breakpoints.find(address));
 }
 
-void Debugger::insert_watchpoint(Address address, uint32_t bytes, xenmem_access_t access) {
+void Debugger::insert_watchpoint(Address address, uint32_t bytes, WatchpointType type) {
   throw FeatureNotSupportedException("insert watchpoint");
 }
 
-void Debugger::remove_watchpoint(Address address, uint32_t bytes, xenmem_access_t access) {
+void Debugger::remove_watchpoint(Address address, uint32_t bytes, WatchpointType type) {
   throw FeatureNotSupportedException("remove watchpoint");
 }
 

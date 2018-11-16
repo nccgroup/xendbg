@@ -31,8 +31,8 @@ namespace xd::dbg {
     void continue_() override;
     void single_step() override;
 
-    void insert_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) override;
-    void remove_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) override;
+    void insert_watchpoint(xen::Address address, uint32_t bytes, WatchpointType type) override;
+    void remove_watchpoint(xen::Address address, uint32_t bytes, WatchpointType type) override;
 
   private:
     xen::DomainHVM _domain;

@@ -47,10 +47,7 @@ namespace xd::gdb {
     {
     }
 
-    void send_stop_reply() const {
-      const auto stop_info = _debugger.get_last_stop_info();
-      _connection.send(rsp::StopReasonSignalResponse(stop_info.first, stop_info.second+1, get_thread_ids()));
-    }
+    void send_stop_reply(dbg::StopReason reason) const;
 
     void send_error(uint8_t code, std::string message = "") const {
       _connection.send_error(code, std::move(message));

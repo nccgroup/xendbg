@@ -36,8 +36,8 @@ namespace xd {
           _gdb_connection = connection;
           _request_handler.emplace(*_debugger, *_gdb_connection);
 
-          _debugger->on_stop([this, connection](auto signal, auto vcpu_id) {
-            _request_handler->send_stop_reply();
+          _debugger->on_stop([this, connection](auto reason) {
+            _request_handler->send_stop_reply(reason);
           });
           _debugger->attach();
 

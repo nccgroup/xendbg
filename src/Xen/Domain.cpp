@@ -187,7 +187,7 @@ std::optional<xd::xen::PageTableEntry> Domain::get_page_table_entry(Address vadd
 
 void Domain::set_mem_access(xenmem_access_t access, Address start_address, Address size) const {
   if (const auto err = xc_set_mem_access( _xen->xenctrl.get(), _domid, access, 
-        translate_foreign_address(start_address, 0), (size + XC_PAGE_SIZE - 1) / XC_PAGE_SIZE))
+        start_address >> XC_PAGE_SHIFT, (size + XC_PAGE_SIZE - 1) / XC_PAGE_SIZE))
   {
     throw XenException("xc_set_mem_access", -err);
   }
@@ -196,7 +196,7 @@ void Domain::set_mem_access(xenmem_access_t access, Address start_address, Addre
 xenmem_access_t Domain::get_mem_access(Address address) const {
   xenmem_access_t access;
   if (const auto err = xc_get_mem_access(_xen->xenctrl.get(), _domid,
-        translate_foreign_address(address, 0), &access))
+        address >> XC_PAGE_SHIFT, &access))
   {
     throw XenException("xc_get_mem_access", -err);
   }

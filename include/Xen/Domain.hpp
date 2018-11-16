@@ -45,7 +45,7 @@ namespace xd::xen {
     MemInfo map_meminfo() const;
     std::optional<PageTableEntry> get_page_table_entry(Address address, VCPU_ID vcpu_id) const;
 
-    void set_mem_access(xenmem_access_t access, Address start_pfn, uint32_t num_pages) const;
+    void set_mem_access(xenmem_access_t access, Address start_address, Address size) const;
     xenmem_access_t get_mem_access(Address pfn) const;
 
     virtual xd::reg::RegistersX86Any get_cpu_context(VCPU_ID vcpu_id) const = 0;

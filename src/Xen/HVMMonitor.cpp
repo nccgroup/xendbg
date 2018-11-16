@@ -111,34 +111,6 @@ void HVMMonitor::read_events() {
     if (req.version != VM_EVENT_INTERFACE_VERSION)
       continue; // TODO: error
 
-    switch (req.reason) {
-      case VM_EVENT_REASON_MEM_ACCESS:
-        std::cout << ">>> mem access" << std::endl;
-        break;
-      case VM_EVENT_REASON_SOFTWARE_BREAKPOINT:
-        std::cout << ">>> software BP" << std::endl;
-        /*
-        _xendevicemodel.inject_event(
-            _domain, req.vcpu_id, X86_TRAP_INT3,
-            req.u.software_breakpoint.type, -1,
-            req.u.software_breakpoint.insn_length, 0);
-            */
-        break;
-      case VM_EVENT_REASON_PRIVILEGED_CALL:
-        break;
-      case VM_EVENT_REASON_SINGLESTEP:
-        std::cout << ">>> single step" << std::endl;
-        break;
-      case VM_EVENT_REASON_DEBUG_EXCEPTION:
-        break;
-      case VM_EVENT_REASON_CPUID:
-        break;
-      case VM_EVENT_REASON_DESCRIPTOR_ACCESS:
-        break;
-      default:
-        break;
-    }
-
     if (_on_event)
       _on_event(req);
 

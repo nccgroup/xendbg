@@ -60,6 +60,9 @@ void DebuggerHVM::attach() {
       _domain.set_singlestep(false, get_vcpu_id());
     } else if (event.reason == VM_EVENT_REASON_SOFTWARE_BREAKPOINT) {
       stop_and_signal(_domain);
+    } else if (event.reason == VM_EVENT_REASON_MEM_ACCESS) {
+      std::cout << "Mem access at: " << std::hex << event.u.mem_access.gla << std::endl;
+      stop_and_signal(_domain);
     }
   });
   _monitor->start();
@@ -98,9 +101,9 @@ void DebuggerHVM::single_step() {
 }
 
 void DebuggerHVM::insert_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t access) {
-  _domain.set_mem_access(access, address >> XC_PAGE_SHIFT, bytes / XC_PAGE_SIZE);
+  _domain.set_mem_access(access, address, bytes);
 }
 
 void DebuggerHVM::remove_watchpoint(xen::Address address, uint32_t bytes, xenmem_access_t /*access*/) {
-  _domain.set_mem_access(XENMEM_access_n, address >> XC_PAGE_SHIFT, bytes / XC_PAGE_SIZE);
+  _domain.set_mem_access(XENMEM_access_n, address, bytes);
 }

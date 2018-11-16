@@ -41,6 +41,8 @@ namespace xd::dbg {
     std::optional<xen::Address> _last_single_step_breakpoint_addr;
     bool _is_continuing;
     bool _non_stop_mode;
+
+    void on_event(vm_event_st event);
   };
 
 }

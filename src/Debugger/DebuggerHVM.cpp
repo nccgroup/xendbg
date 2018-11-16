@@ -29,41 +29,44 @@ DebuggerHVM::DebuggerHVM(uvw::Loop &loop, DomainHVM domain,
 {
 }
 
+void DebuggerHVM::on_event(vm_event_st event) {
+  const auto stop_and_signal = [&](Domain &domain) {
+    domain.pause();
+    /*
+     * In non-stop mode, only the VCPU catching the event is paused, and
+     * all other threads keep running. Otherwise, the whole domain pauses.
+     */
+    if (_non_stop_mode)
+      domain.pause_vcpu(event.vcpu_id);
+    else
+      domain.pause_all_vcpus();
+    domain.unpause();
+    did_stop(SIGTRAP, event.vcpu_id);
+  };
+
+  if (_last_single_step_breakpoint_addr) {
+    insert_breakpoint(*_last_single_step_breakpoint_addr);
+    _last_single_step_breakpoint_addr = std::nullopt;
+  }
+
+  bool was_continuing = _is_continuing;
+  _is_continuing = false;
+
+  if (event.reason == VM_EVENT_REASON_SINGLESTEP) {
+    if (!was_continuing)
+      stop_and_signal(_domain);
+    _domain.set_singlestep(false, get_vcpu_id());
+  } else if (event.reason == VM_EVENT_REASON_SOFTWARE_BREAKPOINT) {
+    stop_and_signal(_domain);
+  } else if (event.reason == VM_EVENT_REASON_MEM_ACCESS) {
+    stop_and_signal(_domain);
+  }
+}
+
 void DebuggerHVM::attach() {
   Debugger::attach();
   _monitor->on_event([this](auto event) {
-    const auto stop_and_signal = [&](Domain &domain) {
-      domain.pause();
-      /*
-       * In non-stop mode, only the VCPU catching the event is paused, and
-       * all other threads keep running. Otherwise, the whole domain pauses.
-       */
-      if (_non_stop_mode)
-        domain.pause_vcpu(event.vcpu_id);
-      else
-        domain.pause_all_vcpus();
-      domain.unpause();
-      did_stop(SIGTRAP, event.vcpu_id);
-    };
-
-    if (_last_single_step_breakpoint_addr) {
-      insert_breakpoint(*_last_single_step_breakpoint_addr);
-      _last_single_step_breakpoint_addr = std::nullopt;
-    }
-
-    bool was_continuing = _is_continuing;
-    _is_continuing = false;
-
-    if (event.reason == VM_EVENT_REASON_SINGLESTEP) {
-      if (!was_continuing)
-        stop_and_signal(_domain);
-      _domain.set_singlestep(false, get_vcpu_id());
-    } else if (event.reason == VM_EVENT_REASON_SOFTWARE_BREAKPOINT) {
-      stop_and_signal(_domain);
-    } else if (event.reason == VM_EVENT_REASON_MEM_ACCESS) {
-      std::cout << "Mem access at: " << std::hex << event.u.mem_access.gla << std::endl;
-      stop_and_signal(_domain);
-    }
+    on_event(event);
   });
   _monitor->start();
 }

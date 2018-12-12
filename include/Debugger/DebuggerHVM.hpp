@@ -24,6 +24,7 @@ namespace xd::dbg {
     DebuggerHVM(uvw::Loop &loop, xen::DomainHVM domain,
         xen::XenDeviceModel &xendevicemodel, xen::XenEventChannel &xenevtchn,
         bool non_stop_mode);
+    ~DebuggerHVM() override = default;
 
     void attach() override;
     void detach() override;

@@ -15,7 +15,7 @@ using xd::ServerModeController;
 using xd::DebugSession;
 using xd::xen::Xen;
 
-xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain_any) {
+xd::xen::DomID ServerModeController::get_domid_any(const xd::xen::DomainAny &domain_any) {
   return std::visit(xd::util::overloaded {
     [](const auto &domain) {
       return domain.get_domid();
@@ -23,7 +23,7 @@ xd::xen::DomID get_domid_any(const xd::xen::DomainAny &domain_any) {
   }, domain_any);
 }
 
-std::string get_name_any(const xd::xen::DomainAny &domain_any) {
+std::string ServerModeController::get_name_any(const xd::xen::DomainAny &domain_any) {
   return std::visit(xd::util::overloaded {
       [](const auto &domain) {
         return domain.get_name();
@@ -31,12 +31,12 @@ std::string get_name_any(const xd::xen::DomainAny &domain_any) {
   }, domain_any);
 }
 
-ServerModeController::ServerModeController(uint16_t base_port, bool non_stop_mode)
+ServerModeController::ServerModeController(std::string address, uint16_t base_port, bool non_stop_mode)
   : _xen(Xen::create()),
     _loop(uvw::Loop::getDefault()),
     _signal(_loop->resource<uvw::SignalHandle>()),
     _poll(_loop->resource<uvw::PollHandle>(_xen->xenstore.get_fileno())),
-    _next_port(base_port), _non_stop_mode(non_stop_mode)
+    _address(address), _next_port(base_port), _non_stop_mode(non_stop_mode)
 {
 }
 
@@ -60,7 +60,7 @@ void ServerModeController::run_single(xen::DomID domid) {
   _poll->on<uvw::PollEvent>([&](const auto &event, auto &handle) {
     if (watch_release.check())
       if (prune_instances())
-        handle.loop().stop();
+        stop();
   });
 
   _poll->start(uvw::PollHandle::Event::READABLE);
@@ -92,17 +92,25 @@ void ServerModeController::run_multi() {
 
 void ServerModeController::run() {
   _signal->once<uvw::SignalEvent>([this](const auto &event, auto &handle) {
-    handle.loop().walk([](auto &handle) {
-      handle.close();
-    });
-    handle.loop().run();
-    _instances.clear();
+    stop();
     exit(0);
   });
   
   _signal->start(SIGINT);
+  _loop->run();
+}
+
+void ServerModeController::stop() {
+  for (auto &instance : _instances)
+    instance.second->stop();
+
+  _loop->walk([](auto &handle) {
+    if (!handle.closing())
+      handle.close();
+  });
 
   _loop->run();
+  _loop->close();
 }
 
 size_t ServerModeController::add_new_instances() {
@@ -121,26 +129,11 @@ size_t ServerModeController::add_new_instances() {
 }
 
 size_t ServerModeController::prune_instances() {
-  const auto domains = _xen->get_domains();
-
-  size_t num_removed = 0;
-  auto it = _instances.begin();
-  while (it != _instances.end()) {
-    if (std::none_of(domains.begin(), domains.end(),
-      [&](const auto &domain) {
-        return get_domid_any(domain) == it->first;
-      }))
-    {
-      spdlog::get(LOGNAME_CONSOLE)->info(
-          "DOWN: Domain {0:d}", it->first);
-      it = _instances.erase(it);
-      ++num_removed;
-    } else {
-      ++it;
-    }
-  }
-
-  return num_removed;
+  return for_terminated_instances([this](auto it) {
+    spdlog::get(LOGNAME_CONSOLE)->info(
+        "DOWN: Domain {0:d}", it->first);
+    _instances.erase(it);
+  });
 }
 
 void ServerModeController::add_instance(xen::DomainAny domain_any) {
@@ -165,5 +158,10 @@ void ServerModeController::add_instance(xen::DomainAny domain_any) {
   }, domain_any);
 
   auto [kv, _] = _instances.emplace(domid, std::make_unique<DebugSession>(*_loop, std::move(debugger)));
-  kv->second->run("127.0.0.1", _next_port++);
+  kv->second->run(_address, _next_port++, [this, domid](auto error) {
+    spdlog::get(LOGNAME_CONSOLE)->info(
+        "ERROR: Domain {0:d}", domid);
+    _instances.erase(_instances.find(domid));
+    add_new_instances();
+  });
 }

@@ -31,13 +31,13 @@ namespace xd::gdb {
     using OnErrorFn = std::function<void(const uvw::ErrorEvent&)>;
 
     explicit GDBConnection(std::shared_ptr<uvw::TcpHandle> tcp);
-    ~GDBConnection() = default;
+    ~GDBConnection();
 
     void enable_error_strings() { _error_strings = true; };
     void disable_ack_mode() { _ack_mode = false; };
 
-    void read(OnReceiveFn on_receive, OnCloseFn on_close, OnErrorFn on_error);
     void stop();
+    void read(OnReceiveFn on_receive, OnCloseFn on_close, OnErrorFn on_error);
 
     void send(const rsp::GDBResponse &packet);
     void send_error(uint8_t code, std::string message);
@@ -46,9 +46,10 @@ namespace xd::gdb {
     std::shared_ptr<uvw::TcpHandle> _tcp;
     GDBPacketQueue _input_queue;
     bool _ack_mode, _is_initializing, _error_strings;
+    OnCloseFn _on_close;
+    OnErrorFn _on_error;
+    OnReceiveFn _on_receive;
 
-    static bool validate_packet_checksum(const GDBPacket &packet);
-    static std::string format_packet(const rsp::GDBResponse &packet);
     static req::GDBRequest parse_packet(const GDBPacket &packet);
   };
 

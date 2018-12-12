@@ -8,22 +8,9 @@ Debugger::Debugger(xen::Domain &domain)
     : _domain(domain), _vcpu_id(0), _is_attached(false),
       _last_stop_reason(StopReasonBreakpoint(SIGSTOP, 0))
 {
-  /*
-  const auto mode =
-      (_domain.get_word_size() == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
-
-  if (cs_open(CS_ARCH_X86, mode, &_capstone) != CS_ERR_OK)
-    throw CapstoneException("Failed to open Capstone handle!");
-
-  cs_option(_capstone, CS_OPT_DETAIL, CS_OPT_ON);
-   */
 }
 
 Debugger::~Debugger() {
-  /*
-  cs_close(&_capstone);
-   */
-
   if (_is_attached)
     this->detach();
 }
@@ -31,102 +18,15 @@ Debugger::~Debugger() {
 void Debugger::attach() {
   _is_attached = true;
   _domain.pause();
-  //_domain.set_debugging(true, _vcpu_id);
 }
 
 void Debugger::detach() {
   _domain.pause();
   cleanup();
-  //_domain.set_debugging(false, _vcpu_id);
   _domain.unpause_all_vcpus();
   _domain.unpause();
   _is_attached = false;
 }
-
-/*
-void Debugger::continue_() {
-  // Single step first to get past the current BP, if any
-  const auto prev_on_stop = _on_stop;
-  _on_stop = [this, prev_on_stop](auto signal) {
-    _on_stop = prev_on_stop;
-    _timer->start(uvw::TimerHandle::Time(10), uvw::TimerHandle::Time(100));
-    _domain.unpause();
-  };
-
-  single_step();
-
-  _domain.unpause();
-}
-
-void Debugger::single_step() {
-  const auto vcpu = _vcpu_id;
-
-  const auto context = _domain.get_cpu_context(vcpu);
-  const auto instr_ptr = reg::read_register<reg::x86_32::eip, reg::x86_64::rip>(context);
-  if (_breakpoints.count(instr_ptr)) {
-    _last_single_step_breakpoint_addr = instr_ptr;
-    remove_breakpoint(instr_ptr);
-  }
-
-  _domain.pause_vcpus_except(vcpu);
-  _domain.set_singlestep(true, vcpu);
-  _last_single_step_vcpu_id = vcpu;
-
-  _is_single_stepping = true;
-  //_timer->start(uvw::TimerHandle::Time(100), uvw::TimerHandle::Time(100));
-  _domain.unpause();
-}
- */
-
-/*
-void Debugger::on_stop(OnStopFn on_stop) {
-  _on_stop = std::move(on_stop);
-
-  _timer->on<uvw::TimerEvent>([](const auto &event, auto &handle) {
-    auto self = handle.template data<Debugger>();
-    auto status = self->_domain.hypercall_domctl(XEN_DOMCTL_gdbsx_domstatus).gdbsx_domstatus;
-    if (status.paused) {
-      handle.stop();
-      auto &domain = self->_domain;
-      auto vcpu = (status.vcpu_id == -1)
-                  ? self->_last_single_step_vcpu_id
-                  : status.vcpu_id;
-
-      // If we're stopping after a single step and there was a BP at the
-      // address we came from, put it back
-      if (self->_last_single_step_breakpoint_addr) {
-        self->insert_breakpoint(*self->_last_single_step_breakpoint_addr);
-        self->_last_single_step_breakpoint_addr = std::nullopt;
-      }
-
-      if (!self->_is_single_stepping) {
-        \*
-         * Otherwise, we came from continuing into a breakpoint.
-         * PV breaks are a bit weird; the guest pauses on the *next* instruction.
-         * Since 0xCC BPs are 1 byte, we can just set RIP back by that amount to get
-         * to the actual instruction that was broken on.
-         *\
-        auto context_any = domain->get_cpu_context(vcpu);
-        std::visit(util::overloaded {
-          [](reg::x86_64::RegistersX86_64 &context) {
-            context.get<reg::x86_64::rip>() -= 1;
-          },
-          [](reg::x86_32::RegistersX86_32 &context) {
-            context.get<reg::x86_32::eip>() -= 1;
-          }}, context_any);
-        domain->set_cpu_context(context_any, vcpu);
-      } else {
-        self->_is_single_stepping = false;
-        domain->set_singlestep(false, vcpu);
-        domain->unpause_vcpus_except(vcpu);
-      }
-
-      self->set_vcpu_id(vcpu);
-      self->on_stop_internal(SIGTRAP);
-    }
-  });
-}
-*/
 
 void Debugger::did_stop(StopReason reason) {
   _last_stop_reason = reason;
@@ -135,10 +35,8 @@ void Debugger::did_stop(StopReason reason) {
 }
 
 void Debugger::cleanup() {
-  for (const auto &bp : _breakpoints) {
-    std::cout << bp.first << std::endl;
-    remove_breakpoint(bp.first);
-  }
+  for (auto it = _breakpoints.cbegin(); it != _breakpoints.cend();)
+    it = remove_breakpoint(it->first);
 }
 
 void Debugger::insert_breakpoint(Address address) {
@@ -163,7 +61,7 @@ void Debugger::insert_breakpoint(Address address) {
   *mem = X86_INT3;
 }
 
-void Debugger::remove_breakpoint(Address address) {
+Debugger::BreakpointMap::iterator Debugger::remove_breakpoint(Address address) {
   spdlog::get(LOGNAME_CONSOLE)->debug("Removing breakpoint at {0:x}", address);
 
   if (!_breakpoints.count(address)) {
@@ -172,7 +70,7 @@ void Debugger::remove_breakpoint(Address address) {
         "This is generally harmless, but might indicate a failure in estimating the "
         "next instruction address.",
         address);
-    return;
+    return _breakpoints.end();
   }
 
   const auto mem_handle = _domain.map_memory<uint8_t>(
@@ -182,7 +80,7 @@ void Debugger::remove_breakpoint(Address address) {
   const auto orig_bytes = _breakpoints.at(address);
   *mem = orig_bytes;
 
-  _breakpoints.erase(_breakpoints.find(address));
+  return _breakpoints.erase(_breakpoints.find(address));
 }
 
 void Debugger::insert_watchpoint(Address address, uint32_t bytes, WatchpointType type) {

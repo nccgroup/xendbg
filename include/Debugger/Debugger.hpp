@@ -52,6 +52,9 @@ namespace xd::dbg {
   using MaskedMemory = std::unique_ptr<unsigned char>;
 
   class Debugger : public std::enable_shared_from_this<Debugger> {
+  private:
+    using BreakpointMap = std::unordered_map<xen::Address, uint8_t>;
+
   public:
     using OnStopFn = std::function<void(StopReason)>;
 
@@ -68,7 +71,7 @@ namespace xd::dbg {
     virtual void single_step() = 0;
 
     void insert_breakpoint(xen::Address address);
-    void remove_breakpoint(xen::Address address);
+    BreakpointMap::iterator remove_breakpoint(xen::Address address);
 
     virtual void insert_watchpoint(xen::Address address, uint32_t bytes, WatchpointType type);
     virtual void remove_watchpoint(xen::Address address, uint32_t bytes, WatchpointType type);
@@ -87,7 +90,7 @@ namespace xd::dbg {
     void did_stop(StopReason reason);
 
   protected:
-    std::unordered_map<xen::Address, uint8_t> _breakpoints;
+    BreakpointMap _breakpoints;
 
   private:
     xen::Domain &_domain;

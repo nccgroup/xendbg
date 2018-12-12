@@ -23,11 +23,15 @@ namespace xd::gdb {
     using OnErrorFn = std::function<void(const uvw::ErrorEvent&)>;
 
     explicit GDBServer(uvw::Loop &loop);
+    ~GDBServer();
 
+    void stop();
     void listen(const std::string& address_str, uint16_t port, OnAcceptFn on_accept, OnErrorFn on_error);
 
   private:
     std::shared_ptr<uvw::TcpHandle> _server;
+    OnAcceptFn _on_accept;
+    OnErrorFn _on_error;
   };
 
 }

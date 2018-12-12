@@ -21,6 +21,7 @@ namespace xd::dbg {
   class DebuggerPV : public Debugger {
   public:
     DebuggerPV(uvw::Loop &loop, xen::DomainPV domain);
+    ~DebuggerPV() override = default;
 
     void attach() override;
     void detach() override;

@@ -22,28 +22,37 @@ GDBConnection::GDBConnection(std::shared_ptr<uvw::TcpHandle> tcp)
 {
 }
 
+GDBConnection::~GDBConnection() {
+  stop();
+}
+
+void GDBConnection::stop() {
+  if (!_tcp->closing())
+    _tcp->close();
+}
+
 void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
     OnErrorFn on_error)
 {
+  _on_receive = std::move(on_receive);
+  _on_close = std::move(on_close);
+  _on_error = std::move(on_error);
+
   _tcp->data(shared_from_this());
+
+  _tcp->on<uvw::ErrorEvent>([](const auto &event, auto &tcp) {
+    auto self = tcp.template data<GDBConnection>();
+    self->_on_error(event);
+  });
+
+  _tcp->on<uvw::CloseEvent>([](const auto &event, auto &tcp) {
+    auto self = tcp.template data<GDBConnection>();
+    self->_on_close();
+  });
 
   _is_initializing = true;
 
-  _tcp->on<uvw::ErrorEvent>([on_error](const auto &event, auto &tcp) {
-    on_error(event);
-    tcp.close();
-  });
-
-  _tcp->on<uvw::CloseEvent>([on_close](const auto &event, auto &tcp) {
-    on_close();
-  });
-
-  /*
-  _tcp->on<uvw::ConnectEvent>([](const auto &error) {
-  });
-  */
-
-  _tcp->template on<uvw::DataEvent>([on_receive](const auto &event, auto &tcp) {
+  _tcp->template on<uvw::DataEvent>([](const auto &event, auto &tcp) {
     auto self = tcp.template data<GDBConnection>();
 
     std::vector<char> data(event.data.get(), event.data.get() + event.length);
@@ -68,7 +77,7 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
           try {
             spdlog::get(LOGNAME_CONSOLE)->debug("RECV: {0}", raw_packet.to_string());
             const auto packet = parse_packet(raw_packet);
-            on_receive(*self, packet);
+            self->_on_receive(*self, packet);
           } catch (const UnknownPacketTypeException &e) {
             spdlog::get(LOGNAME_ERROR)->warn(
               "Got packet of unknown type: \"{0}\"", e.what());
@@ -88,11 +97,6 @@ void GDBConnection::read(OnReceiveFn on_receive, OnCloseFn on_close,
   });
 
   _tcp->read();
-}
-
-void GDBConnection::stop() {
-  if (!_tcp->closing())
-    _tcp->stop();
 }
 
 void GDBConnection::send(const rsp::GDBResponse &packet)

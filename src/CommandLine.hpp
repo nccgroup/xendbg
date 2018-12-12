@@ -26,7 +26,7 @@ namespace xd {
 
   private:
     uint16_t _port;
-    std::string _domain;
+    std::string _ip, _domain;
   };
 
 }

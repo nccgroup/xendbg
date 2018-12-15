@@ -36,7 +36,7 @@ ServerModeController::ServerModeController(std::string address, uint16_t base_po
     _loop(uvw::Loop::getDefault()),
     _signal(_loop->resource<uvw::SignalHandle>()),
     _poll(_loop->resource<uvw::PollHandle>(_xen->xenstore.get_fileno())),
-    _address(address), _next_port(base_port), _non_stop_mode(non_stop_mode)
+    _address(std::move(address)), _next_port(base_port), _non_stop_mode(non_stop_mode)
 {
 }
 
@@ -58,9 +58,11 @@ void ServerModeController::run_single(xen::DomID domid) {
   watch_release.add_path("@releaseDomain");
 
   _poll->on<uvw::PollEvent>([&](const auto &event, auto &handle) {
-    if (watch_release.check())
-      if (prune_instances())
+    if (watch_release.check() && !_instances.empty())
+      if (prune_instances()) {
         stop();
+        exit(0);
+      }
   });
 
   _poll->start(uvw::PollHandle::Event::READABLE);
@@ -129,11 +131,25 @@ size_t ServerModeController::add_new_instances() {
 }
 
 size_t ServerModeController::prune_instances() {
-  return for_terminated_instances([this](auto it) {
-    spdlog::get(LOGNAME_CONSOLE)->info(
-        "DOWN: Domain {0:d}", it->first);
-    _instances.erase(it);
-  });
+  const auto domains = _xen->get_domains();
+
+  size_t num_removed = 0;
+  auto it = _instances.begin();
+  while (it != _instances.end()) {
+    if (std::none_of(domains.begin(), domains.end(),
+      [&](const auto &domain) {
+        return get_domid_any(domain) == it->first;
+      }))
+    {
+      spdlog::get(LOGNAME_CONSOLE)->info(
+          "DOWN: Domain {0:d}", it->first);
+      it = _instances.erase(it);
+      ++num_removed;
+    } else {
+      ++it;
+    }
+  }
+  return num_removed;
 }
 
 void ServerModeController::add_instance(xen::DomainAny domain_any) {

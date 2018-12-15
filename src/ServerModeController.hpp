@@ -59,27 +59,6 @@ namespace xd {
     size_t add_new_instances();
     size_t prune_instances();
 
-    template <typename F>
-    size_t for_terminated_instances(F f) {
-      const auto domains = _xen->get_domains();
-
-      size_t num_removed = 0;
-      auto it = _instances.begin();
-      while (it != _instances.end()) {
-        if (std::none_of(domains.begin(), domains.end(),
-          [&](const auto &domain) {
-            return get_domid_any(domain) == it->first;
-          }))
-        {
-          f(it);
-          ++num_removed;
-        } else {
-          ++it;
-        }
-      }
-      return num_removed;
-    }
-
     void add_instance(xen::DomainAny domain);
   };
 

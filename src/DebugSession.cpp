@@ -17,8 +17,10 @@ DebugSession::~DebugSession() {
 }
 
 void DebugSession::stop() {
-  _gdb_connection->stop();
-  _gdb_server->stop();
+  if (_gdb_connection)
+    _gdb_connection->stop();
+  if (_gdb_server)
+    _gdb_server->stop();
 }
 
 void DebugSession::run(const std::string& address_str, uint16_t port, OnErrorFn on_error) {

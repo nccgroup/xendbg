@@ -15,6 +15,10 @@ CommandLine::CommandLine()
           "Enable non-stop mode (HVM only), making step, continue, "
           "breakpoints, etc. only apply to current the thread");
 
+  auto debug = _app.add_flag(
+      "-d,--debug",
+      "Enable debug logging.");
+
   auto server_mode = _app.add_option(
       "-s,--server", _port,
       "Start as an LLDB stub server on the given port. "
@@ -39,7 +43,13 @@ CommandLine::CommandLine()
   attach->needs(server_mode);
   server_ip->needs(server_mode);
 
-  _app.callback([this, non_stop_mode, server_mode, server_ip, attach] {
+  _app.callback([this, non_stop_mode, server_mode, server_ip, attach, debug] {
+    if (debug->count()) {
+      auto console = spdlog::stdout_color_mt(LOGNAME_CONSOLE);
+      console->set_level(spdlog::level::debug);
+      auto err_log = spdlog::stderr_color_mt(LOGNAME_ERROR);
+      err_log->set_level(spdlog::level::debug);
+    }
     if (server_mode->count()) {
       xd::ServerModeController server(_ip, _port, non_stop_mode->count() > 0);
       if (attach->count()) {

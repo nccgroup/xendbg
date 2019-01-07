@@ -15,7 +15,7 @@
 #include "Token/Match.hpp"
 #include "Token/Symbol.hpp"
 #include "Token/Variable.hpp"
-#include "../../Util/string.hpp"
+#include <Util/string.hpp>
 
 namespace xd::parser::tokenizer {
 

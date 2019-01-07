@@ -4,8 +4,8 @@
 
 #include "Match.hpp"
 #include "Verb.hpp"
-#include "../../Util/IndentHelper.hpp"
-#include "../../Util/string.hpp"
+#include <Util/IndentHelper.hpp>
+#include <Util/string.hpp>
 
 using xd::repl::cmd::Action;
 using xd::repl::cmd::ArgsHandle;

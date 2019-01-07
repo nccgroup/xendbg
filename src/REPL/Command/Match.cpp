@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "Match.hpp"
-#include "../../Util/string.hpp"
+#include <Util/string.hpp>
 
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::Flag;

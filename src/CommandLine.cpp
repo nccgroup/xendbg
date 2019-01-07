@@ -1,9 +1,12 @@
+#include "REPL/DebuggerREPL.hpp"
+
 #include "CommandLine.hpp"
 #include "Constants.hpp"
 #include "ServerModeController.hpp"
 
 using xd::CommandLine;
 using xd::gdb::GDBServer;
+using xd::repl::REPL;
 using xd::xen::DomID;
 using xd::xen::XenException;
 
@@ -40,7 +43,6 @@ CommandLine::CommandLine()
       "up and shut down.")
     ->type_name("DOMAIN");
 
-  attach->needs(server_mode);
   server_ip->needs(server_mode);
 
   _app.callback([this, non_stop_mode, server_mode, server_ip, attach, debug] {
@@ -67,8 +69,10 @@ CommandLine::CommandLine()
         server.run_multi();
       }
     } else {
-      // TODO: repl mode
+      dbg::DebuggerREPL repl(non_stop_mode->count() > 0);
+      repl.run();
     }
+    exit(0);
   });
 };
 

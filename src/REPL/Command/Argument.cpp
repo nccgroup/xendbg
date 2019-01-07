@@ -5,8 +5,8 @@
 #include <sstream>
 
 #include "Argument.hpp"
-#include "../../Util/IndentHelper.hpp"
-#include "../../Util/string.hpp"
+#include <Util/IndentHelper.hpp>
+#include <Util/string.hpp>
 
 using xd::repl::cmd::Argument;
 using xd::util::IndentHelper;

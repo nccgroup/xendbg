@@ -3,7 +3,7 @@
 //
 
 #include "CommandVerb.hpp"
-#include "../../Util/IndentHelper.hpp"
+#include <Util/IndentHelper.hpp>
 
 using xd::repl::cmd::Action;
 using xd::repl::cmd::CommandVerb;

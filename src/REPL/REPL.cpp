@@ -6,14 +6,18 @@
 #include <iostream>
 #include <string>
 
+#include <Util/IndentHelper.hpp>
+#include <Util/string.hpp>
+
 #include <readline/readline.h>
 #include <readline/history.h>
 
 #include "REPL.hpp"
+
+#include "Command/Action.hpp"
+#include "Command/CommandBase.hpp"
 #include "Command/MakeCommand.hpp"
 #include "Command/Match.hpp"
-#include "../Util/IndentHelper.hpp"
-#include "../Util/string.hpp"
 
 using xd::repl::REPL;
 using xd::repl::cmd::Action;

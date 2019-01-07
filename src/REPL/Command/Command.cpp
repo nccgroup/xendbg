@@ -5,8 +5,8 @@
 #include <iostream>
 
 #include "Command.hpp"
-#include "../../Util/IndentHelper.hpp"
-#include "../../Util/string.hpp"
+#include <Util/IndentHelper.hpp>
+#include <Util/string.hpp>
 
 using xd::util::IndentHelper;
 using xd::util::string::expect;

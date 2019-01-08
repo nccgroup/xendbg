@@ -15,22 +15,6 @@ using xd::ServerModeController;
 using xd::DebugSession;
 using xd::xen::Xen;
 
-xd::xen::DomID ServerModeController::get_domid_any(const xd::xen::DomainAny &domain_any) {
-  return std::visit(xd::util::overloaded {
-    [](const auto &domain) {
-      return domain.get_domid();
-    }
-  }, domain_any);
-}
-
-std::string ServerModeController::get_name_any(const xd::xen::DomainAny &domain_any) {
-  return std::visit(xd::util::overloaded {
-      [](const auto &domain) {
-        return domain.get_name();
-      }
-  }, domain_any);
-}
-
 ServerModeController::ServerModeController(std::string address, uint16_t base_port, bool non_stop_mode)
   : _xen(Xen::create()),
     _loop(uvw::Loop::getDefault()),
@@ -44,13 +28,13 @@ void ServerModeController::run_single(const std::string &name) {
   const auto domains = _xen->get_domains();
 
   auto found = std::find_if(domains.begin(), domains.end(), [&](const auto &domain) {
-    return get_name_any(domain) == name;
+    return Xen::get_name_any(domain) == name;
   });
 
   if (found == domains.end())
     throw std::runtime_error("No such domain!");
 
-  run_single(get_domid_any(*found));
+  run_single(Xen::get_domid_any(*found));
 }
 
 void ServerModeController::run_single(xen::DomID domid) {
@@ -120,7 +104,7 @@ size_t ServerModeController::add_new_instances() {
 
   size_t num_added = 0;
   for (const auto &domain : domains) {
-    const auto domid = get_domid_any(domain);
+    const auto domid = Xen::get_domid_any(domain);
     if (!_instances.count(domid)) {
       add_instance(domain);
       ++num_added;
@@ -138,7 +122,7 @@ size_t ServerModeController::prune_instances() {
   while (it != _instances.end()) {
     if (std::none_of(domains.begin(), domains.end(),
       [&](const auto &domain) {
-        return get_domid_any(domain) == it->first;
+        return Xen::get_domid_any(domain) == it->first;
       }))
     {
       spdlog::get(LOGNAME_CONSOLE)->info(
@@ -153,7 +137,7 @@ size_t ServerModeController::prune_instances() {
 }
 
 void ServerModeController::add_instance(xen::DomainAny domain_any) {
-  const auto domid = get_domid_any(domain_any);
+  const auto domid = Xen::get_domid_any(domain_any);
 
   if (_instances.count(domid))
     throw DomainAlreadyAddedException(domid);

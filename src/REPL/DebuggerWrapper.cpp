@@ -22,8 +22,20 @@ DebuggerWrapper::DebuggerWrapper(bool non_stop_mode)
   : _xen(Xen::create()),
     _loop(uvw::Loop::getDefault()),
     _non_stop_mode(non_stop_mode),
-    _vcpu_id(0)
+    _vcpu_id(0), _breakpoint_id(0)
 {
+}
+
+size_t DebuggerWrapper::insert_breakpoint(xen::Address address) {
+  get_debugger_or_fail()->insert_breakpoint(address);
+  const auto id = ++_breakpoint_id;
+  _breakpoints[id] = address;
+  return id;
+}
+
+void DebuggerWrapper::remove_breakpoint(size_t id) {
+  get_debugger_or_fail()->remove_breakpoint(_breakpoints[id]);
+  _breakpoints.erase(id);
 }
 
 void DebuggerWrapper::attach(xd::xen::DomainAny domain_any) {
@@ -40,7 +52,6 @@ void DebuggerWrapper::attach(xd::xen::DomainAny domain_any) {
   }, domain_any);
 
   _debugger->attach();
-  load_symbols_from_file(_debugger->get_domain().get_kernel_path());
 }
 
 void DebuggerWrapper::detach() {
@@ -60,7 +71,7 @@ void DebuggerWrapper::load_symbols_from_file(const std::string &filename) {
   ELFIO::elfio reader;
 
   if (!reader.load(filename))
-    throw std::runtime_error("Failed to read file!");
+    throw std::runtime_error("Failed to read file: " + filename);
 
   _symbols.clear();
 

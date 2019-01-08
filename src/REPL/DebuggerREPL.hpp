@@ -19,6 +19,12 @@ namespace xd::dbg {
       : std::runtime_error(what.c_str()) {};
   };
 
+  class NoSuchDomainException : public std::runtime_error {
+  public:
+    explicit NoSuchDomainException(const std::string &what)
+      : std::runtime_error(what.c_str()) {};
+  };
+
   class DebuggerREPL {
   public:
     DebuggerREPL(bool non_stop_mode);
@@ -30,9 +36,9 @@ namespace xd::dbg {
   private:
     void setup_repl();
 
-    //static void print_domain_info(const xen::Domain& domain);
-    //static void print_registers(const xen::Registers& regs);
-    //static void print_xen_info(const xen::XenHandle& xen);
+    static void print_domain_info(const xen::Domain& domain);
+    static void print_registers(const reg::RegistersX86Any& regs);
+    static void print_xen_info(const xen::Xen& xen);
     void examine(uint64_t address, size_t word_size, size_t num_words);
 
   private:

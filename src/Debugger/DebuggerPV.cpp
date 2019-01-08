@@ -91,7 +91,7 @@ void DebuggerPV::attach() {
 void DebuggerPV::detach() {
   if (!_timer->closing())
     _timer->stop();
-  _domain.set_debugging(false,0 );
+  _domain.set_debugging(false, 0);
   Debugger::detach();
 }
 

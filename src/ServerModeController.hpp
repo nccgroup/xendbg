@@ -50,9 +50,6 @@ namespace xd {
     std::unordered_map<xen::DomID, std::unique_ptr<DebugSession>> _instances;
 
   private:
-    static xen::DomID get_domid_any(const xen::DomainAny &domain_any);
-    static std::string get_name_any(const xen::DomainAny &domain_any);
-
     void run();
     void stop();
 

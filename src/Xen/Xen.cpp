@@ -1,10 +1,48 @@
 #include <Xen/Xen.hpp>
 
+#include <unordered_set>
+
 using xd::xen::DomID;
 using xd::xen::DomainAny;
 using xd::xen::DomainHVM;
 using xd::xen::DomainPV;
 using xd::xen::Xen;
+
+std::optional<DomainAny> Xen::get_domain_from_name(const std::string &name) {
+  auto domains = get_domains();
+  for (const auto &domain : domains) {
+    if (Xen::get_name_any(domain) == name) {
+      return domain;
+    }
+  }
+  return std::nullopt;
+}
+
+std::optional<DomainAny> Xen::get_domain_from_domid(DomID domid) {
+  auto domains = get_domains();
+  for (const auto &domain : domains) {
+    if (Xen::get_domid_any(domain) == domid) {
+      return domain;
+    }
+  }
+  return std::nullopt;
+}
+
+DomID Xen::get_domid_any(const xd::xen::DomainAny &domain_any) {
+  return std::visit(xd::util::overloaded {
+    [](const auto &domain) {
+      return domain.get_domid();
+    }
+  }, domain_any);
+}
+
+std::string Xen::get_name_any(const xd::xen::DomainAny &domain_any) {
+  return std::visit(xd::util::overloaded {
+      [](const auto &domain) {
+        return domain.get_name();
+      }
+  }, domain_any);
+}
 
 DomainAny Xen::init_domain(DomID domid) {
   auto dominfo = xenctrl.get_domain_info(domid);
@@ -22,10 +60,25 @@ std::vector<DomainAny> Xen::get_domains() {
 
   std::vector<DomainAny> domains;
   domains.reserve(domid_strs.size());
-  std::transform(domid_strs.begin(), domid_strs.end(), std::back_inserter(domains),
-      [&](const auto& domid_str) {
-        const auto domid = std::stoul(domid_str);
-        return init_domain(domid);
-  });
+
+  /* We have to account for the fact that Xenstore sometimes contains entries
+     for dead domains that don't actually exist anymore. These will have the
+     same name but a lower domid, and can be safely ignored.
+   */
+  for (const auto domid_str : domid_strs) {
+    const auto domid = std::stoul(domid_str);
+    auto domain = init_domain(domid);
+
+    auto it = std::find_if(domains.begin(), domains.end(),
+      [&](auto &d) {
+        return get_domid_any(d) < domid;
+      });
+
+    if (it != domains.end())
+      domains.erase(it);
+
+    domains.push_back(std::move(domain));
+  }
+
   return domains;
 }

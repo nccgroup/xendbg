@@ -22,6 +22,7 @@
 using xd::repl::REPL;
 using xd::repl::cmd::Action;
 using xd::repl::cmd::ArgMatchFailedException;
+using xd::repl::cmd::ExtraArgumentException;
 using xd::repl::cmd::FlagArgMatchFailedException;
 using xd::repl::cmd::Argument;
 using xd::repl::cmd::CommandVerb;
@@ -140,15 +141,17 @@ void REPL::run(ActionHandlerFn action_handler) {
 
     try {
       const auto action = interpret_line(line);
+      add_history(line.c_str());
       if (action) {
-        add_history(line.c_str());
         action_handler(action.value());
       } else if (_no_match_handler) {
         _no_match_handler(line);
       } else {
         std::cout << "Invalid input." << std::endl;
       }
-
+    } catch (const ExtraArgumentException &e) {
+      std::cout << "Too many arguments: " << e.what() << std::endl;
+      continue;
     } catch (const ArgMatchFailedException &e) {
       std::cout << "Invalid value '" << 
         std::string(e.get_pos(), next_whitespace<std::string::const_iterator>(

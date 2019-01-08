@@ -10,6 +10,7 @@
 
 #include <Util/string.hpp>
 #include <Xen/XenException.hpp>
+#include <Xen/Xen.hpp>
 
 #include "DebuggerREPL.hpp"
 #include "Parser/Parser.hpp"
@@ -63,6 +64,8 @@ void DebuggerREPL::run() {
       std::cout << std::endl;
     } catch (const InvalidInputException &e) {
       std::cout << e.what() << std::endl;
+    } catch (const NoSuchDomainException&e) {
+      std::cout << "No such domain: " << e.what() << std::endl;
     } catch (const parser::except::ParserException &e) {
       std::cout << "Invalid input! Parse failed at:" << std::endl;
       std::cout << e.input() << std::endl;
@@ -73,6 +76,8 @@ void DebuggerREPL::run() {
       std::cout << std::string(e.pos(), ' ') << "^" << std::endl;
     } catch (const NoSuchVariableException &e) {
       std::cout << "No such variable: " << e.what() << std::endl;
+    } catch (const repl::NoGuestAttachedException&e) {
+      std::cout << "Not attached to a guest! Use 'guest attach <domid/name>'." << std::endl;
     } catch (const NoSuchBreakpointException &e) {
       // TODO
       std::cout << "No such breakpoint: #" << e.get_address() << std::endl;
@@ -156,13 +161,11 @@ void DebuggerREPL::setup_repl() {
       {}, {},
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
-          /*
-          const auto domains = _debugger.get_guest_domains();
+          const auto domains = _dwrap.get_xen().get_domains();
           for (const auto &domain : domains) {
-            // TODO: formatting
-            std::cout << domain.get_name() << "\t" << domain.get_domid() << std::endl;
+            std::cout << xen::Xen::get_domid_any(domain) << "\t"
+                << xen::Xen::get_name_any(domain) << std::endl;
           }
-           */
         };
       }),
 
@@ -174,13 +177,11 @@ void DebuggerREPL::setup_repl() {
             match_optionally_quoted_string<std::string::const_iterator>,
               [this](const auto&, const auto&) {
                 std::vector<std::string> options;
-                /*
-                const auto domains = _debugger.get_guest_domains();
+                auto domains = _dwrap.get_xen().get_domains();
                 std::transform(domains.begin(), domains.end(),
                   std::back_inserter(options), [](const auto& domain) {
-                    return domain.get_name();
+                    return xen::Xen::get_name_any(domain);
                   });
-                  */
                 return options;
               }),
       },
@@ -192,9 +193,20 @@ void DebuggerREPL::setup_repl() {
           try {
             domid = (xen::DomID)std::stoul(domid_or_name);
           } catch (std::invalid_argument& e) {
-            //domid = _dwrap.get_xen_handle().xenstore.get_domid_from_name(domid_or_name);
-            domid = -1; // TODO
+            domid = (unsigned short)-1;
           }
+
+          std::optional<xen::DomainAny> domain;
+          if (domid != (unsigned short)-1) {
+            domain = _dwrap.get_xen().get_domain_from_domid(domid);
+          } else {
+            domain = _dwrap.get_xen().get_domain_from_name(domid_or_name);
+            if (domain)
+              domid = xen::Xen::get_domid_any(*domain);
+          }
+
+          if (!domain)
+            throw NoSuchDomainException(domid_or_name);
 
           const auto d = _dwrap.get_debugger();
           if (d && d->get_domain().get_domid() == domid) {
@@ -202,10 +214,8 @@ void DebuggerREPL::setup_repl() {
             return;
           }
 
-          //_dwrap.attach(domid);
-          //const auto domain = _debugger.get_current_domain().value();
-          //std::cout << "Attached to guest " << domain.get_domid() << " (" << domain.get_name() << ")." << std::endl;
-          // TODO
+          _dwrap.attach(*domain);
+          std::cout << "Attached to guest " << domid << " (" << xen::Xen::get_name_any(*domain) << ")." << std::endl;
         };
       }),
 
@@ -243,9 +253,8 @@ void DebuggerREPL::setup_repl() {
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
-            // TODO: handle not being attached yet
-            //auto &domain = _dwrap.get_domain_or_fail();
-            //print_domain_info(domain);
+            auto &domain = _dwrap.get_domain_or_fail();
+            print_domain_info(domain);
           };
         }),
       Verb("registers", "Query the register state of the current domain.",
@@ -254,25 +263,23 @@ void DebuggerREPL::setup_repl() {
           return [this]() {
             auto &domain = _dwrap.get_domain_or_fail();
             auto regs = domain.get_cpu_context(0);
-            //print_registers(regs);
+            print_registers(regs);
           };
         }),
       Verb("variables", "Query variables.",
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
-            /*
-            for (const auto& var : _variables) {
+            for (const auto& var : _dwrap.get_variables()) {
               std::cout << var.first << "\t" << var.second << std::endl;
             }
-             */
           };
         }),
       Verb("xen", "Query Xen version and capabilities.",
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
-            //print_xen_info(_dwrap.get_xen_handle());
+            print_xen_info(_dwrap.get_xen());
           };
         }),
   }));
@@ -473,12 +480,11 @@ void DebuggerREPL::setup_repl() {
         const auto address_str = args.get(0);
 
         return [this, address_str]() {
-          // TODO
-          //Parser parser;
-          //const auto address_expr = parser.parse(address_str);
-          //const auto address = evaluate_expression(address_expr);
-          //const auto id = _debugger.create_breakpoint(address);
-          //std::cout << "Created breakpoint #" << id << "." << std::endl;
+          Parser parser;
+          const auto address_expr = parser.parse(address_str);
+          const auto address = _dwrap.evaluate_expression(address_expr);
+          const auto id = _dwrap.insert_breakpoint(address);
+          std::cout << "Created breakpoint #" << id << "." << std::endl;
         };
       }),
     Verb("delete", "Delete a breakpoint.",
@@ -489,8 +495,7 @@ void DebuggerREPL::setup_repl() {
       [this](auto &/*flags*/, auto &args) {
         const auto id = std::stoul(args.get(0));
         return [this, id]() {
-          // TODO
-          //_debugger.delete_breakpoint(id);
+          _dwrap.remove_breakpoint(id);
           std::cout << "Deleted breakpoint #" << id << "." << std::endl;
         };
       }),
@@ -498,14 +503,12 @@ void DebuggerREPL::setup_repl() {
       {}, {},
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
-          /* TODO
-          const auto bps = _debugger.get_breakpoints();
-          std::cout << std::showbase << std::hex;
+          const auto bps = _dwrap.get_breakpoints();
+          std::cout << std::showbase;
           for (const auto pair : bps) {
-            std::cout << pair.first << ":\t" << pair.second.address << std::endl;
+            std::cout << std::dec << pair.first << ":\t" << std::hex << pair.second << std::endl;
           }
           std::cout << std::dec;
-           */
         };
       }),
     }));
@@ -515,9 +518,28 @@ void DebuggerREPL::setup_repl() {
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
-            _dwrap.get_debugger()->continue_();
-            // TODO
-            //std::cout << "Hit breakpoint #" << bp.id << "." << std::endl;
+            _dwrap.get_debugger_or_fail()->continue_();
+            auto ctx = _dwrap.get_debugger_or_fail()->get_domain().get_cpu_context(0); // TODO
+            auto ip = std::visit(util::overloaded {
+              [](const reg::x86_32::RegistersX86_32 &regs) {
+                return (uint64_t)regs.template get<reg::x86_32::eip>();
+              },
+              [](const reg::x86_64::RegistersX86_64 &regs) {
+                return (uint64_t)regs.template get<reg::x86_64::rip>();
+              }
+            }, ctx);
+            const auto &bps = _dwrap.get_breakpoints();
+            std::cout << ip << std::endl;
+            auto it = std::find_if(bps.begin(), bps.end(),
+              [&](auto pair) {
+                auto [id, addr] = pair;
+                std::cout << std::hex << id << " " << addr << " " << ip << std::endl;
+                return addr == ip;
+              });
+            if (it != bps.end())
+              std::cout << "Hit breakpoint #" << it->first << "." << std::endl;
+            else
+              std::cout << "Hit a breakpoint, but no ID is associated with it." << std::endl;
           };
         })));
 
@@ -531,10 +553,8 @@ void DebuggerREPL::setup_repl() {
         })));
 }
 
-/* TODO
 void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
-  const auto dominfo = domain.get_info();
-
+  const auto dominfo = domain.get_dominfo();
   std::cout
     << "Domain " << domain.get_domid() << " (" << domain.get_name() << "):" << std::endl
     << domain.get_word_size() * 8 << "-bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl
@@ -544,31 +564,29 @@ void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
     << std::endl;
 }
 
-void DebuggerREPL::print_registers(const xen::Registers& regs) {
-std::cout << std::hex << std::showbase;
+void DebuggerREPL::print_registers(const reg::RegistersX86Any& regs) {
+  std::cout << std::hex << std::showbase;
 
-
-std::visit(util::overloaded {
-  [](const xen::Registers32 regs) {
-    regs.for_each([](const auto &name, auto val) {
-      std::cout << name << "\t" << val << std::endl;
-    });
-  },
-  [](const xen::Registers64 regs) {
-    regs.for_each([](const auto &name, auto val) {
-      std::cout << name << "\t" << val << std::endl;
-    });
-  }
-}, regs);
+  std::visit(util::overloaded {
+    [](const reg::x86_32::RegistersX86_32 regs) {
+      regs.for_each([](const auto &md, auto reg) {
+        std::cout << md.name << "\t" << (uint64_t)reg << std::endl;
+      });
+    },
+    [](const reg::x86_64::RegistersX86_64 regs) {
+      regs.for_each([](const auto &md, auto reg) {
+        std::cout << md.name << "\t" << (uint64_t)reg << std::endl;
+      });
+    }
+  }, regs);
 
   std::cout << std::dec;
 }
 
-void DebuggerREPL::print_xen_info(const xen::XenHandle &xen) {
-  auto version = xen.get_xenctrl().get_xen_version();
+void DebuggerREPL::print_xen_info(const xen::Xen &xen) {
+  auto version = xen.xenctrl.get_xen_version();
   std::cout << "Xen " << version.major << "." << version.minor << std::endl;
 }
-*/
 
 void DebuggerREPL::examine(uint64_t address, size_t word_size, size_t num_words) {
   auto mem_handle = _dwrap.examine(address, word_size, num_words);

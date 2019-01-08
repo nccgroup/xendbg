@@ -45,11 +45,15 @@ namespace xd::repl {
       uint64_t address;
     };
 
+    using BreakpointMap = std::unordered_map<size_t, uint64_t>;
     using SymbolMap = std::unordered_map<std::string, Symbol>;
+    using VarMap = std::unordered_map<std::string, uint64_t>;
 
   public:
     explicit DebuggerWrapper(bool non_stop_mode);
     ~DebuggerWrapper() = default;
+
+    xen::Xen &get_xen() { return *_xen; };
 
     const xd::xen::Domain &get_domain_or_fail() {
       return get_debugger_or_fail()->get_domain();
@@ -64,6 +68,9 @@ namespace xd::repl {
       return _debugger;
     }
 
+    size_t insert_breakpoint(xen::Address address);
+    void remove_breakpoint(size_t id);
+
     void attach(xd::xen::DomainAny domain_any);
     void detach();
 
@@ -76,26 +83,30 @@ namespace xd::repl {
     xd::dbg::MaskedMemory examine(uint64_t address, size_t word_size, size_t num_words);
 
     const Symbol &lookup_symbol(const std::string &name);
+    const BreakpointMap &get_breakpoints() { return _breakpoints; };
     const SymbolMap &get_symbols() { return _symbols; };
+    const VarMap &get_variables() { return _variables; };
 
     const xen::Xen &get_xen_handle() { return *_xen; };
 
-  private:
-    void assert_attached();
     void load_symbols_from_file(const std::string &name);
 
   private:
+    void assert_attached();
 
-    using VarMap = std::unordered_map<std::string, uint64_t>;
+  private:
 
     bool _non_stop_mode;
+    size_t _breakpoint_id;
 
     std::shared_ptr<xen::Xen> _xen;
     std::shared_ptr<uvw::Loop> _loop;
 
     std::shared_ptr<xd::dbg::Debugger> _debugger;
-    VarMap _variables;
+
+    BreakpointMap _breakpoints;
     SymbolMap _symbols;
+    VarMap _variables;
 
     xen::VCPU_ID _vcpu_id;
   };

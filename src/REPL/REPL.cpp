@@ -130,7 +130,8 @@ void REPL::run(ActionHandlerFn action_handler) {
 
     // Just hitting enter repeats the last line
     if (line.empty()) {
-      const auto last_line = history_get(where_history())->line;
+      auto last_line_ptr = history_get(where_history());
+      const auto last_line = last_line_ptr ? last_line_ptr->line : "";
       line = std::string(last_line);
 
     // A line with only spaces should be ignored

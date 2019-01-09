@@ -16,7 +16,7 @@ CommandLine::CommandLine()
   auto non_stop_mode = _app.add_flag(
           "-n,--non-stop-mode",
           "Enable non-stop mode (HVM only), making step, continue, "
-          "breakpoints, etc. only apply to current the thread");
+          "breakpoints, etc. only apply to the current thread.");
 
   auto debug = _app.add_flag(
       "-d,--debug",

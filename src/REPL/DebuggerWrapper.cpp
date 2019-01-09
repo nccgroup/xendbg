@@ -96,7 +96,7 @@ void DebuggerWrapper::load_symbols_from_file(const std::string &filename) {
   ELFIO::elfio reader;
 
   if (!reader.load(filename))
-    throw std::runtime_error("Failed to read file: " + filename);
+    throw FileLoadException(filename);
 
   _symbols.clear();
 
@@ -116,7 +116,7 @@ void DebuggerWrapper::load_symbols_from_file(const std::string &filename) {
         symbols.get_symbol(i, name, address, size, bind, type, section_index, other);
 
         // TODO: very basic for now; just load functions with known addresses
-        if (type == STT_FUNC && address > 0)
+        if ((type == STT_FUNC || type == STT_OBJECT) && address > 0)
           _symbols[name] = Symbol{address};
       }
     }

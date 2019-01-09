@@ -22,6 +22,13 @@ namespace xd::repl {
   class NoSuchWatchpointException : public std::exception {
   };
 
+  class FileLoadException : public std::runtime_error {
+  public:
+    explicit FileLoadException(const std::string &name)
+      : std::runtime_error(name.c_str())
+    {};
+  };
+
   class NoSuchSymbolException : public std::runtime_error {
   public:
     explicit NoSuchSymbolException(const std::string &name)
@@ -109,6 +116,7 @@ namespace xd::repl {
     const xen::Xen &get_xen_handle() { return *_xen; };
 
     void load_symbols_from_file(const std::string &name);
+    void clear_symbols() { _symbols.clear(); };
 
     void set_vcpu_id(size_t id) {
       _vcpu_id = id;

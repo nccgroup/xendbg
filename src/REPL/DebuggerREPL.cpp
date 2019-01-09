@@ -2,9 +2,11 @@
 // Created by Spencer Michaels on 8/28/18.
 //
 
+#include <experimental/filesystem>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
+#include <regex>
 
 #include <elfio/elfio.hpp>
 
@@ -48,6 +50,8 @@ using xd::repl::cmd::match::match_number_unsigned;
 using xd::repl::cmd::Verb;
 using xd::util::string::next_whitespace;
 using xd::util::string::match_optionally_quoted_string;
+
+namespace fs = std::experimental::filesystem;
 
 DebuggerREPL::DebuggerREPL(bool non_stop_mode)
   : _loop(uvw::Loop::getDefault()),
@@ -101,6 +105,8 @@ void DebuggerREPL::run() {
       std::cout << "No such breakpoint!" << std::endl;
     } catch (const repl::NoSuchWatchpointException &e) {
       std::cout << "No such breakpoint!" << std::endl;
+    } catch (const repl::FileLoadException &e) {
+      std::cout << "Failed to load file: " << e.what() << std::endl;
     }
   });
 
@@ -190,7 +196,7 @@ void DebuggerREPL::setup_repl() {
    * Standard commands: help and quit
    */
   _repl.add_command(make_command(
-    Verb("help", "Print help.",
+    Verb("help", "Print this list.",
       {}, {},
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this](){
@@ -205,6 +211,58 @@ void DebuggerREPL::setup_repl() {
           _repl.exit();
         };
       })));
+
+  _repl.add_command(make_command("symbol", "Load symbols.", {
+    Verb("list", "List all symbols.",
+      {}, {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          const auto &symbols = _dwrap.get_symbols();
+          for (const auto &pair : symbols) {
+            const auto [name, symbol] = pair;
+            std::cout << std::hex << std::showbase << symbol.address
+              << "\t" << name << std::endl;
+          }
+        };
+      }),
+
+    Verb("load", "Load symbols from a file.",
+      {},
+      {
+        Argument("file",
+            "The path of the file from which to load symbols.", 
+            match_everything<std::string::const_iterator>,
+              [](const auto start, const auto end) {
+                std::string path(start, end);
+                auto last_slash = path.rfind('/');
+                if (last_slash != std::string::npos)
+                  path.erase(last_slash);
+                if (path.empty())
+                  path = ".";
+                std::vector<std::string> options;
+                for (const auto &entry : fs::directory_iterator(path)) {
+                  std::string path = entry.path();
+                  if (path != "./" && path != "../")
+                    options.push_back(path);
+                }
+                return options;
+              }),
+      },
+      [this](auto &/*flags*/, auto &args) {
+        const auto filename = args.get(0);
+        return [this, filename]() {
+          _dwrap.load_symbols_from_file(std::regex_replace(filename, std::regex(" +$"), ""));
+        };
+      }),
+
+    Verb("clear", "Clear all loaded symbols.",
+      {}, {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          _dwrap.clear_symbols();
+        };
+      }),
+  }));
 
   /**
    * domain
@@ -303,7 +361,7 @@ void DebuggerREPL::setup_repl() {
         };
       }),
 
-    Verb("pause", "Pause the current domain",
+    Verb("pause", "Pause the current domain.",
       {}, {},
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
@@ -311,7 +369,7 @@ void DebuggerREPL::setup_repl() {
         };
       }),
 
-    Verb("unpause", "Unpause the current domain",
+    Verb("unpause", "Unpause the current domain.",
       {}, {},
       [this](auto &/*flags*/, auto &/*args*/) {
         return [this]() {
@@ -673,7 +731,7 @@ void DebuggerREPL::setup_repl() {
           };
         })));
 
-  _repl.add_command(make_command("watchpoint", "Manage watchpoints..", {
+  _repl.add_command(make_command("watchpoint", "Manage watchpoints.", {
     Verb("create", "Create a watchpoint.",
       {},
       {

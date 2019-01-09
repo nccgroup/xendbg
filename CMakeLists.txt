@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 project(xendbg)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_REQUIRED_FLAGS -std=c++17)
 set(CLANG_DEFAULT_CXX_STDLIB "libc++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
@@ -20,6 +22,7 @@ target_link_libraries(xendbg
   capstone
   pthread
   readline
+  c++experimental
   uv
   xencall
   xenctrl

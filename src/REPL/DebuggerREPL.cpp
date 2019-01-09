@@ -1,4 +1,25 @@
 //
+// Copyright (C) 2018-2019 Spencer Michaels
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+//
 // Created by Spencer Michaels on 8/28/18.
 //
 
@@ -105,6 +126,8 @@ void DebuggerREPL::run() {
       std::cout << "No such breakpoint!" << std::endl;
     } catch (const repl::NoSuchWatchpointException &e) {
       std::cout << "No such breakpoint!" << std::endl;
+    } catch (const repl::NoSuchSymbolException &e) {
+      std::cout << "No such symbol!" << std::endl;
     } catch (const repl::FileLoadException &e) {
       std::cout << "Failed to load file: " << e.what() << std::endl;
     }
@@ -240,10 +263,14 @@ void DebuggerREPL::setup_repl() {
                 if (path.empty())
                   path = ".";
                 std::vector<std::string> options;
-                for (const auto &entry : fs::directory_iterator(path)) {
-                  std::string path = entry.path();
-                  if (path != "./" && path != "../")
-                    options.push_back(path);
+                try {
+                  for (const auto &entry : fs::directory_iterator(path)) {
+                    std::string path = entry.path();
+                    if (path != "./" && path != "../")
+                      options.push_back(path);
+                  }
+                } catch (std::exception &e) {
+                  // ignore
                 }
                 return options;
               }),
@@ -401,7 +428,7 @@ void DebuggerREPL::setup_repl() {
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
             for (const auto& var : _dwrap.get_variables()) {
-              std::cout << var.first << "\t" << var.second << std::endl;
+              std::cout << var.first << "\t" << std::showbase << std::hex << var.second << std::endl;
             }
           };
         }),
@@ -662,7 +689,12 @@ void DebuggerREPL::setup_repl() {
           const auto bps = _dwrap.get_breakpoints();
           std::cout << std::showbase;
           for (const auto pair : bps) {
-            std::cout << std::dec << pair.first << ":\t" << std::hex << pair.second << std::endl;
+            std::cout << std::dec << pair.first << ":\t" << std::hex << pair.second;
+            for (const auto &sym : _dwrap.get_symbols()) {
+              if (sym.second.address == pair.second)
+                std::cout << " (" << sym.first << ")";
+            }
+            std::cout << std::endl;
           }
           std::cout << std::dec;
         };
@@ -702,12 +734,15 @@ void DebuggerREPL::setup_repl() {
                 auto [id, addr] = pair;
                 return addr == ip;
               });
+
             if (interrupted)
               std::cout << "Interrupted." << std::endl;
             else if (it != bps.end())
               std::cout << "Hit breakpoint #" << it->first << "." << std::endl;
             else
               std::cout << "Hit a breakpoint, but no ID is associated with it." << std::endl;
+
+            disassemble(ip, X86_MAX_INSTRUCTION_SIZE*STEP_PRINT_INSTRS, STEP_PRINT_INSTRS);
           };
         })));
 
@@ -835,12 +870,11 @@ void DebuggerREPL::setup_repl() {
 void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
   const auto dominfo = domain.get_dominfo();
   std::cout
+    << "Kernel: " << domain.get_kernel_path() << std::endl
     << "Domain " << domain.get_domid() << " (" << domain.get_name() << "):" << std::endl
     << domain.get_word_size() * 8 << "-bit " << (dominfo.hvm ? "HVM" : "PV") << std::endl
     << (dominfo.max_vcpu_id+1) << " VCPUs" << std::endl
-    << (dominfo.paused ? "Paused" : "Running") << std::endl
-    << (dominfo.crashed ? "Crashed" : "")
-    << std::endl;
+    << (dominfo.crashed ? "Crashed" : (dominfo.paused ? "Paused" : "Running")) << std::endl;
 }
 
 void DebuggerREPL::print_registers(const reg::RegistersX86Any& regs) {
@@ -873,9 +907,10 @@ void DebuggerREPL::disassemble(uint64_t address, size_t length, size_t max_instr
 
   cs_insn *insn;
   auto count = cs_disasm(_capstone, mem, length, address, 0, &insn);
+  max_instrs = max_instrs ? max_instrs : count;
   if (count > 0) {
     size_t j;
-    for (j = 0; j < count && j < max_instrs; j++) {
+    for (j = 0; j < count && (j < max_instrs); j++) {
       printf("0x%lx:\t%s\t\t%s\n", insn[j].address, insn[j].mnemonic,
           insn[j].op_str);
     }

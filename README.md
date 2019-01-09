@@ -4,8 +4,16 @@
 superseding Xen's own `gdbsx`. It can debug both HVM and PV guests, and
 provides both a standalone REPL and an LLDB server mode.
 
-## Features
+## Feature list
 
+* Supports 32- and 64-bit x86 Xen guests, both paravirtualized (PV) and
+  hardware virtualized (HVM)
+* LLDB server mode
+* Standalone REPL mode
+* Register read/write
+* Memory read/write
+* Breakpoints
+* Watchpoints (HVM only due to Xen API limitations)
 
 ## Command line options
 
@@ -26,7 +34,24 @@ provides both a standalone REPL and an LLDB server mode.
                               up and shut down.
 ```
 
-## REPL
+## Server mode
+
+If run with the `--server` argument, `xendbg` will start up an LLDB server on
+the specified port. If a domain is specified with `--attach`, the server will
+connect to that domain immediately and close once it is destroyed. Otherwise,
+it will open one port per Xen domain, starting at the given port and counting
+up. The server will open and close ports as domains are created and destroyed,
+and will only exit when the user explicitly sends a `CTRL-C`.
+
+In either case, LLDB can then connect to any of `xendbg`'s ports using the
+`gdb-remote` command, providing the user with a seamless and familiar debugging
+experience.
+
+![LLDB mode](demos/xendbg-lldb1.png)
+
+![LLDB](demos/xendbg-lldb2.png)
+
+## REPL mode
 
 `xendbg` will start in a standalone mode if run without the `--server`
 argument. This mode provides a REPL with access to all of the debugging
@@ -38,12 +63,7 @@ Standalone mode has contextual tab-completion for all commands. Hit `<tab>` at
 any point to list completion options; if only one option is available, it will
 be expanded automatically.
 
-
-### Usage examples
-
-```
-
-```
+![REPL mode](demos/xendbg-repl.gif)
 
 ### Command list
 
@@ -77,8 +97,8 @@ guest: Manage guest domains.
   attach <domid/name>
     Attach to a domain.
   detach: Detach from the current domain.
-  pause: Pause the current domain
-  unpause: Unpause the current domain
+  pause: Pause the current domain.
+  unpause: Unpause the current domain.
 
 help: Print this list.
 
@@ -101,6 +121,12 @@ set [flags] <{$var, *expr} = expr>
     Size of each word to read.
 
 step: Step forward one instruction.
+
+symbol: Load symbols.
+  list: List all symbols.
+  load <file>
+    Load symbols from a file.
+  clear: Clear all loaded symbols.
 
 unset <$var>
   Unset a variable.

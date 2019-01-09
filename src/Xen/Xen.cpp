@@ -67,17 +67,22 @@ std::vector<DomainAny> Xen::get_domains() {
    */
   for (const auto domid_str : domid_strs) {
     const auto domid = std::stoul(domid_str);
-    auto domain = init_domain(domid);
+    try {
+      auto domain = init_domain(domid);
 
-    auto it = std::find_if(domains.begin(), domains.end(),
-      [&](auto &d) {
-        return get_domid_any(d) < domid;
-      });
+      auto it = std::find_if(domains.begin(), domains.end(),
+        [&](auto &d) {
+          return get_domid_any(d) < domid;
+        });
 
-    if (it != domains.end())
-      domains.erase(it);
+      if (it != domains.end())
+        domains.erase(it);
 
-    domains.push_back(std::move(domain));
+      domains.push_back(std::move(domain));
+    } catch (xen::XenException &e) {
+      // Sometimes Xenstore yields dead domains, just skip them
+      continue;
+    }
   }
 
   return domains;

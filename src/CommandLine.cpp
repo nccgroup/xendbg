@@ -47,10 +47,8 @@ CommandLine::CommandLine()
 
   _app.callback([this, non_stop_mode, server_mode, server_ip, attach, debug] {
     if (debug->count()) {
-      auto console = spdlog::stdout_color_mt(LOGNAME_CONSOLE);
-      console->set_level(spdlog::level::debug);
-      auto err_log = spdlog::stderr_color_mt(LOGNAME_ERROR);
-      err_log->set_level(spdlog::level::debug);
+      spdlog::get(LOGNAME_CONSOLE)->set_level(spdlog::level::debug);
+      spdlog::get(LOGNAME_ERROR)->set_level(spdlog::level::debug);
     }
     if (server_mode->count()) {
       xd::ServerModeController server(_ip, _port, non_stop_mode->count() > 0);

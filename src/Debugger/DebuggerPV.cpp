@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <sys/mman.h>
 
-#include <capstone/capstone.h>
 #include <spdlog/spdlog.h>
 
 #include <Globals.hpp>

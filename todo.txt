@@ -1,0 +1,3 @@
+Licensing (MIT?)
+Authors file
+Readme

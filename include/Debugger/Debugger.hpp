@@ -31,17 +31,6 @@ namespace xd::dbg {
       : std::runtime_error(msg) {};
   };
 
-  class NoSuchBreakpointException : public std::exception {
-  public:
-    explicit NoSuchBreakpointException(const xen::Address address)
-        : _address(address) {};
-
-    xen::Address get_address() const { return _address; };
-
-  private:
-    xen::Address _address;
-  };
-
   class FeatureNotSupportedException : public std::runtime_error {
   public:
     explicit FeatureNotSupportedException(const std::string &msg)

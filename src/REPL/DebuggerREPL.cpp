@@ -21,6 +21,8 @@
 #include "Command/MatchHelper.hpp"
 #include "Command/Verb.hpp"
 
+#define STEP_PRINT_INSTRS 4
+
 using xd::dbg::Debugger;
 using xd::dbg::DebuggerREPL;
 using xd::dbg::InvalidInputException;
@@ -48,9 +50,24 @@ using xd::util::string::next_whitespace;
 using xd::util::string::match_optionally_quoted_string;
 
 DebuggerREPL::DebuggerREPL(bool non_stop_mode)
-  : _dwrap(repl::DebuggerWrapper(non_stop_mode))
+  : _loop(uvw::Loop::getDefault()),
+    _signal(_loop->resource<uvw::SignalHandle>()),
+    _dwrap(repl::DebuggerWrapper(_loop, non_stop_mode)),
+    _vcpu_id(0)
 {
   setup_repl();
+}
+
+void DebuggerREPL::stop() {
+  _loop->walk([](auto &handle) {
+    if (!handle.closing())
+      handle.close();
+  });
+
+  _loop->run();
+  _loop->close();
+
+  std::cout << "Goodbye!" << std::endl;
 }
 
 void DebuggerREPL::run() {
@@ -76,13 +93,19 @@ void DebuggerREPL::run() {
       std::cout << std::string(e.pos(), ' ') << "^" << std::endl;
     } catch (const NoSuchVariableException &e) {
       std::cout << "No such variable: " << e.what() << std::endl;
-    } catch (const repl::NoGuestAttachedException&e) {
+    } catch (const NotSupportedException &e) {
+      std::cout << "Unsupported feature: " << e.what() << std::endl;
+    } catch (const repl::NoGuestAttachedException &e) {
       std::cout << "Not attached to a guest! Use 'guest attach <domid/name>'." << std::endl;
-    } catch (const NoSuchBreakpointException &e) {
-      // TODO
-      std::cout << "No such breakpoint: #" << e.get_address() << std::endl;
+    } catch (const repl::NoSuchBreakpointException &e) {
+      std::cout << "No such breakpoint!" << std::endl;
+    } catch (const repl::NoSuchWatchpointException &e) {
+      std::cout << "No such breakpoint!" << std::endl;
     }
   });
+
+  stop();
+  exit(0);
 }
 
 void DebuggerREPL::setup_repl() {
@@ -129,6 +152,39 @@ void DebuggerREPL::setup_repl() {
     parse_and_eval_expression(line);
   });
   */
+
+  _repl.add_command(make_command("cpu", "Get/set the current CPU.", {
+    Verb("get", "Get the current CPU.",
+      {},
+      {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          _dwrap.get_debugger_or_fail();
+          std::cout << "CPU " << _vcpu_id << " (max: " << _max_vcpu_id << ")" << std::endl;
+        };
+      }),
+    Verb("set", "Switch to a new CPU.",
+      {},
+      {
+        Argument("id", "The ID of the CPU to switch to.",
+            match_number_unsigned<std::string::const_iterator>)
+      },
+      [this](auto &/*flags*/, auto &args) {
+        const auto id = std::stoul(args.get(0));
+        return [this, id]() {
+          _dwrap.get_debugger_or_fail();
+
+          if (id > _max_vcpu_id) {
+            std::cout << "CPU ID too high! Max is " << _max_vcpu_id << "." << std::endl;
+            return;
+          }
+
+          _vcpu_id = id;
+          _dwrap.set_vcpu_id(_vcpu_id);
+          std::cout << "Switched to CPU " << _vcpu_id << "." << std::endl;
+        };
+      }),
+    }));
 
   /**
    * Standard commands: help and quit
@@ -208,13 +264,26 @@ void DebuggerREPL::setup_repl() {
           if (!domain)
             throw NoSuchDomainException(domid_or_name);
 
-          const auto d = _dwrap.get_debugger();
-          if (d && d->get_domain().get_domid() == domid) {
+          auto dbg = _dwrap.get_debugger();
+          if (dbg && dbg->get_domain().get_domid() == domid) {
             std::cout << "Already attached." << std::endl;
             return;
           }
 
           _dwrap.attach(*domain);
+
+          auto &d = _dwrap.get_domain_or_fail();
+          _max_vcpu_id = d.get_dominfo().max_vcpu_id;
+          auto word_size = d.get_word_size();
+
+          const auto mode =
+              (word_size == sizeof(uint64_t)) ? CS_MODE_64 : CS_MODE_32;
+
+          if (cs_open(CS_ARCH_X86, mode, &_capstone) != CS_ERR_OK)
+            throw CapstoneException("Failed to open Capstone handle!");
+
+          cs_option(_capstone, CS_OPT_DETAIL, CS_OPT_ON);
+
           std::cout << "Attached to guest " << domid << " (" << xen::Xen::get_name_any(*domain) << ")." << std::endl;
         };
       }),
@@ -226,8 +295,11 @@ void DebuggerREPL::setup_repl() {
           const auto& domain = _dwrap.get_domain_or_fail();
           const auto domid = domain.get_domid();
           const auto name = domain.get_name();
-          std::cout << "Detached from guest " << domid << " (" << name << ")." << std::endl;
+
           _dwrap.detach();
+          cs_close(&_capstone);
+
+          std::cout << "Detached from guest " << domid << " (" << name << ")." << std::endl;
         };
       }),
 
@@ -262,7 +334,7 @@ void DebuggerREPL::setup_repl() {
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
             auto &domain = _dwrap.get_domain_or_fail();
-            auto regs = domain.get_cpu_context(0);
+            auto regs = domain.get_cpu_context(_vcpu_id);
             print_registers(regs);
           };
         }),
@@ -412,6 +484,31 @@ void DebuggerREPL::setup_repl() {
         })));
 
   _repl.add_command(make_command(
+    Verb("disassemble", "Disassemble instructions.",
+      {},
+      {
+        Argument("addr", "The start address.",
+            match_optionally_quoted_string<std::string::const_iterator>),
+        Argument("len", "The number of bytes to read.",
+            match_optionally_quoted_string<std::string::const_iterator>),
+      },
+      [this](auto &/*flags*/, auto &args) {
+        const auto address_str = args.get(0);
+        const auto len_str = args.get(1);
+
+        return [this, address_str, len_str]() {
+          Parser parser;
+          const auto address_expr = parser.parse(address_str);
+          const auto address = _dwrap.evaluate_expression(address_expr);
+
+          const auto len_expr = parser.parse(len_str);
+          const auto len = _dwrap.evaluate_expression(len_expr);
+
+          disassemble(address, len);
+        };
+      })));
+
+  _repl.add_command(make_command(
       Verb("examine", "Read memory.",
         {
           Flag('w', "word-size", "Size of each word to read.", {
@@ -422,7 +519,7 @@ void DebuggerREPL::setup_repl() {
                   }),
           }),
           Flag('n', "num-words", "Number of words to read.", {
-              Argument("num", "The number of words to read.", match_number_unsigned<std::string::const_iterator>),
+              Argument("num", "The number of words to read.", match_optionally_quoted_string<std::string::const_iterator>),
           })
         },
         {
@@ -462,6 +559,7 @@ void DebuggerREPL::setup_repl() {
             Parser parser;
             const auto expr = parser.parse(expr_str);
             const auto addr = _dwrap.evaluate_expression(expr);
+
             examine(
                 addr,
                 word_size ? word_size : _dwrap.get_domain_or_fail().get_word_size(),
@@ -518,8 +616,20 @@ void DebuggerREPL::setup_repl() {
         {}, {},
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
+            bool interrupted = false;
+            _dwrap.get_debugger_or_fail()->on_stop([this](auto /*reason*/) {
+              _loop->stop();
+            });
+            _signal->once<uvw::SignalEvent>([this, &interrupted](const auto &event, auto &handle) {
+              interrupted = true;
+              handle.loop().stop();
+            });
+            _signal->start(SIGINT);
             _dwrap.get_debugger_or_fail()->continue_();
-            auto ctx = _dwrap.get_debugger_or_fail()->get_domain().get_cpu_context(0); // TODO
+            _loop->run();
+            _signal->stop();
+
+            auto ctx = _dwrap.get_debugger_or_fail()->get_domain().get_cpu_context(_vcpu_id);
             auto ip = std::visit(util::overloaded {
               [](const reg::x86_32::RegistersX86_32 &regs) {
                 return (uint64_t)regs.template get<reg::x86_32::eip>();
@@ -529,14 +639,14 @@ void DebuggerREPL::setup_repl() {
               }
             }, ctx);
             const auto &bps = _dwrap.get_breakpoints();
-            std::cout << ip << std::endl;
             auto it = std::find_if(bps.begin(), bps.end(),
               [&](auto pair) {
                 auto [id, addr] = pair;
-                std::cout << std::hex << id << " " << addr << " " << ip << std::endl;
                 return addr == ip;
               });
-            if (it != bps.end())
+            if (interrupted)
+              std::cout << "Interrupted." << std::endl;
+            else if (it != bps.end())
               std::cout << "Hit breakpoint #" << it->first << "." << std::endl;
             else
               std::cout << "Hit a breakpoint, but no ID is associated with it." << std::endl;
@@ -549,8 +659,119 @@ void DebuggerREPL::setup_repl() {
         [this](auto &/*flags*/, auto &/*args*/) {
           return [this]() {
             _dwrap.get_debugger()->single_step();
+
+            auto ctx = _dwrap.get_debugger_or_fail()->get_domain().get_cpu_context(_vcpu_id);
+            auto ip = std::visit(util::overloaded {
+              [](const reg::x86_32::RegistersX86_32 &regs) {
+                return (uint64_t)regs.template get<reg::x86_32::eip>();
+              },
+              [](const reg::x86_64::RegistersX86_64 &regs) {
+                return (uint64_t)regs.template get<reg::x86_64::rip>();
+              }
+            }, ctx);
+            disassemble(ip, X86_MAX_INSTRUCTION_SIZE*STEP_PRINT_INSTRS, STEP_PRINT_INSTRS);
           };
         })));
+
+  _repl.add_command(make_command("watchpoint", "Manage watchpoints..", {
+    Verb("create", "Create a watchpoint.",
+      {},
+      {
+        Argument("addr", "The address at which to create a watchpoint.",
+            match_number_unsigned<std::string::const_iterator>),
+        Argument("len", "The length of the region to watch.",
+            match_number_unsigned<std::string::const_iterator>),
+        Argument("type", "The type of the watchpoint (r/w/a).",
+            make_match_one_of<std::string::const_iterator,
+              std::vector<std::string>>({"r", "w", "a"})),
+      },
+      [this](auto &/*flags*/, auto &args) {
+        const auto address_str = args.get(0);
+        const auto len_str = args.get(1);
+        const auto type_str = args.get(2);
+
+        return [this, address_str, len_str, type_str]() {
+          if (!_dwrap.is_hvm())
+            throw NotSupportedException("Watchpoints are only supported on HVM guests.");
+
+          Parser parser;
+          const auto address_expr = parser.parse(address_str);
+          const auto address = _dwrap.evaluate_expression(address_expr);
+
+          const auto len_expr = parser.parse(len_str);
+          const auto len = _dwrap.evaluate_expression(len_expr);
+
+          if (type_str.size() != 1)
+            throw InvalidInputException("Type must be one of: r, w, a");
+
+          WatchpointType type;
+          switch (type_str[0]) {
+            case 'r':
+              type = WatchpointType::Read;
+              break;
+            case 'w':
+              type = WatchpointType::Write;
+              break;
+            case 'a':
+              type = WatchpointType::Access;
+              break;
+            default:
+              throw InvalidInputException("Type must be one of: r, w, a");
+          }
+
+          const auto id = _dwrap.insert_watchpoint(address, len, type);
+          std::cout << "Created watchpoint #" << id << "." << std::endl;
+        };
+      }),
+    Verb("delete", "Delete a watchpoint.",
+      {},
+      {
+        Argument("id", "The ID of a watchpoint to delete.",
+            match_number_unsigned<std::string::const_iterator>)
+      },
+      [this](auto &/*flags*/, auto &args) {
+        const auto id = std::stoul(args.get(0));
+        return [this, id]() {
+          if (!_dwrap.is_hvm())
+            throw NotSupportedException("Watchpoints are only supported on HVM guests.");
+
+          _dwrap.remove_watchpoint(id);
+          std::cout << "Deleted watchpoint #" << id << "." << std::endl;
+        };
+      }),
+    Verb("list", "List watchpoints.",
+      {}, {},
+      [this](auto &/*flags*/, auto &/*args*/) {
+        return [this]() {
+          if (!_dwrap.is_hvm())
+            throw NotSupportedException("Watchpoints are only supported on HVM guests.");
+
+          const auto bps = _dwrap.get_watchpoints();
+          std::cout << std::showbase;
+          for (const auto pair : bps) {
+            std::string type;
+            switch (pair.second.type) {
+              case WatchpointType::Access:
+                type = "access";
+                break;
+              case WatchpointType::Read:
+                type = "read";
+                break;
+              case WatchpointType::Write:
+                type = "write";
+                break;
+            }
+
+            std::cout << std::dec << pair.first << ":\t"
+              << std::showbase << std::hex << pair.second.address << " +"
+              << pair.second.length << " "
+              << type << std::endl;
+          }
+          std::cout << std::dec;
+        };
+      }),
+    }));
+
 }
 
 void DebuggerREPL::print_domain_info(const xen::Domain &domain) {
@@ -586,6 +807,24 @@ void DebuggerREPL::print_registers(const reg::RegistersX86Any& regs) {
 void DebuggerREPL::print_xen_info(const xen::Xen &xen) {
   auto version = xen.xenctrl.get_xen_version();
   std::cout << "Xen " << version.major << "." << version.minor << std::endl;
+}
+
+void DebuggerREPL::disassemble(uint64_t address, size_t length, size_t max_instrs) {
+  auto mem_handle = _dwrap.examine(address, 1, length);
+  auto mem = mem_handle.get();
+
+  cs_insn *insn;
+  auto count = cs_disasm(_capstone, mem, length, address, 0, &insn);
+  if (count > 0) {
+    size_t j;
+    for (j = 0; j < count && j < max_instrs; j++) {
+      printf("0x%lx:\t%s\t\t%s\n", insn[j].address, insn[j].mnemonic,
+          insn[j].op_str);
+    }
+
+    cs_free(insn, count);
+  } else
+    printf("ERROR: Failed to disassemble given code!\n");
 }
 
 void DebuggerREPL::examine(uint64_t address, size_t word_size, size_t num_words) {

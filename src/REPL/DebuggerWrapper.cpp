@@ -18,9 +18,9 @@ using xd::xen::Xen;
 
 using namespace xd::parser::expr::op;
 
-DebuggerWrapper::DebuggerWrapper(bool non_stop_mode)
+DebuggerWrapper::DebuggerWrapper(std::shared_ptr<uvw::Loop> loop, bool non_stop_mode)
   : _xen(Xen::create()),
-    _loop(uvw::Loop::getDefault()),
+    _loop(loop),
     _non_stop_mode(non_stop_mode),
     _vcpu_id(0), _breakpoint_id(0)
 {
@@ -34,8 +34,28 @@ size_t DebuggerWrapper::insert_breakpoint(xen::Address address) {
 }
 
 void DebuggerWrapper::remove_breakpoint(size_t id) {
+  if (!_breakpoints.count(id))
+    throw NoSuchBreakpointException();
+
   get_debugger_or_fail()->remove_breakpoint(_breakpoints[id]);
   _breakpoints.erase(id);
+}
+
+size_t DebuggerWrapper::insert_watchpoint(
+    xen::Address address, xen::Address length, dbg::WatchpointType type) {
+  get_debugger_or_fail()->insert_watchpoint(address, length, type);
+  const auto id = ++_watchpoint_id;
+  _watchpoints[id] = Watchpoint{address, length, type};
+  return id;
+}
+
+void DebuggerWrapper::remove_watchpoint(size_t id) {
+  if (!_watchpoints.count(id))
+    throw NoSuchWatchpointException();
+
+  const auto wp = _watchpoints[id];
+  get_debugger_or_fail()->remove_watchpoint(wp.address, wp.length, wp.type);
+  _watchpoints.erase(id);
 }
 
 void DebuggerWrapper::attach(xd::xen::DomainAny domain_any) {
@@ -52,6 +72,7 @@ void DebuggerWrapper::attach(xd::xen::DomainAny domain_any) {
   }, domain_any);
 
   _debugger->attach();
+  _vcpu_id = 0;
 }
 
 void DebuggerWrapper::detach() {
@@ -60,6 +81,10 @@ void DebuggerWrapper::detach() {
   _debugger.reset();
   _variables.clear();
   _symbols.clear();
+}
+
+bool DebuggerWrapper::is_hvm() {
+  return _debugger->get_domain().get_dominfo().hvm;
 }
 
 void DebuggerWrapper::assert_attached() {

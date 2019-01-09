@@ -16,6 +16,12 @@
 
 namespace xd::repl {
 
+  class NoSuchBreakpointException : public std::exception {
+  };
+
+  class NoSuchWatchpointException : public std::exception {
+  };
+
   class NoSuchSymbolException : public std::runtime_error {
   public:
     explicit NoSuchSymbolException(const std::string &name)
@@ -49,8 +55,15 @@ namespace xd::repl {
     using SymbolMap = std::unordered_map<std::string, Symbol>;
     using VarMap = std::unordered_map<std::string, uint64_t>;
 
+  private:
+    struct Watchpoint {
+      xen::Address address, length;
+      dbg::WatchpointType type;
+    };
+    using WatchpointMap = std::unordered_map<size_t, Watchpoint>;
+
   public:
-    explicit DebuggerWrapper(bool non_stop_mode);
+    explicit DebuggerWrapper(std::shared_ptr<uvw::Loop> loop, bool non_stop_mode);
     ~DebuggerWrapper() = default;
 
     xen::Xen &get_xen() { return *_xen; };
@@ -71,8 +84,13 @@ namespace xd::repl {
     size_t insert_breakpoint(xen::Address address);
     void remove_breakpoint(size_t id);
 
+    size_t insert_watchpoint(xen::Address address, xen::Address length, dbg::WatchpointType type);
+    void remove_watchpoint(size_t id);
+
     void attach(xd::xen::DomainAny domain_any);
     void detach();
+
+    bool is_hvm();
 
     uint64_t get_var(const std::string &name);
     void set_var(const std::string &name, uint64_t value);
@@ -84,6 +102,7 @@ namespace xd::repl {
 
     const Symbol &lookup_symbol(const std::string &name);
     const BreakpointMap &get_breakpoints() { return _breakpoints; };
+    const WatchpointMap &get_watchpoints() { return _watchpoints; };
     const SymbolMap &get_symbols() { return _symbols; };
     const VarMap &get_variables() { return _variables; };
 
@@ -91,13 +110,18 @@ namespace xd::repl {
 
     void load_symbols_from_file(const std::string &name);
 
+    void set_vcpu_id(size_t id) {
+      _vcpu_id = id;
+      if (_debugger)
+        _debugger->set_vcpu_id(id);
+    };
+
   private:
     void assert_attached();
 
   private:
-
     bool _non_stop_mode;
-    size_t _breakpoint_id;
+    size_t _breakpoint_id, _watchpoint_id;
 
     std::shared_ptr<xen::Xen> _xen;
     std::shared_ptr<uvw::Loop> _loop;
@@ -105,6 +129,7 @@ namespace xd::repl {
     std::shared_ptr<xd::dbg::Debugger> _debugger;
 
     BreakpointMap _breakpoints;
+    WatchpointMap _watchpoints;
     SymbolMap _symbols;
     VarMap _variables;
 

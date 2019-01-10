@@ -63,78 +63,54 @@ Standalone mode has contextual tab-completion for all commands. Hit `<tab>` at
 any point to list completion options; if only one option is available, it will
 be expanded automatically.
 
+Type `help` at the REPL for a full list of commands.
+
 ![REPL mode](demos/xendbg-repl.gif)
 
-### Command list
+## Building
+
+The following steps were tested on Ubuntu 18.04.1 LTS.
 
 ```
-breakpoint: Manage breakpoints.
-  create <addr>
-    Create a breakpoint.
-  delete <id>
-    Delete a breakpoint.
-  list: List breakpoints.
+sudo apt install git cmake build-essential
+git submodule update --init
 
-continue: Continue until the next breakpoint.
+# Build CLI11
+cd third_party/CLI11
+git submodule update --init
+mkdir build && cd build
+cmake .. && make && sudo make install
 
-cpu: Get/set the current CPU.
-  get: Get the current CPU.
-  set <id>
-    Switch to a new CPU.
+# Build ELFIO
+cd ../ELFIO
+sudo apt install autoconf libbost-test-dev
+aclocal
+autoconf
+autoheader
+automake --add-missing
+./configure && make && sudo make install
 
-disassemble <addr> <len>
-  Disassemble instructions.
+# Build uvw
+cd ../uvw/build
+sudo apt install libuv-dev
+cmake .. && make && sudo make install
 
-examine [flags] <expr>
-    Read memory.
-  -w/--word-size <size>
-    Size of each word to read.
-  -n/--num-words <num>
-    Number of words to read.
+# Install xendbg dependencies
+sudo apt install libcapstone-dev libspdlog-dev libxen-dev \
+  libreadline-dev libc++abi-dev
 
-guest: Manage guest domains.
-  list: List all guests and their respective states.
-  attach <domid/name>
-    Attach to a domain.
-  detach: Detach from the current domain.
-  pause: Pause the current domain.
-  unpause: Unpause the current domain.
+# Build with clang. Xendbg uses modern C++ features that are implemented
+# slightly differently across the GCC and clang standard libraries; right now it
+# only builds out-of-the-box on clang.
+clang libc++1 libc++-dev clang
+sudo update-alternatives --config cc    # Choose clang
+sudo update-alternatives --config c++   # Choose clang
 
-help: Print this list.
+mkdir build && cd build
+cmake ..
+make
 
-info: Query the state of Xen, the attached guest and its registers.
-  guest: Query the state of the current guest.
-  registers: Query the register state of the current domain.
-  variables: Query variables.
-  xen: Query Xen version and capabilities.
-
-print [flags] <expr>
-    Display the value of an expression.
-  -f/--format <fmt>
-    Format.
-
-quit: Quit.
-
-set [flags] <{$var, *expr} = expr>
-    Write to a variable, register, or memory region.
-  -w/--word-size <size>
-    Size of each word to read.
-
-step: Step forward one instruction.
-
-symbol: Load symbols.
-  list: List all symbols.
-  load <file>
-    Load symbols from a file.
-  clear: Clear all loaded symbols.
-
-unset <$var>
-  Unset a variable.
-
-watchpoint: Manage watchpoints.
-  create <addr> <len> <type>
-    Create a watchpoint.
-  delete <id>
-    Delete a watchpoint.
-  list: List watchpoints.
+# Set the default compiler back to GCC if desired
+sudo update-alternatives --config cc
+sudo update-alternatives --config c++
 ```

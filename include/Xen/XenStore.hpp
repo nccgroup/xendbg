@@ -34,13 +34,6 @@ namespace xd::xen {
     std::string read(const std::string& file) const;
     std::vector<std::string> read_directory(const std::string& dir) const;
 
-  private:
-    std::unique_ptr<struct xs_handle, decltype(&xs_close)> _xenstore;
-    std::unordered_map<Token, Watch> _watches;
-    size_t _next_watch_id;
-
-    void check_watches();
-
   public:
     class Watch {
     public:
@@ -64,8 +57,15 @@ namespace xd::xen {
 
       std::queue<Path> _events;
     };
-  };
 
+  private:
+    std::unique_ptr<struct xs_handle, decltype(&xs_close)> _xenstore;
+    std::unordered_map<Token, Watch> _watches;
+    size_t _next_watch_id;
+
+    void check_watches();
+
+  };
 }
 
 #endif //XENDBG_XENSTORE_HPP

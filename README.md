@@ -4,7 +4,7 @@
 superseding Xen's own `gdbsx`. It can debug both HVM and PV guests, and
 provides both a standalone REPL and an LLDB server mode.
 
-## Feature list
+## Features
 
 * Supports 32- and 64-bit x86 Xen guests, both paravirtualized (PV) and
   hardware virtualized (HVM)
@@ -59,13 +59,31 @@ functions that the server mode makes available to LLDB, but without the
 dependency on LLDB itself. The REPL itself, of course, is substantially
 more basic than that of LLDB.
 
-Standalone mode has contextual tab-completion for all commands. Hit `<tab>` at
-any point to list completion options; if only one option is available, it will
-be expanded automatically.
-
 Type `help` at the REPL for a full list of commands.
 
 ![REPL mode](demos/xendbg-repl.gif)
+
+### Features
+
+* **Contextual tab completion:** Hit `<tab>` at any point to list completion
+  options; if only one option is available, it will be expanded automatically.
+* **Expressions:** Any statements that take numerical values can also take
+  expressions, e.g. `disassemble $rip+0x10 0x20`. Besides addition,
+  subtraction, multiplication, division, and parenthesization, expressions also
+  support:
+  * The C-style dereference operator `*`, which will interpret its operand as
+    an address in guest memory and read either a 32- or 64-bit value from that
+    location, depending on the bitness of the guest.
+  * Symbol resolution via the `&` operator.
+* **Symbols:** Symbols can be loaded via `symbol load <filename>`, and
+  thereafter any valid symbol name prefixed with `&` will evaluate to the
+  address of that symbol and can be used in an expression, e.g. `print
+  &rumprun_main1`
+* **Variables:** Any C-style variable name prefaced with a dollar sign `$` is
+  treated as a variable. Variables can be set with `set $my_var = {expression}`
+  and unset with `unset $my_var`. In addition, when attached to a guest, its
+  registers will be given variable semantics, so they can be read/written
+  directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1337`.
 
 ## Building
 

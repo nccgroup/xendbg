@@ -34,11 +34,12 @@ experience.
 
 ## REPL mode
 
-`xendbg` will start in a standalone mode if run without the `--server`
-argument. This mode provides a REPL with access to all of the debugging
-functions that the server mode makes available to LLDB, but without the
-dependency on LLDB itself. The REPL itself, of course, is substantially
-more basic than that of LLDB.
+If run without the `--server` argument, `xendbg` will start as a standalone
+REPL. This provides access to all of the debugging functions that the server
+mode makes available to LLDB, but without the dependency on LLDB itself.
+`xendbg`'s REPL, while necessarily simpler than that of LLDB, does possess
+some of the same major features, including tab completion, expressions, and
+variables.
 
 Type `help` at the REPL for a full list of commands.
 
@@ -85,9 +86,9 @@ Type `help` at the REPL for a full list of commands.
                               up and shut down.
 ```
 
-## Building
+## Build steps
 
-The following steps were tested on Ubuntu 18.04.1 LTS.
+The following steps were run on a vanilla Ubuntu 18.04.1 LTS.
 
 ```
 sudo apt install git cmake build-essential

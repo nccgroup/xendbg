@@ -15,25 +15,6 @@ provides both a standalone REPL and an LLDB server mode.
 * Breakpoints
 * Watchpoints (HVM only due to Xen API limitations)
 
-## Command line options
-
-```
--h,--help                   Print this help message and exit
--n,--non-stop-mode          Enable non-stop mode (HVM only), making step,
-                              continue, breakpoints, etc. only apply to the
-                              current thread.
--d,--debug                  Enable debug logging.
--s,--server PORT            Start as an LLDB stub server on the given port.
-                              If omitted, xendbg will run as a standalone REPL.
--i,--ip PORT Needs: --server
-                            Start the stub server on the given address.
--a,--attach DOMAIN          Attach to a single domain given either its domid
-                              or name. If omitted, xendbg will start a server
-                              for each domain on sequential ports starting from
-                              PORT, adding and removing ports as domains start
-                              up and shut down.
-```
-
 ## Server mode
 
 If run with the `--server` argument, `xendbg` will start up an LLDB server on
@@ -61,8 +42,6 @@ more basic than that of LLDB.
 
 Type `help` at the REPL for a full list of commands.
 
-![REPL mode](demos/xendbg-repl.gif)
-
 ### Features
 
 * **Contextual tab completion:** Hit `<tab>` at any point to list completion
@@ -84,6 +63,27 @@ Type `help` at the REPL for a full list of commands.
   and unset with `unset $my_var`. In addition, when attached to a guest, its
   registers will be given variable semantics, so they can be read/written
   directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1337`.
+  
+![REPL mode](demos/xendbg-repl.gif)
+
+## Command line options
+
+```
+-h,--help                   Print this help message and exit
+-n,--non-stop-mode          Enable non-stop mode (HVM only), making step,
+                              continue, breakpoints, etc. only apply to the
+                              current thread.
+-d,--debug                  Enable debug logging.
+-s,--server PORT            Start as an LLDB stub server on the given port.
+                              If omitted, xendbg will run as a standalone REPL.
+-i,--ip PORT Needs: --server
+                            Start the stub server on the given address.
+-a,--attach DOMAIN          Attach to a single domain given either its domid
+                              or name. If omitted, xendbg will start a server
+                              for each domain on sequential ports starting from
+                              PORT, adding and removing ports as domains start
+                              up and shut down.
+```
 
 ## Building
 

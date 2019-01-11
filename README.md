@@ -1,13 +1,14 @@
 # xendbg - The Xen debugger that actually works!
 
-`xendbg` is a feature-complete reference implementation of a Xen VMI debugger,
-superseding Xen's own `gdbsx`. It can debug both HVM and PV guests, and
-provides both a standalone REPL and an LLDB server mode.
+`xendbg` is a feature-complete reference implementation of a modern Xen VMI debugger,
+superseding Xen's own ancient, limited, and rarely-maintained
+[`gdbsx`](https://github.com/mirage/xen/tree/master/tools/debugger/gdbsx).
+It can debug both paravirtualized (PV) and hardware virtualized (HVM) guests,
+and provides both a standalone REPL and an LLDB server mode.
 
 ## Features
 
-* Supports 32- and 64-bit x86 Xen guests, both paravirtualized (PV) and
-  hardware virtualized (HVM)
+* Supports 32- and 64-bit x86 Xen guests, both PV and HVM
 * LLDB server mode
 * Standalone REPL mode
 * Register read/write
@@ -63,7 +64,7 @@ Type `help` at the REPL for a full list of commands.
   treated as a variable. Variables can be set with `set $my_var = {expression}`
   and unset with `unset $my_var`. In addition, when attached to a guest, its
   registers will be given variable semantics, so they can be read/written
-  directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1337`.
+  directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1000`.
   
 ![REPL mode](demos/xendbg-repl.gif)
 
@@ -88,7 +89,7 @@ Type `help` at the REPL for a full list of commands.
 
 ## Build steps
 
-The following steps were run on a vanilla Ubuntu 18.04.1 LTS.
+The following steps were run on a fresh Ubuntu 18.04.1 LTS install.
 
 ```
 sudo apt install git cmake build-essential

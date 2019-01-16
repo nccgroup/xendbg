@@ -90,9 +90,9 @@ Type `help` at the REPL for a full list of commands.
 
 ### Automatically
 
-Ubuntu users can simply install by running `install.sh` in the root of the
-project. The script will install the necessary packages, build third-party
-dependencies, and finally build and install `xendbg`.
+Ubuntu users can simply install by running `install.sh` in the root of the project
+(see also [`build.sh`](./build.sh)). The script will install the necessary packages,
+build third-party dependencies, and finally build and install `xendbg`.
 
 ### Manually
 

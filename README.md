@@ -1,13 +1,14 @@
 # xendbg - A modern Xen debugger
 
-`xendbg` is a feature-complete reference implementation of a Xen VMI debugger,
-superseding Xen's own `gdbsx`. It can debug both HVM and PV guests, and
-provides both a standalone REPL and an LLDB server mode.
+`xendbg` is a feature-complete reference implementation of a modern Xen VMI debugger,
+superseding Xen's own ancient, limited, and rarely-maintained
+[`gdbsx`](https://github.com/mirage/xen/tree/master/tools/debugger/gdbsx).
+It can debug both paravirtualized (PV) and hardware virtualized (HVM) guests,
+and provides both a standalone REPL and an LLDB server mode.
 
 ## Features
 
-* Supports 32- and 64-bit x86 Xen guests, both paravirtualized (PV) and
-  hardware virtualized (HVM)
+* Supports 32- and 64-bit x86 Xen guests, both PV and HVM
 * LLDB server mode
 * Standalone REPL mode
 * Register read/write
@@ -64,9 +65,7 @@ Type `help` at the REPL for a full list of commands.
   treated as a variable. Variables can be set with `set $my_var = {expression}`
   and unset with `unset $my_var`. In addition, when attached to a guest, its
   registers will be given variable semantics, so they can be read/written
-  directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1337`.
-
-![REPL mode](demos/xendbg-repl.gif)
+  directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1000`.
 
 ## Command line options
 
@@ -119,41 +118,3 @@ Ubuntu packages.
 - [CLI11](https://github.com/CLIUtils/CLI11)
 - [ELFIO](https://github.com/serge1/ELFIO)
 - [uvw](https://github.com/skypjack/uvw)
-
-```
-sudo apt install git cmake build-essential
-git submodule update --init
-
-# Build CLI11
-cd third_party/CLI11
-git submodule update --init
-mkdir build && cd build
-cmake .. && make && sudo make install
-
-# Build ELFIO
-cd ../ELFIO
-sudo apt install autoconf libbost-test-dev
-aclocal
-autoconf
-autoheader
-automake --add-missing
-./configure && make && sudo make install
-
-# Build uvw
-cd ../uvw/build
-sudo apt install libuv-dev
-cmake .. && make && sudo make install
-
-# Install xendbg dependencies
-sudo apt install libcapstone-dev libspdlog-dev libxen-dev \
-  libreadline-dev libc++abi-dev
-
-# Build with clang. Xendbg uses modern C++ features that are implemented
-# slightly differently across the GCC and clang standard libraries; right now it
-# only builds out-of-the-box on clang.
-sudo apt install clang libc++1 libc++-dev clang
-
-mkdir build && cd build
-cmake ..
-make
-```

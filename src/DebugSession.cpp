@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -17,10 +17,6 @@
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-//
-// Created by smichaels on 12/11/18.
 //
 
 #include "DebugSession.hpp"
@@ -55,7 +51,7 @@ void DebugSession::run(const std::string& address_str, uint16_t port, OnErrorFn 
       });
       _debugger->attach();
 
-      _gdb_connection->read([this, &server](auto &connection, const auto &packet) {
+      _gdb_connection->read([this](auto &connection, const auto &packet) {
         try {
           std::visit(*_request_handler, packet);
         } catch (const xen::XenException &e) {

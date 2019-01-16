@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -17,10 +17,6 @@
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-//
-// Created by smichaels on 1/7/19.
 //
 
 #ifndef XENDBG_DEBUGGERWRAPPER_HPP
@@ -149,13 +145,13 @@ namespace xd::repl {
     void assert_attached();
 
   private:
-    bool _non_stop_mode;
-    size_t _breakpoint_id, _watchpoint_id;
-
     std::shared_ptr<xen::Xen> _xen;
     std::shared_ptr<uvw::Loop> _loop;
 
     std::shared_ptr<xd::dbg::Debugger> _debugger;
+
+    bool _non_stop_mode;
+    size_t _breakpoint_id, _watchpoint_id;
 
     BreakpointMap _breakpoints;
     WatchpointMap _watchpoints;

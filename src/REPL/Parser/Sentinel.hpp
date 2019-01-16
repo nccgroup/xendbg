@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -19,10 +19,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-//
-// Created by Spencer Michaels on 8/12/18.
-//
-
 #ifndef XENDBG_SENTINEL_HPP
 #define XENDBG_SENTINEL_HPP
 
@@ -31,7 +27,7 @@
 #include "Expression/Operator/Precedence.hpp"
 
 namespace xd::parser::expr::op {
-  struct Sentinel {};
+  class Sentinel {};
 
   template <>
   struct _precedence<Sentinel> {

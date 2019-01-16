@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -17,10 +17,6 @@
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-//
-// Created by Spencer Michaels on 8/13/18.
 //
 
 #include <Xen/Domain.hpp>
@@ -133,7 +129,6 @@ MemInfo Domain::map_meminfo() const {
   std::memset(meminfo.get(), 0, sizeof(xc_domain_meminfo));
 
   int err;
-  xc_domain_meminfo minfo;
   if ((err = xc_map_domain_meminfo(_xen->xenctrl.get(), _domid, meminfo.get()))) {
     throw XenException(
         "Failed to map meminfo for domain " + std::to_string(_domid),

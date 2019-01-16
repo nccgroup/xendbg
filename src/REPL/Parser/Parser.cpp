@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -17,10 +17,6 @@
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-//
-// Created by Spencer Michaels on 8/11/18.
 //
 
 #include <iostream>
@@ -147,15 +143,15 @@ void Parser::parse_unit() {
 
   if (is_constant(next)) {
     const auto value = std::get<token::Constant>(next).value();
-    _operands.emplace(expr::Constant{value});
+    _operands.emplace(expr::Constant{{value}});
     consume();
   } else if (is_label(next)) {
     const auto name = std::get<token::Label>(next).name();
-    _operands.emplace(expr::Label{name});
+    _operands.emplace(expr::Label{{name}});
     consume();
   } else if (is_variable(next)) {
     const auto name = std::get<token::Variable>(next).name();
-    _operands.emplace(expr::Variable{name});
+    _operands.emplace(expr::Variable{{name}});
     consume();
   } else if (is_symbol_of_type(next, Symbol::Type::ParenLeft)) {
     consume();

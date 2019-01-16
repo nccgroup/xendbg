@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -17,10 +17,6 @@
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-//
-// Created by Spencer Michaels on 8/28/18.
 //
 
 #include <iostream>
@@ -42,7 +38,7 @@ using xd::xen::Address;
 using xd::xen::DomainPV;
 
 DebuggerPV::DebuggerPV(uvw::Loop &loop, DomainPV domain)
-  : _domain(std::move(domain)), Debugger(_domain),
+  : Debugger(_domain), _domain(std::move(domain)),
     _timer(loop.resource<uvw::TimerHandle>()),
     _is_in_pre_continue_singlestep(false),
     _is_continuing(false)
@@ -64,7 +60,7 @@ void DebuggerPV::attach() {
     handle.stop();
 
     auto &domain = self->_domain;
-    auto vcpu = (status.vcpu_id == -1)
+    auto vcpu = (status.vcpu_id == (size_t)-1)
         ? self->_last_single_step_vcpu_id
         : status.vcpu_id;
 

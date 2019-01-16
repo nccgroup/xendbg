@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -66,7 +66,7 @@ CommandLine::CommandLine()
 
   server_ip->needs(server_mode);
 
-  _app.callback([this, non_stop_mode, server_mode, server_ip, attach, debug] {
+  _app.callback([this, non_stop_mode, server_mode, attach, debug] {
     if (debug->count()) {
       spdlog::get(LOGNAME_CONSOLE)->set_level(spdlog::level::debug);
       spdlog::get(LOGNAME_ERROR)->set_level(spdlog::level::debug);
@@ -88,8 +88,13 @@ CommandLine::CommandLine()
         server.run_multi();
       }
     } else {
-      dbg::DebuggerREPL repl(non_stop_mode->count() > 0);
-      repl.run();
+      try {
+        dbg::DebuggerREPL repl(non_stop_mode->count() > 0);
+        repl.run();
+      } catch (const xen::XenException &e) {
+        std::cerr << "Xen error: " << e.what() << std::endl;
+        exit(1);
+      }
     }
     exit(0);
   });

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -19,10 +19,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-//
-// Created by Spencer Michaels on 8/17/18.
-//
-
 #include <fcntl.h>
 #include <sys/errno.h>
 #include <unistd.h>
@@ -37,8 +33,8 @@ using xd::xen::XenException;
 
 
 XenCall::XenCall(std::shared_ptr<xc_interface> xenctrl)
-  : _xencall(xencall_open(nullptr, 0), &xencall_close),
-    _xenctrl(std::move(xenctrl))
+  : _xenctrl(std::move(xenctrl)),
+    _xencall(xencall_open(nullptr, 0), &xencall_close)
 {
   if (!_xencall)
     throw XenException("Failed to open xencall interface!", errno);

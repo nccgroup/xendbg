@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018-2019 Spencer Michaels
+// Copyright (C) 2018-2019 NCC Group
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -235,7 +235,7 @@ void GDBRequestHandler::operator()(
 {
   // TODO: -1 means "all threads"... need to implement better support for this
   const auto thread_id = req.get_thread_id();
-  if (thread_id != -1 && thread_id != 0)
+  if (thread_id != (size_t)-1 && thread_id != 0)
     _debugger.set_vcpu_id(thread_id);
   send(rsp::OKResponse());
 }

@@ -1,4 +1,4 @@
-# xendbg - The Xen debugger that actually works!
+# xendbg - A modern Xen debugger
 
 `xendbg` is a feature-complete reference implementation of a Xen VMI debugger,
 superseding Xen's own `gdbsx`. It can debug both HVM and PV guests, and
@@ -15,33 +15,15 @@ provides both a standalone REPL and an LLDB server mode.
 * Breakpoints
 * Watchpoints (HVM only due to Xen API limitations)
 
-## Command line options
-
-```
--h,--help                   Print this help message and exit
--n,--non-stop-mode          Enable non-stop mode (HVM only), making step,
-                              continue, breakpoints, etc. only apply to the
-                              current thread.
--d,--debug                  Enable debug logging.
--s,--server PORT            Start as an LLDB stub server on the given port.
-                              If omitted, xendbg will run as a standalone REPL.
--i,--ip PORT Needs: --server
-                            Start the stub server on the given address.
--a,--attach DOMAIN          Attach to a single domain given either its domid
-                              or name. If omitted, xendbg will start a server
-                              for each domain on sequential ports starting from
-                              PORT, adding and removing ports as domains start
-                              up and shut down.
-```
-
 ## Server mode
 
-If run with the `--server` argument, `xendbg` will start up an LLDB server on
-the specified port. If a domain is specified with `--attach`, the server will
-connect to that domain immediately and close once it is destroyed. Otherwise,
-it will open one port per Xen domain, starting at the given port and counting
-up. The server will open and close ports as domains are created and destroyed,
-and will only exit when the user explicitly sends a `CTRL-C`.
+When started with `--server`, `xendbg` will start up an LLDB server on the
+specified port. A xen domain may also be specified using the `--attach` option,
+which will tell xendbg to connect to that domain immediately and close the
+connection when it is destroyed. Otherwise, it will open one port per Xen
+domain, starting at the given port and counting up. The server will open and
+close ports as domains are created and destroyed, and will only exit when the
+user explicitly sends a `CTRL-C`.
 
 In either case, LLDB can then connect to any of `xendbg`'s ports using the
 `gdb-remote` command, providing the user with a seamless and familiar debugging
@@ -53,15 +35,14 @@ experience.
 
 ## REPL mode
 
-`xendbg` will start in a standalone mode if run without the `--server`
-argument. This mode provides a REPL with access to all of the debugging
-functions that the server mode makes available to LLDB, but without the
-dependency on LLDB itself. The REPL itself, of course, is substantially
-more basic than that of LLDB.
+If started without `--server`, `xendbg` will run a standalone REPL in the
+foreground. This mode still provides all of the debugging features that the
+LLDB server supports, and some users may prefer it over LLDB's CLI interface.
+`xendbg`'s REPL, while somewhat simpler than that of the LLDB CLI, does provide
+common CLI debugger comfort features, including tab completion, expressions,
+and variables.
 
 Type `help` at the REPL for a full list of commands.
-
-![REPL mode](demos/xendbg-repl.gif)
 
 ### Features
 
@@ -85,9 +66,59 @@ Type `help` at the REPL for a full list of commands.
   registers will be given variable semantics, so they can be read/written
   directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1337`.
 
-## Building
+![REPL mode](demos/xendbg-repl.gif)
 
-The following steps were tested on Ubuntu 18.04.1 LTS.
+## Command line options
+
+```
+-h,--help                   Print this help message and exit
+-n,--non-stop-mode          Enable non-stop mode (HVM only), making step,
+                              continue, breakpoints, etc. only apply to the
+                              current thread.
+-d,--debug                  Enable debug logging.
+-s,--server PORT            Start as an LLDB stub server on the given port.
+                              If omitted, xendbg will run as a standalone REPL.
+-i,--ip PORT Needs: --server
+                            Start the stub server on the given address.
+-a,--attach DOMAIN          Attach to a single domain given either its domid
+                              or name. If omitted, xendbg will start a server
+                              for each domain on sequential ports starting from
+                              PORT, adding and removing ports as domains start
+                              up and shut down.
+```
+
+## Building and installing
+
+### Automatically
+
+Ubuntu users can simply install by running `install.sh` in the root of the
+project. The script will install the necessary packages, build third-party
+dependencies, and finally build and install `xendbg`.
+
+### Manually
+
+`xendbg` depends on the following packages. Exact names may differ on other
+systems; these are from Ubuntu. Note that `xendbg` must be built via `clang`
+with `libc++`, as it uses C++17 features whose implementations differ slightly
+from their equivalents in `libstdc++`.
+
+```
+libcapstone-dev
+libspdlog-dev
+libxen-dev
+libreadline-dev
+clang
+libc++abi-dev
+libc++1
+libc++-dev
+```
+
+`xendbg` also requires some third-party dependencies that are not available as
+Ubuntu packages.
+
+- [CLI11](https://github.com/CLIUtils/CLI11)
+- [ELFIO](https://github.com/serge1/ELFIO)
+- [uvw](https://github.com/skypjack/uvw)
 
 ```
 sudo apt install git cmake build-essential
@@ -120,15 +151,9 @@ sudo apt install libcapstone-dev libspdlog-dev libxen-dev \
 # Build with clang. Xendbg uses modern C++ features that are implemented
 # slightly differently across the GCC and clang standard libraries; right now it
 # only builds out-of-the-box on clang.
-clang libc++1 libc++-dev clang
-sudo update-alternatives --config cc    # Choose clang
-sudo update-alternatives --config c++   # Choose clang
+sudo apt install clang libc++1 libc++-dev clang
 
 mkdir build && cd build
 cmake ..
 make
-
-# Set the default compiler back to GCC if desired
-sudo update-alternatives --config cc
-sudo update-alternatives --config c++
 ```

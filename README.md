@@ -67,6 +67,8 @@ Type `help` at the REPL for a full list of commands.
   registers will be given variable semantics, so they can be read/written
   directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1000`.
 
+![REPL mode](demos/xendbg-repl.gif)
+
 ## Command line options
 
 ```

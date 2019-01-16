@@ -1,7 +1,7 @@
 # xendbg - A modern Xen debugger
 
 `xendbg` is a feature-complete reference implementation of a modern Xen VMI debugger,
-superseding Xen's own ancient, limited, and rarely-maintained
+superseding Xen's own limited and rarely-maintained
 [`gdbsx`](https://github.com/mirage/xen/tree/master/tools/debugger/gdbsx).
 It can debug both paravirtualized (PV) and hardware virtualized (HVM) guests,
 and provides both a standalone REPL and an LLDB server mode.

@@ -92,16 +92,17 @@ Type `help` at the REPL for a full list of commands.
 
 ### Automatically
 
-Ubuntu users can simply install by running `install.sh` in the root of the project
-(see also [`build.sh`](./build.sh)). The script will install the necessary packages,
-build third-party dependencies, and finally build and install `xendbg`.
+Ubuntu users can easily build and install `xendbg` by running `install.sh` in the
+root of the project (see also [`build.sh`](./build.sh)). The script will install the
+necessary packages, pull and build the third-party dependencies, and finally build
+and install `xendbg`.
 
 ### Manually
 
-`xendbg` depends on the following packages. Exact names may differ on other
-systems; these are from Ubuntu. Note that `xendbg` must be built via `clang`
-with `libc++`, as it uses C++17 features whose implementations differ slightly
-from their equivalents in `libstdc++`.
+`xendbg` depends on the packages listed below. Exact names may differ on non-Ubuntu
+systems; these are from Ubuntu. Note that `xendbg` must be built with `clang` and
+`libc++`, as it uses C++17 features for which the `libstdc++` implementations are
+known to differ depending on the version of GCC.
 
 ```
 libcapstone-dev

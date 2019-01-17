@@ -2,6 +2,7 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 .idea/
+.ycm_extra_conf.py
 
 # User-specific stuff
 .idea/**/workspace.xml

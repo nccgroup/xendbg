@@ -19,8 +19,8 @@ and provides both a standalone REPL and an LLDB server mode.
 ## Server mode
 
 When started with `--server`, `xendbg` will start up an LLDB server on the
-specified port. A xen domain may also be specified using the `--attach` option,
-which will tell xendbg to connect to that domain immediately and close the
+specified port. A Xen domain may also be specified using the `--attach` option,
+which will tell `xendbg` to connect to that domain immediately and close the
 connection when it is destroyed. Otherwise, it will open one port per Xen
 domain, starting at the given port and counting up. The server will open and
 close ports as domains are created and destroyed, and will only exit when the

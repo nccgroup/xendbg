@@ -1,7 +1,7 @@
 # xendbg - A modern Xen debugger
 
 `xendbg` is a feature-complete reference implementation of a modern Xen VMI debugger,
-superseding Xen's own ancient, limited, and rarely-maintained
+superseding Xen's own limited and rarely-maintained
 [`gdbsx`](https://github.com/mirage/xen/tree/master/tools/debugger/gdbsx).
 It can debug both paravirtualized (PV) and hardware virtualized (HVM) guests,
 and provides both a standalone REPL and an LLDB server mode.
@@ -19,8 +19,8 @@ and provides both a standalone REPL and an LLDB server mode.
 ## Server mode
 
 When started with `--server`, `xendbg` will start up an LLDB server on the
-specified port. A xen domain may also be specified using the `--attach` option,
-which will tell xendbg to connect to that domain immediately and close the
+specified port. A Xen domain may also be specified using the `--attach` option,
+which will tell `xendbg` to connect to that domain immediately and close the
 connection when it is destroyed. Otherwise, it will open one port per Xen
 domain, starting at the given port and counting up. The server will open and
 close ports as domains are created and destroyed, and will only exit when the
@@ -67,6 +67,8 @@ Type `help` at the REPL for a full list of commands.
   registers will be given variable semantics, so they can be read/written
   directly via the `set`/`print` commands, e.g. `set $rax = $rbx + 0x1000`.
 
+![REPL mode](demos/xendbg-repl.gif)
+
 ## Command line options
 
 ```
@@ -90,16 +92,17 @@ Type `help` at the REPL for a full list of commands.
 
 ### Automatically
 
-Ubuntu users can simply install by running `install.sh` in the root of the
-project. The script will install the necessary packages, build third-party
-dependencies, and finally build and install `xendbg`.
+Ubuntu users can easily build and install `xendbg` by running `install.sh` in the
+root of the project (see also [`build.sh`](./build.sh)). The script will install the
+necessary packages, pull and build the third-party dependencies, and finally build
+and install `xendbg`.
 
 ### Manually
 
-`xendbg` depends on the following packages. Exact names may differ on other
-systems; these are from Ubuntu. Note that `xendbg` must be built via `clang`
-with `libc++`, as it uses C++17 features whose implementations differ slightly
-from their equivalents in `libstdc++`.
+`xendbg` depends on the packages listed below. Exact names may differ on non-Ubuntu
+systems; these are from Ubuntu. Note that `xendbg` must be built with `clang` and
+`libc++`, as it uses C++17 features whose `libstdc++` implementations are known
+to differ depending on the version of GCC.
 
 ```
 libcapstone-dev

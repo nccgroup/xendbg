@@ -75,7 +75,7 @@ void DebuggerHVM::on_event(vm_event_st event) {
   } else if (event.reason == VM_EVENT_REASON_MEM_ACCESS) {
     pause_domain(_domain);
     const auto ma = event.u.mem_access;
-    const auto address = (ma.gfn << XC_PAGE_SHIFT) + ma.offset;
+    const auto address = ma.gla;
 
     WatchpointType type;
     if (ma.flags & MEM_ACCESS_R) {

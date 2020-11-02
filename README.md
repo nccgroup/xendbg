@@ -6,6 +6,11 @@ superseding Xen's own limited and rarely-maintained
 It can debug both paravirtualized (PV) and hardware virtualized (HVM) guests,
 and provides both a standalone REPL and an LLDB server mode.
 
+**Note:** The author of this program no longer works at NCC Group. As such, this repository
+has been archived, and development has moved to a new fork at [SpencerMichaels/xendbg](
+https://github.com/SpencerMichaels/xendbg). Please direct any new issues,
+pull requests, and communication there.
+
 ## Features
 
 * Supports 32- and 64-bit x86 Xen guests, both PV and HVM
